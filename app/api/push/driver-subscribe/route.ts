@@ -1,0 +1,86 @@
+export const dynamic = 'force-dynamic'
+
+import { NextRequest, NextResponse } from 'next/server'
+
+const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
+const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+
+function srvHeaders(extras?: Record<string, string>) {
+  return {
+    'apikey':        SUPA_SRV(),
+    'Authorization': `Bearer ${SUPA_SRV()}`,
+    'Content-Type':  'application/json',
+    ...extras,
+  }
+}
+
+async function getDriverId(req: NextRequest): Promise<string | null> {
+  const cookieHeader = req.headers.get('cookie') ?? ''
+  const driverId = cookieHeader
+    .split(';')
+    .find(c => c.trim().startsWith('driver_token='))
+    ?.split('=')[1]?.trim()
+  if (!driverId) return null
+
+  const res = await fetch(
+    `${SUPA_URL()}/rest/v1/drivers?id=eq.${encodeURIComponent(driverId)}&select=id,is_active`,
+    { headers: srvHeaders() }
+  )
+  const drivers = await res.json()
+  const driver = Array.isArray(drivers) ? drivers[0] : null
+  return driver?.is_active ? driverId : null
+}
+
+// POST /api/push/driver-subscribe — save push subscription for a driver
+export async function POST(req: NextRequest) {
+  const driverId = await getDriverId(req)
+  if (!driverId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let body: { subscription: PushSubscriptionJSON }
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const { subscription } = body
+  if (!subscription?.endpoint) return NextResponse.json({ error: 'Missing subscription' }, { status: 400 })
+
+  const keys = subscription.keys as { p256dh: string; auth: string } | undefined
+
+  const res = await fetch(
+    `${SUPA_URL()}/rest/v1/driver_push_subscriptions`,
+    {
+      method: 'POST',
+      headers: srvHeaders({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
+      body: JSON.stringify({
+        driver_id: driverId,
+        endpoint:  subscription.endpoint,
+        p256dh:    keys?.p256dh ?? '',
+        auth:      keys?.auth   ?? '',
+      }),
+    }
+  )
+
+  if (!res.ok) {
+    const err = await res.text()
+    return NextResponse.json({ error: err }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true })
+}
+
+// DELETE /api/push/driver-subscribe — remove subscription
+export async function DELETE(req: NextRequest) {
+  const driverId = await getDriverId(req)
+  if (!driverId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(req.url)
+  const endpoint = searchParams.get('endpoint')
+  if (!endpoint) return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 })
+
+  await fetch(
+    `${SUPA_URL()}/rest/v1/driver_push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}&driver_id=eq.${encodeURIComponent(driverId)}`,
+    { method: 'DELETE', headers: srvHeaders() }
+  ).catch(() => {})
+
+  return NextResponse.json({ ok: true })
+}

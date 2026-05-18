@@ -9,14 +9,28 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@cashfreepayments/cashfree-js": "^1.0.7",
+    "@heroui/react": "^3.0.4",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.78.0",
+    "autoprefixer": "^10.5.0",
+    "framer-motion": "^12.38.0",
+    "gsap": "^3.15.0",
+    "iron-session": "^8.0.4",
+    "lucide-react": "^1.11.0",
     "next": "16.2.3",
+    "postcss": "^8.5.12",
+    "razorpay": "^2.9.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "tailwindcss": "^3.4.19",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "typescript": "^5"

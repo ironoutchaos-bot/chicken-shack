@@ -1,7 +1,12 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
+  // API routes (Razorpay, Supabase) require server-side rendering — no static export
+  images: {
+    unoptimized: true,
+  },
+  reactStrictMode: true,
+  transpilePackages: ['@heroui/react', '@heroui/theme', '@heroui/system', '@heroui/shared-utils'],
+}
 
-export default nextConfig;
+export default nextConfig
