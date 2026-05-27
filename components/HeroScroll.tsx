@@ -177,7 +177,7 @@ export default function HeroScroll() {
                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
               </svg>
               <span>Order Now</span>
-              <span className="btn-order-badge">⚡ ~45 min</span>
+              <span className="btn-order-badge">⚡ Within 1 hour</span>
             </Link>
             <a href="#story" className="btn-ghost btn-lg" onClick={(e) => handleSmoothScroll(e, '#story')}>
               Our Story

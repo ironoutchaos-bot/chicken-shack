@@ -209,7 +209,7 @@ export default function ShopTab({
         >
           <div className="flex items-center gap-4 px-4">
             {[
-              { icon: '⚡', text: '~45 min delivery' },
+              { icon: '⚡', text: 'Within 1 hour' },
               { icon: '✂️', text: 'Order to cut' },
               { icon: '🥩', text: 'Farm fresh daily' },
               { icon: '🌿', text: 'No preservatives' },

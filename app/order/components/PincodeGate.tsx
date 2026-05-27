@@ -175,7 +175,7 @@ export default function PincodeGate({ onVerified }: Props) {
 
           {/* Trust badges */}
           <div className="flex items-center gap-3 flex-wrap justify-center">
-            {['⚡ ~45 min delivery', '🥩 Farm fresh', '🔒 FSSAI Licensed'].map(tag => (
+            {['⚡ Within 1 hour', '🥩 Farm fresh', '🔒 FSSAI Licensed'].map(tag => (
               <span
                 key={tag}
                 className="text-[10px] font-semibold px-2.5 py-1.5 rounded-full"
