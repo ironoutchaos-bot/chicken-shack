@@ -4,12 +4,11 @@ export const dynamic = 'force-dynamic'
  * Banner image upload — three endpoints:
  *
  * GET  /api/admin/banner-images?filename=xxx
- *   Returns a Supabase signed upload URL so the browser can PUT the file
- *   directly to Supabase Storage, bypassing the 4.5 MB Vercel function limit.
- *   Response: { uploadUrl, publicUrl }
+ *   Returns a Supabase signed upload URL (kept for reference, not used by UI).
  *
- * POST /api/admin/banner-images   body: { url: string }
- *   Appends a public URL (already uploaded by the client) to the settings list.
+ * POST /api/admin/banner-images   body: FormData { file: File }
+ *   Uploads the file through the server (no CORS) and records the public URL.
+ *   Also accepts legacy { url: string } JSON to record a pre-uploaded URL.
  *
  * DELETE /api/admin/banner-images body: { url: string }
  *   Removes the file from storage + the settings list.
@@ -68,7 +67,7 @@ async function setBannerImages(urls: string[]) {
   }
 }
 
-// ── GET — return a signed upload URL for direct browser → Supabase upload ────
+// ── GET — return a signed upload URL (kept for reference) ─────────────────────
 export async function GET(req: NextRequest) {
   if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -77,8 +76,6 @@ export async function GET(req: NextRequest) {
   const safeName = `banner_${Date.now()}.${ext}`
 
   try {
-    // Ask Supabase to create a signed upload URL (service-role key required)
-    // Correct endpoint: /storage/v1/object/upload/sign/{bucket}/{path}
     const res = await fetch(
       `${SUPA_URL()}/storage/v1/object/upload/sign/${BUCKET}/${safeName}`,
       {
@@ -100,7 +97,6 @@ export async function GET(req: NextRequest) {
     }
 
     const body = await res.json()
-    // upload/sign returns { signedUrl, token, path } — signedUrl is a relative path
     const signedPath = body.signedUrl ?? body.signedURL ?? body.url ?? ''
     const uploadUrl  = signedPath.startsWith('http') ? signedPath : `${SUPA_URL()}${signedPath}`
     const publicUrl  = `${SUPA_URL()}/storage/v1/object/public/${BUCKET}/${safeName}`
@@ -111,20 +107,63 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// ── POST — record a URL that was already uploaded directly by the client ──────
+// ── POST — upload file through server (no CORS) and record URL ────────────────
 export async function POST(req: NextRequest) {
   if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { url?: string }
-  try { body = await req.json() } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
-  }
-  if (!body.url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
+  const contentType = req.headers.get('content-type') ?? ''
 
+  // Legacy: accept { url } JSON body (record a pre-uploaded URL)
+  if (contentType.includes('application/json')) {
+    let body: { url?: string }
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    }
+    if (!body.url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
+    try {
+      const current = await getBannerImages()
+      await setBannerImages([...current, body.url])
+      return NextResponse.json({ url: body.url })
+    } catch (e) {
+      return NextResponse.json({ error: String(e) }, { status: 500 })
+    }
+  }
+
+  // Primary: multipart form data — upload file through server to avoid browser CORS
   try {
-    const current = await getBannerImages()
-    await setBannerImages([...current, body.url])
-    return NextResponse.json({ url: body.url })
+    const form = await req.formData()
+    const file = form.get('file') as File | null
+    if (!file) return NextResponse.json({ error: 'No file in form data' }, { status: 400 })
+
+    const ext      = file.name.split('.').pop()?.toLowerCase() ?? 'jpg'
+    const safeName = `banner_${Date.now()}.${ext}`
+
+    // Server-to-server upload — no CORS
+    const arrayBuf  = await file.arrayBuffer()
+    const uploadRes = await fetch(
+      `${SUPA_URL()}/storage/v1/object/${BUCKET}/${safeName}`,
+      {
+        method:  'POST',
+        headers: srvHeaders({ 'Content-Type': file.type, 'x-upsert': 'true' }),
+        body:    arrayBuf,
+      }
+    )
+
+    if (!uploadRes.ok) {
+      const txt = await uploadRes.text()
+      if (txt.includes('Bucket not found') || uploadRes.status === 404) {
+        return NextResponse.json(
+          { error: 'Storage bucket "banners" not found. Go to Supabase Dashboard → Storage, create a bucket named "banners" and set it to Public.' },
+          { status: 400 }
+        )
+      }
+      return NextResponse.json({ error: `Storage upload failed: ${txt}` }, { status: 500 })
+    }
+
+    const publicUrl = `${SUPA_URL()}/storage/v1/object/public/${BUCKET}/${safeName}`
+    const current   = await getBannerImages()
+    await setBannerImages([...current, publicUrl])
+    return NextResponse.json({ url: publicUrl })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }

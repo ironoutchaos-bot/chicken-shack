@@ -358,44 +358,18 @@ function BannerImagesRow({
       }
 
       try {
-        // Step 1 — get a signed upload URL from the server (no file sent yet)
-        const signRes  = await fetch(`/api/admin/banner-images?filename=${encodeURIComponent(file.name)}`)
-        const signText = await signRes.text()
-        let signData: { uploadUrl?: string; publicUrl?: string; error?: string } = {}
-        try { signData = JSON.parse(signText) } catch {}
-        if (!signRes.ok) {
-          setError(signData.error ?? `Could not get upload URL (${signRes.status})`)
+        // Single step: send file to our server — it uploads to Supabase server-to-server (no CORS)
+        const form = new FormData()
+        form.append('file', file)
+        const res  = await fetch('/api/admin/banner-images', { method: 'POST', body: form })
+        const data: { url?: string; error?: string } = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          setError(data.error ?? `Upload failed (${res.status})`)
           break
         }
 
-        // Step 2 — PUT the file directly to Supabase Storage (bypasses Vercel size limit)
-        const uploadRes = await fetch(signData.uploadUrl!, {
-          method:  'PUT',
-          headers: { 'Content-Type': file.type },
-          body:    file,
-        })
-        if (!uploadRes.ok) {
-          const txt = await uploadRes.text().catch(() => '')
-          setError(`Upload failed (${uploadRes.status}): ${txt.slice(0, 200)}`)
-          break
-        }
-
-        // Step 3 — tell the API to record the public URL in settings
-        const recRes  = await fetch('/api/admin/banner-images', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ url: signData.publicUrl }),
-        })
-        const recText = await recRes.text()
-        let recData: { error?: string; url?: string } = {}
-        try { recData = JSON.parse(recText) } catch {}
-        if (!recRes.ok) {
-          setError(recData.error ?? `Failed to save URL (${recRes.status})`)
-          break
-        }
-
-        onChange([...images, signData.publicUrl!])
-        images = [...images, signData.publicUrl!]
+        onChange([...images, data.url!])
+        images = [...images, data.url!]
       } catch (e) {
         setError(`Network error: ${e instanceof Error ? e.message : String(e)}`)
         break
