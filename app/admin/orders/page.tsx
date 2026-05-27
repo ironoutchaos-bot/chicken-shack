@@ -34,6 +34,7 @@ export default function AdminOrdersPage() {
   const [drivers,   setDrivers]   = useState<DriverRow[]>([])
   const [loading,   setLoading]   = useState(false)
   const [saving,    setSaving]    = useState<string | null>(null)
+  const [orderError, setOrderError] = useState<string | null>(null)
   const [etaInputs, setEtaInputs] = useState<Record<string, string>>({})
   const [filter,    setFilter]    = useState<'active' | 'all'>('active')
   const [search,    setSearch]    = useState('')
@@ -140,9 +141,10 @@ export default function AdminOrdersPage() {
 
   async function assignDriver(orderId: string, driverId: string) {
     setSaving(orderId + '-driver')
+    setOrderError(null)
     const driver = drivers.find(d => d.id === driverId)
     try {
-      await fetch(`/api/orders/${orderId}`, {
+      const res = await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -151,6 +153,11 @@ export default function AdminOrdersPage() {
           driver_phone: driver?.phone || null,
         }),
       })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setOrderError(data.error ?? `Driver assignment failed (${res.status})`)
+        return   // do NOT update local state — keep UI in sync with DB
+      }
       setOrders(prev => prev.map(o =>
         o.id === orderId
           ? { ...o, driver_id: driverId || null, driver_name: driver?.name || null, driver_phone: driver?.phone || null }
@@ -319,6 +326,22 @@ export default function AdminOrdersPage() {
           }}
         />
       </div>
+
+      {orderError && (
+        <div style={{
+          background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: 10,
+          padding: '0.75rem 1rem', marginBottom: '0.75rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+        }}>
+          <span style={{ color: '#dc2626', fontWeight: 600, fontSize: '0.875rem' }}>
+            ⚠️ {orderError}
+          </span>
+          <button
+            onClick={() => setOrderError(null)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '1rem' }}
+          >✕</button>
+        </div>
+      )}
 
       {displayed.length === 0 && !loading && (
         <div style={S.empty}>
