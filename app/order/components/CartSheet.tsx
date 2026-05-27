@@ -55,7 +55,6 @@ export default function CartSheet({
   const [couponError,    setCouponError]    = useState('')
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponLabel,    setCouponLabel]    = useState('')
-  const couponSettingsRef = useRef<{ code: string; type: string; value: number; enabled: boolean } | null>(null)
   const couponInputRef    = useRef<HTMLInputElement>(null)
 
   const subtotal   = cart.reduce((s, c) => s + c.pricePerKg * c.quantity, 0)
@@ -82,12 +81,6 @@ export default function CartSheet({
       .then(d => {
         setCodEnabled(d.cod_enabled !== false)
         setCfEnabled(d.cashfree_enabled !== false)
-        couponSettingsRef.current = {
-          code:    (d.coupon_code ?? '').trim().toUpperCase(),
-          type:    d.coupon_discount_type ?? 'percent',
-          value:   Number(d.coupon_discount_value ?? 0),
-          enabled: d.coupon_enabled === true,
-        }
       })
       .catch(() => {})
 
@@ -128,35 +121,32 @@ export default function CartSheet({
     const entered = couponInput.trim().toUpperCase()
     if (!entered) { setCouponError('Please enter a coupon code'); return }
 
-    // Always fetch fresh from server so we never use stale/null ref
     setCouponChecking(true)
-    let s = couponSettingsRef.current
     try {
-      const d = await fetch('/api/settings').then(r => r.json())
-      s = {
-        code:    String(d.coupon_code ?? '').trim().toUpperCase(),
-        type:    String(d.coupon_discount_type ?? 'percent'),
-        value:   Number(d.coupon_discount_value ?? 0),
-        enabled: d.coupon_enabled === true || d.coupon_enabled === 'true',
+      const res = await fetch('/api/coupon/validate', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code:            entered,
+          cart_items:      cart,
+          customer_phone:  user?.phone ?? '',
+          subtotal,
+          delivery_fee:    deliveryFee,
+        }),
+      })
+      const data = await res.json()
+      if (!data.valid) {
+        setCouponError(data.error ?? 'Invalid coupon code')
+        setCouponChecking(false)
+        return
       }
-      couponSettingsRef.current = s
+      setCouponDiscount(data.discount)
+      setCouponLabel(data.label)
+      setCouponApplied(true)
     } catch {
       setCouponError('Could not verify coupon. Please try again.')
-      setCouponChecking(false)
-      return
     }
     setCouponChecking(false)
-
-    if (!s.enabled || !s.code) { setCouponError('No active coupon right now'); return }
-    if (entered !== s.code)    { setCouponError('Invalid coupon code'); return }
-
-    const base = subtotal + deliveryFee
-    const amt  = s.type === 'percent'
-      ? Math.round((base * s.value) / 100)
-      : s.value
-    setCouponDiscount(Math.min(amt, base))
-    setCouponLabel(s.type === 'percent' ? `${s.value}% off` : `₹${s.value} off`)
-    setCouponApplied(true)
   }
 
   function removeCoupon() {

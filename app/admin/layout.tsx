@@ -10,6 +10,7 @@ const NAV = [
   { href: '/admin/pincodes',  label: '📍 Pincodes'               },
   { href: '/admin/users',     label: '👥 Users'                  },
   { href: '/admin/analytics', label: '📊 Analytics'              },
+  { href: '/admin/coupons',   label: '🎟️ Coupons'                },
   { href: '/admin/settings',  label: '⚙️ Settings'               },
 ]
 

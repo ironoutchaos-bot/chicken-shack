@@ -18,6 +18,7 @@ export const dynamic = 'force-dynamic'
  * to prevent anonymous abuse.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { type Coupon } from '@/app/api/coupons/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -86,45 +87,52 @@ export async function POST(req: NextRequest) {
   const deliveryFee = Number(settings.delivery_fee ?? 0)
   let   serverDiscount = 0
 
-  // ── Coupon validation ─────────────────────────────────────────────────────
+  // ── Coupon validation (multi-coupon system) ───────────────────────────────
   const requestedCode = body.coupon_code ? String(body.coupon_code).trim().toUpperCase() : null
   if (requestedCode) {
-    const activeCode    = String(settings.coupon_code    ?? '').trim().toUpperCase()
-    const couponEnabled = settings.coupon_enabled === true || settings.coupon_enabled === 'true'
-    const discountType  = String(settings.coupon_discount_type  ?? 'percent')
-    const discountValue = Number(settings.coupon_discount_value ?? 0)
-    const maxUses       = Number(settings.coupon_max_uses_per_phone ?? 0)
+    // Load coupons array from settings
+    const couponsRaw = settings.coupons
+    const coupons: Coupon[] = Array.isArray(couponsRaw) ? couponsRaw as Coupon[] : []
+    const coupon = coupons.find((c: Coupon) => c.code === requestedCode)
 
-    if (!couponEnabled || !activeCode) {
-      return NextResponse.json({ error: 'No active coupon available' }, { status: 400 })
+    if (!coupon || !coupon.enabled) {
+      return NextResponse.json({ error: 'Invalid or inactive coupon code' }, { status: 400 })
     }
-    if (requestedCode !== activeCode) {
-      return NextResponse.json({ error: 'Invalid coupon code' }, { status: 400 })
+
+    // Product-specific check
+    if (coupon.applies_to === 'specific' && coupon.product_ids.length > 0) {
+      const cartItems = items as { productId: string }[]
+      const hasMatch  = cartItems.some((i: { productId: string }) => coupon.product_ids.includes(i.productId))
+      if (!hasMatch) {
+        return NextResponse.json({
+          error: 'This coupon does not apply to the items in your order',
+        }, { status: 400 })
+      }
     }
 
     // Check usage limit per phone
-    if (maxUses > 0) {
+    if (coupon.max_uses_per_phone > 0) {
       const phone   = body.customer_phone ? String(body.customer_phone).replace(/\D/g, '') : ''
       const tracker = (settings.coupon_usage_tracker ?? {}) as Record<string, number>
-      const tKey    = `${activeCode}:${phone}`
+      const tKey    = `${coupon.code}:${phone}`
       const used    = Number(tracker[tKey] ?? 0)
 
-      if (used >= maxUses) {
+      if (used >= coupon.max_uses_per_phone) {
         return NextResponse.json({
-          error: `Coupon already used — this code can only be used ${maxUses} time${maxUses !== 1 ? 's' : ''} per phone number`,
+          error: `This coupon has already been used ${coupon.max_uses_per_phone} time${coupon.max_uses_per_phone !== 1 ? 's' : ''} on your number`,
         }, { status: 400 })
       }
 
-      // Increment and save usage tracker — await so it's saved before order goes through
+      // Increment usage tracker — await so it's saved before order goes through
       const updated = { ...tracker, [tKey]: used + 1 }
       await saveSettingKey('coupon_usage_tracker', updated)
     }
 
     // Compute actual discount server-side
     const base = subtotal + deliveryFee
-    serverDiscount = discountType === 'percent'
-      ? Math.round((base * discountValue) / 100)
-      : discountValue
+    serverDiscount = coupon.discount_type === 'percent'
+      ? Math.round((base * coupon.discount_value) / 100)
+      : coupon.discount_value
     serverDiscount = Math.min(serverDiscount, base)
   }
 
