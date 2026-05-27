@@ -328,7 +328,7 @@ export default function AdminOrdersPage() {
             ))}
           </div>
           <button onClick={exportCSV}   style={S.refreshBtn}>⬇ Export CSV</button>
-          <button onClick={loadOrders} style={S.refreshBtn}>↻ Refresh</button>
+          <button onClick={() => loadOrders(true)} style={S.refreshBtn}>↻ Refresh</button>
         </div>
       </div>
 
