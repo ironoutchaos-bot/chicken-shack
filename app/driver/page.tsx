@@ -186,6 +186,17 @@ export default function DriverPage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [view, loadOrders])
 
+  // Instant refresh when SW delivers a push notification to this page
+  useEffect(() => {
+    if (view !== 'dashboard') return
+    if (!('serviceWorker' in navigator)) return
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === 'ORDER_UPDATE') loadOrders()
+    }
+    navigator.serviceWorker.addEventListener('message', handler)
+    return () => navigator.serviceWorker.removeEventListener('message', handler)
+  }, [view, loadOrders])
+
   // ── Login ────────────────────────────────────────────────────
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()

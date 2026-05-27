@@ -1,6 +1,6 @@
-// B'LURU FRESH Service Worker — v6
+// B'LURU FRESH Service Worker — v7
 // Bump the version any time sw.js changes so the browser installs the update.
-const CACHE = 'blurufresh-v6'
+const CACHE = 'blurufresh-v7'
 
 // ── NO pre-caching on install ─────────────────────────────────────────────────
 // Previously we pre-cached HTML pages in the install event using cache.addAll().
@@ -88,15 +88,22 @@ self.addEventListener('push', (event) => {
   } catch {}
 
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body:     data.body,
-      icon:     data.icon,
-      badge:    data.badge,
-      vibrate:  [100, 50, 100],
-      tag:      'order-update',
-      renotify: true,
-      data:     { url: data.url ?? '/order' },
-    })
+    Promise.all([
+      // Show the notification
+      self.registration.showNotification(data.title, {
+        body:     data.body,
+        icon:     data.icon,
+        badge:    data.badge,
+        vibrate:  [100, 50, 100],
+        tag:      'order-update',
+        renotify: true,
+        data:     { url: data.url ?? '/order' },
+      }),
+      // Tell any open pages to refresh their order list immediately
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+        list.forEach(c => c.postMessage({ type: 'ORDER_UPDATE' }))
+      }),
+    ])
   )
 })
 

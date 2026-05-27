@@ -85,6 +85,23 @@ export default function AdminOrdersPage() {
     return () => { supabase.removeChannel(channel) }
   }, [authed, supabase, loadOrders])
 
+  // Polling fallback (15s) in case the realtime socket drops
+  useEffect(() => {
+    if (!authed) return
+    const t = setInterval(loadOrders, 15_000)
+    return () => clearInterval(t)
+  }, [authed, loadOrders])
+
+  // Instant refresh when SW delivers a push notification to this tab
+  useEffect(() => {
+    if (!authed || !('serviceWorker' in navigator)) return
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === 'ORDER_UPDATE') loadOrders()
+    }
+    navigator.serviceWorker.addEventListener('message', handler)
+    return () => navigator.serviceWorker.removeEventListener('message', handler)
+  }, [authed, loadOrders])
+
   async function login(e: React.FormEvent) {
     e.preventDefault()
     setLogging(true); setLoginErr('')
