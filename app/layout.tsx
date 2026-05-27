@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   title: "B'LURU Fresh Chicken | Fresh Chicken Delivery Yelahanka Bangalore",
   description:
-    "B'LURU Fresh delivers farm-fresh chicken in Yelahanka, Bangalore. Order boneless, curry cut, drumsticks & more — cut fresh after your order, no preservatives, delivered within 1 hour. FSSAI licensed (11226331000344).",
+    "B'LURU Fresh delivers farm-fresh chicken in Yelahanka, Bangalore. Order boneless, curry cut, drumsticks & more — cut fresh after your order, no preservatives, delivery within 1 hour. FSSAI licensed (11226331000344).",
   keywords: [
     "blurufresh",
     "bluru fresh",
@@ -81,7 +81,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "B'LURU Fresh Chicken — Yelahanka, Bangalore",
     description:
-      "Farm-fresh chicken order to cut, delivered within 1 hour across Yelahanka & Bangalore. No preservatives, FSSAI certified.",
+      "Farm-fresh chicken order to cut, delivery within 1 hour across Yelahanka & Bangalore. No preservatives, FSSAI certified.",
     url: 'https://www.blurufresh.com',
     siteName: "B'LURU Fresh",
     type: 'website',
@@ -98,7 +98,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "B'LURU Fresh Chicken Yelahanka",
-    description: 'Fresh chicken order to cut, delivered within 1 hour. No preservatives. Order now!',
+    description: 'Fresh chicken order to cut, delivery within 1 hour. No preservatives. Order now!',
     images: ['https://www.blurufresh.com/assets/raw_chicken_breast.jpg'],
   },
   appleWebApp: {
@@ -140,7 +140,7 @@ export default function RootLayout({
               "url": "https://www.blurufresh.com",
               "logo": "https://www.blurufresh.com/bluru_logo.png",
               "image": "https://www.blurufresh.com/assets/raw_chicken_breast.jpg",
-              "description": "Farm-fresh chicken order to cut and delivered within 1 hour across Yelahanka, Bangalore. No preservatives, FSSAI certified.",
+              "description": "Farm-fresh chicken order to cut and delivery within 1 hour across Yelahanka, Bangalore. No preservatives, FSSAI certified.",
               "telephone": "+917012488951",
               "email": "contact@blurufresh.com",
               "address": {
@@ -185,7 +185,7 @@ export default function RootLayout({
               },
               "additionalProperty": [
                 { "@type": "PropertyValue", "name": "FSSAI License", "value": "11226331000344" },
-                { "@type": "PropertyValue", "name": "Delivery Time", "value": "Within 1 hour" },
+                { "@type": "PropertyValue", "name": "Delivery Time", "value": "Delivery within 1 hour" },
                 { "@type": "PropertyValue", "name": "Preservatives", "value": "None" }
               ]
             })

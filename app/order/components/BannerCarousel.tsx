@@ -88,7 +88,7 @@ export default function BannerCarousel({ images }: Props) {
               className="rounded-full px-3 py-1.5"
               style={{ background: 'rgba(255,255,255,0.13)', border: '1px solid rgba(255,255,255,0.1)' }}
             >
-              <span className="text-[11px] font-bold" style={{ color: '#FDE68A' }}>⚡ Within 1 hour</span>
+              <span className="text-[11px] font-bold" style={{ color: '#FDE68A' }}>⚡ Delivery within 1 hour</span>
             </div>
           </div>
         </div>
