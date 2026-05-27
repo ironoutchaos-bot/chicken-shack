@@ -69,6 +69,7 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  color-scheme: light; /* prevent Android/system dark-mode from recolouring the app */
 }
 
 body {
