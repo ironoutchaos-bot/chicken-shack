@@ -1,9 +1,10 @@
 {
+  "id": "/order",
   "name": "B'LURU FRESH – Fresh Chicken",
   "short_name": "B'LURU FRESH",
   "description": "Order fresh chicken online — cut fresh, delivered same day.",
   "start_url": "/order",
-  "scope": "/",
+  "scope": "/order",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
