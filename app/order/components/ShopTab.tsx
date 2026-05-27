@@ -352,8 +352,14 @@ export default function ShopTab({
                     {/* Price on image */}
                     <div className="absolute bottom-2 left-2.5">
                       <span
-                        className="text-[11px] font-medium leading-none block"
-                        style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'line-through' }}
+                        className="text-[13px] font-bold leading-none block"
+                        style={{
+                          color: '#fca5a5',
+                          textDecoration: 'line-through',
+                          textDecorationColor: '#f87171',
+                          textDecorationThickness: '1.5px',
+                          textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+                        }}
                       >
                         ₹{Math.round(p.price_per_kg / 0.75)}
                       </span>
