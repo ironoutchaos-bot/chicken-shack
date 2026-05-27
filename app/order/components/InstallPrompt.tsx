@@ -93,8 +93,23 @@ export default function InstallPrompt() {
               </button>
             </div>
 
+            {/* Android-only reassurance message */}
+            {!isIOS && (
+              <div className="mt-3 flex items-start gap-2 bg-stone-800 rounded-2xl px-3 py-2.5">
+                <span className="text-base shrink-0 mt-0.5">🛡️</span>
+                <p className="text-xs text-stone-300 leading-snug">
+                  Your phone may show a{' '}
+                  <span className="text-amber-400 font-semibold">"security warning"</span>
+                  {' '}— this is a known Google issue with new websites and is{' '}
+                  <span className="text-white font-semibold">completely safe</span>.
+                  Just tap{' '}
+                  <span className="text-white font-semibold">More details → Install anyway</span>.
+                </p>
+              </div>
+            )}
+
             {/* Actions */}
-            <div className="flex items-center gap-2 mt-3.5">
+            <div className="flex items-center gap-2 mt-3">
               {isIOS ? (
                 <>
                   {/* iOS share icon instruction */}
