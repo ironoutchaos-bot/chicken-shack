@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -15,12 +15,7 @@ function srvHeaders(extras?: Record<string, string>) {
 }
 
 function isAdmin(req: NextRequest) {
-  const cookieHeader = req.headers.get('cookie') ?? ''
-  const token = cookieHeader
-    .split(';')
-    .find(c => c.trim().startsWith('admin_token='))
-    ?.split('=')[1]?.trim()
-  return token === process.env.ADMIN_PASSWORD
+  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
 }
 
 // GET /api/drivers — list all drivers (admin only)

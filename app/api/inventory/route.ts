@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -15,10 +15,7 @@ function srvHeaders() {
 }
 
 function isAdmin(req: NextRequest) {
-  const token = req.headers.get('cookie')?.split(';')
-    .find(c => c.trim().startsWith('admin_token='))
-    ?.split('=')[1]?.trim()
-  return token === process.env.ADMIN_PASSWORD
+  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
 }
 
 // GET /api/inventory — full product rows for admin

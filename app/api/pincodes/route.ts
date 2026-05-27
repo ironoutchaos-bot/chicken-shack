@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -7,9 +7,7 @@ const SUPA_KEY = () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? SUPA_KEY()
 
 function isAdmin(req: NextRequest) {
-  const cookie = req.headers.get('cookie') ?? ''
-  const token  = cookie.split(';').find(c => c.trim().startsWith('admin_token='))?.split('=')[1]?.trim()
-  return token === process.env.ADMIN_PASSWORD
+  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
 }
 
 // GET /api/pincodes — public: returns active pincodes for client-side check
