@@ -78,11 +78,15 @@ export async function PATCH(req: NextRequest) {
 }
 
 const DEFAULTS = {
-  cod_enabled:       true,
-  cashfree_enabled:  true,
-  store_open:        true,
-  min_order_amount:  0,
-  delivery_fee:      0,
-  delivery_hours:    '8am – 8pm',
-  announcement:      '',
+  cod_enabled:            true,
+  cashfree_enabled:       true,
+  store_open:             true,
+  min_order_amount:       0,
+  delivery_fee:           0,
+  delivery_hours:         '8am – 8pm',
+  announcement:           '',
+  coupon_enabled:         false,
+  coupon_code:            '',
+  coupon_discount_type:   'percent',   // 'percent' | 'fixed'
+  coupon_discount_value:  10,
 }

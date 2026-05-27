@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, ShieldCheck, Banknote, MessageSquare, AlertTriangle, RotateCcw } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, ShieldCheck, Banknote, MessageSquare, AlertTriangle, RotateCcw, Tag, CheckCircle2 } from 'lucide-react'
 import { type CartItem } from '@/lib/supabase-browser'
 import { type AuthUser } from '@/lib/auth-types'
 import { UNIT_LABEL } from '@/lib/units'
@@ -38,26 +38,42 @@ export default function CartSheet({
   minOrderAmount = 0, deliveryFee = 0,
 }: Props) {
   const [loading,        setLoading]        = useState(false)
-  const [slowConn,       setSlowConn]       = useState(false)   // shown after 8s of loading
-  const [payStep,        setPayStep]        = useState('')      // visible step for debugging
+  const [slowConn,       setSlowConn]       = useState(false)
+  const [payStep,        setPayStep]        = useState('')
   const [error,          setError]          = useState('')
   const [addressOpen,    setAddressOpen]    = useState(false)
   const [checkoutMode,   setCheckoutMode]   = useState<CheckoutMode>('cashfree')
   const [codEnabled,     setCodEnabled]     = useState(true)
   const [cfEnabled,      setCfEnabled]      = useState(true)
   const [notes,          setNotes]          = useState('')
-  const [outOfStock,     setOutOfStock]     = useState<string[]>([])   // names of OOS cart items
+  const [outOfStock,     setOutOfStock]     = useState<string[]>([])
   const [lastAddr,       setLastAddr]       = useState<DeliveryAddress | null>(null)
 
-  // supabase client no longer needed — auth is iron-session based
+  // Coupon state
+  const [couponInput,    setCouponInput]    = useState('')
+  const [couponApplied,  setCouponApplied]  = useState(false)
+  const [couponError,    setCouponError]    = useState('')
+  const [couponDiscount, setCouponDiscount] = useState(0)
+  const [couponLabel,    setCouponLabel]    = useState('')
+  const couponSettingsRef = useRef<{ code: string; type: string; value: number; enabled: boolean } | null>(null)
+  const couponInputRef    = useRef<HTMLInputElement>(null)
+
   const subtotal   = cart.reduce((s, c) => s + c.pricePerKg * c.quantity, 0)
-  const total      = subtotal + deliveryFee
+  const discount   = couponApplied ? couponDiscount : 0
+  const total      = Math.max(0, subtotal + deliveryFee - discount)
   const totalPaise = Math.round(total * 100)
   const belowMin   = minOrderAmount > 0 && subtotal < minOrderAmount
 
   // Fetch settings + check stock freshness when cart opens
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setCouponInput('')
+      setCouponApplied(false)
+      setCouponError('')
+      setCouponDiscount(0)
+      setCouponLabel('')
+      return
+    }
     setError('')
 
     // Settings
@@ -66,6 +82,12 @@ export default function CartSheet({
       .then(d => {
         setCodEnabled(d.cod_enabled !== false)
         setCfEnabled(d.cashfree_enabled !== false)
+        couponSettingsRef.current = {
+          code:    (d.coupon_code ?? '').trim().toUpperCase(),
+          type:    d.coupon_discount_type ?? 'percent',
+          value:   Number(d.coupon_discount_value ?? 0),
+          enabled: d.coupon_enabled === true,
+        }
       })
       .catch(() => {})
 
@@ -97,6 +119,29 @@ export default function CartSheet({
     setError('')
     setCheckoutMode(mode)
     setAddressOpen(true)
+  }
+
+  function applyCoupon() {
+    setCouponError('')
+    const s = couponSettingsRef.current
+    const entered = couponInput.trim().toUpperCase()
+    if (!entered) { setCouponError('Please enter a coupon code'); return }
+    if (!s || !s.enabled || !s.code) { setCouponError('No active coupon available'); return }
+    if (entered !== s.code) { setCouponError('Invalid coupon code'); return }
+    const amt = s.type === 'percent'
+      ? Math.round((subtotal * s.value) / 100)
+      : s.value
+    setCouponDiscount(Math.min(amt, subtotal + deliveryFee))
+    setCouponLabel(s.type === 'percent' ? `${s.value}% off` : `₹${s.value} off`)
+    setCouponApplied(true)
+  }
+
+  function removeCoupon() {
+    setCouponApplied(false)
+    setCouponDiscount(0)
+    setCouponLabel('')
+    setCouponInput('')
+    setCouponError('')
   }
 
   function handleRetry() {
@@ -142,6 +187,7 @@ export default function CartSheet({
         }),
       })
 
+
       if (!orderRes.ok) {
         const errJson = await orderRes.json().catch(() => ({ error: orderRes.status }))
         throw new Error(`Order failed: ${errJson.detail ?? errJson.error ?? orderRes.status}`)
@@ -169,6 +215,8 @@ export default function CartSheet({
             notes:             notes.trim() || null,
             customer_phone:    deliveryAddress.customerPhone || null,
             customer_name:     deliveryAddress.customerName  || null,
+            coupon_code:       couponApplied ? couponInput.trim().toUpperCase() : null,
+            coupon_discount:   couponApplied ? couponDiscount : 0,
           }),
         }),
         20_000,
@@ -225,6 +273,8 @@ export default function CartSheet({
             notes:            notes.trim() || null,
             customer_phone:   deliveryAddress.customerPhone || null,
             customer_name:    deliveryAddress.customerName  || null,
+            coupon_code:      couponApplied ? couponInput.trim().toUpperCase() : null,
+            coupon_discount:  couponApplied ? couponDiscount : 0,
           }),
         }),
         25_000,
@@ -361,6 +411,53 @@ export default function CartSheet({
                   </div>
                 )}
 
+                {/* Coupon code */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 uppercase tracking-widest mb-1.5">
+                    <Tag size={11} />
+                    Coupon Code
+                    <span className="text-stone-300 font-normal normal-case tracking-normal">· optional</span>
+                  </label>
+                  {couponApplied ? (
+                    <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
+                      <CheckCircle2 size={16} className="text-green-600 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-green-800">{couponInput.toUpperCase()}</p>
+                        <p className="text-xs text-green-600">{couponLabel} applied — saving ₹{couponDiscount}</p>
+                      </div>
+                      <button
+                        onClick={removeCoupon}
+                        className="text-xs text-red-400 font-semibold hover:text-red-600 transition-colors shrink-0"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        ref={couponInputRef}
+                        type="text"
+                        placeholder="Enter coupon code"
+                        value={couponInput}
+                        onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
+                        onKeyDown={e => e.key === 'Enter' && applyCoupon()}
+                        maxLength={20}
+                        className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 text-sm font-mono font-bold uppercase tracking-widest text-stone-900 outline-none focus:border-amber-400 transition-colors placeholder:text-stone-300 placeholder:font-normal placeholder:tracking-normal placeholder:normal-case"
+                      />
+                      <button
+                        onClick={applyCoupon}
+                        className="px-4 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95"
+                        style={{ background: '#1C1917', color: '#fff' }}
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  )}
+                  {couponError && (
+                    <p className="text-xs text-red-500 mt-1.5 ml-1">{couponError}</p>
+                  )}
+                </div>
+
                 {/* Delivery notes */}
                 <div>
                   <label className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 uppercase tracking-widest mb-1.5">
@@ -384,22 +481,37 @@ export default function CartSheet({
           {/* Footer */}
           {cart.length > 0 && (
             <div className="px-5 pt-3 pb-2 border-t border-stone-100 space-y-3">
-              {deliveryFee > 0 && (
+              {(deliveryFee > 0 || couponApplied) && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-stone-400">Subtotal</span>
                     <span className="text-stone-600 font-medium">₹{subtotal.toFixed(0)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-stone-400">Delivery fee</span>
-                    <span className="text-stone-600 font-medium">₹{deliveryFee}</span>
-                  </div>
+                  {deliveryFee > 0 && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-stone-400">Delivery fee</span>
+                      <span className="text-stone-600 font-medium">₹{deliveryFee}</span>
+                    </div>
+                  )}
+                  {couponApplied && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-green-600 font-medium flex items-center gap-1">
+                        <Tag size={12} /> {couponInput.toUpperCase()}
+                      </span>
+                      <span className="text-green-600 font-bold">−₹{couponDiscount}</span>
+                    </div>
+                  )}
                   <div className="h-px bg-stone-100" />
                 </div>
               )}
               <div className="flex items-center justify-between">
                 <span className="text-stone-500 text-sm font-medium">Total</span>
-                <span className="text-2xl font-bold text-stone-900">₹{total.toFixed(0)}</span>
+                <div className="text-right">
+                  {couponApplied && (
+                    <p className="text-xs text-stone-400 line-through">₹{(subtotal + deliveryFee).toFixed(0)}</p>
+                  )}
+                  <span className="text-2xl font-bold text-stone-900">₹{total.toFixed(0)}</span>
+                </div>
               </div>
 
               {belowMin && (

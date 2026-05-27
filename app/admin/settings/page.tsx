@@ -5,25 +5,33 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 
 type Settings = {
-  cod_enabled:      boolean
-  cashfree_enabled: boolean
-  store_open:       boolean
-  min_order_amount: number
-  delivery_fee:     number
-  delivery_hours:   string
-  announcement:     string
-  banner_images:    string[]
+  cod_enabled:           boolean
+  cashfree_enabled:      boolean
+  store_open:            boolean
+  min_order_amount:      number
+  delivery_fee:          number
+  delivery_hours:        string
+  announcement:          string
+  banner_images:         string[]
+  coupon_enabled:        boolean
+  coupon_code:           string
+  coupon_discount_type:  'percent' | 'fixed'
+  coupon_discount_value: number
 }
 
 const DEFAULTS: Settings = {
-  cod_enabled:      true,
-  cashfree_enabled: true,
-  store_open:       true,
-  min_order_amount: 0,
-  delivery_fee:     0,
-  delivery_hours:   '8am – 8pm',
-  announcement:     '',
-  banner_images:    [],
+  cod_enabled:           true,
+  cashfree_enabled:      true,
+  store_open:            true,
+  min_order_amount:      0,
+  delivery_fee:          0,
+  delivery_hours:        '8am – 8pm',
+  announcement:          '',
+  banner_images:         [],
+  coupon_enabled:        false,
+  coupon_code:           '',
+  coupon_discount_type:  'percent',
+  coupon_discount_value: 10,
 }
 
 export default function AdminSettingsPage() {
@@ -181,6 +189,32 @@ export default function AdminSettingsPage() {
           />
         </Section>
 
+        {/* ── Coupon Code ──────────────────────────── */}
+        <Section title="🎟️ Coupon Code" subtitle="Set one active coupon code. Only this code will work in the app.">
+          <ToggleRow
+            label="Enable Coupon"
+            description="When off, no coupon code will be accepted at checkout"
+            value={settings.coupon_enabled}
+            saving={saving === 'coupon_enabled'}
+            saved={saved === 'coupon_enabled'}
+            onChange={v => saveSetting('coupon_enabled', v)}
+          />
+          <CouponRow
+            code={settings.coupon_code}
+            discountType={settings.coupon_discount_type}
+            discountValue={settings.coupon_discount_value}
+            savingCode={saving === 'coupon_code'}
+            savedCode={saved === 'coupon_code'}
+            savingType={saving === 'coupon_discount_type'}
+            savedType={saved === 'coupon_discount_type'}
+            savingValue={saving === 'coupon_discount_value'}
+            savedValue={saved === 'coupon_discount_value'}
+            onSaveCode={v => saveSetting('coupon_code', v)}
+            onSaveType={v => saveSetting('coupon_discount_type', v)}
+            onSaveValue={v => saveSetting('coupon_discount_value', v)}
+          />
+        </Section>
+
         {/* ── Banner Images ─────────────────────────── */}
         <Section
           title="🖼️ Shop Banner Images"
@@ -324,6 +358,131 @@ function TextRow({ label, description, placeholder, value, saving, saved, onSave
           {saving ? '…' : saved ? '✓' : 'Save'}
         </button>
       </div>
+    </div>
+  )
+}
+
+function CouponRow({ code, discountType, discountValue,
+  savingCode, savedCode, savingType, savedType, savingValue, savedValue,
+  onSaveCode, onSaveType, onSaveValue,
+}: {
+  code: string; discountType: 'percent' | 'fixed'; discountValue: number
+  savingCode: boolean; savedCode: boolean
+  savingType: boolean; savedType: boolean
+  savingValue: boolean; savedValue: boolean
+  onSaveCode: (v: string) => void
+  onSaveType: (v: 'percent' | 'fixed') => void
+  onSaveValue: (v: number) => void
+}) {
+  const [draftCode,  setDraftCode]  = useState(code)
+  const [draftType,  setDraftType]  = useState(discountType)
+  const [draftValue, setDraftValue] = useState(discountValue)
+  useEffect(() => { setDraftCode(code) },          [code])
+  useEffect(() => { setDraftType(discountType) },  [discountType])
+  useEffect(() => { setDraftValue(discountValue) }, [discountValue])
+
+  function generate() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    const code = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    setDraftCode(code)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {/* Code row */}
+      <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <p style={S.rowLabel}>Coupon Code</p>
+          <p style={S.rowDesc}>The exact code customers must enter (case-insensitive)</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 240, alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="e.g. FRESH10"
+            value={draftCode}
+            onChange={e => setDraftCode(e.target.value.toUpperCase())}
+            style={{ ...S.textInput, flex: 1, fontFamily: 'monospace', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}
+          />
+          <button
+            onClick={generate}
+            style={{
+              background: '#f3f4f6', border: '1.5px solid #e5e7eb', borderRadius: 8,
+              padding: '0.5rem 0.75rem', fontSize: '0.8125rem', fontWeight: 600,
+              cursor: 'pointer', color: '#374151', whiteSpace: 'nowrap' as const,
+            }}
+            title="Generate random code"
+          >
+            🎲 Generate
+          </button>
+          <button
+            onClick={() => onSaveCode(draftCode.trim().toUpperCase())}
+            disabled={savingCode}
+            style={{ ...S.saveBtn, ...(savedCode ? S.saveBtnOk : {}), alignSelf: 'flex-start' }}
+          >
+            {savingCode ? '…' : savedCode ? '✓' : 'Save'}
+          </button>
+        </div>
+      </div>
+
+      {/* Discount type + value row */}
+      <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <p style={S.rowLabel}>Discount</p>
+          <p style={S.rowDesc}>How much to deduct when code is applied</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 240, alignItems: 'center' }}>
+          {/* Type toggle */}
+          <div style={{ display: 'flex', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+            {(['percent', 'fixed'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => { setDraftType(t); onSaveType(t) }}
+                style={{
+                  padding: '0.45rem 0.85rem', fontSize: '0.8125rem', fontWeight: 700,
+                  border: 'none', cursor: 'pointer',
+                  background: draftType === t ? '#d97706' : '#fff',
+                  color: draftType === t ? '#fff' : '#6b7280',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {t === 'percent' ? '% Off' : '₹ Off'}
+              </button>
+            ))}
+          </div>
+          <input
+            type="number" min={0} max={draftType === 'percent' ? 100 : undefined}
+            value={draftValue}
+            onChange={e => setDraftValue(Number(e.target.value))}
+            style={{ ...S.numInput, width: 80 }}
+          />
+          <span style={{ color: '#6b7280', fontWeight: 600, fontSize: '0.875rem' }}>
+            {draftType === 'percent' ? '%' : '₹'}
+          </span>
+          <button
+            onClick={() => onSaveValue(draftValue)}
+            disabled={savingValue}
+            style={{ ...S.saveBtn, ...(savedValue ? S.saveBtnOk : {}) }}
+          >
+            {savingValue ? '…' : savedValue ? '✓' : 'Save'}
+          </button>
+        </div>
+      </div>
+
+      {/* Preview */}
+      {draftCode && (
+        <div style={{
+          margin: '0 1.5rem 1rem', padding: '0.75rem 1rem',
+          background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
+          fontSize: '0.8125rem', color: '#78350f',
+          display: 'flex', alignItems: 'center', gap: 8,
+        }}>
+          <span style={{ fontSize: 16 }}>🎟️</span>
+          <span>
+            Code <strong style={{ fontFamily: 'monospace', letterSpacing: 1 }}>{draftCode}</strong> gives{' '}
+            <strong>{draftType === 'percent' ? `${draftValue}% off` : `₹${draftValue} off`}</strong> the order total.
+          </span>
+        </div>
+      )}
     </div>
   )
 }
