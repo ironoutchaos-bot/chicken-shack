@@ -55,22 +55,33 @@ export async function PATCH(req: NextRequest) {
   if (!body.key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
 
   try {
-    // Use Supabase upsert (POST + resolution=merge-duplicates) so it works whether
-    // the row already exists or is brand new. The old PATCH approach silently did
-    // nothing when a key was missing because Supabase returns 204 even for 0 updated rows.
-    const res = await fetch(
-      `${SUPA_URL()}/rest/v1/settings`,
+    // Step 1: try to update existing row — use return=representation so we can
+    // detect "0 rows matched" (empty array) vs a real update
+    const patch = await fetch(
+      `${SUPA_URL()}/rest/v1/settings?key=eq.${encodeURIComponent(body.key)}`,
       {
-        method:  'POST',
-        headers: { ...srvHeaders(true), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-        body:    JSON.stringify({ key: body.key, value: body.value }),
+        method:  'PATCH',
+        headers: { ...srvHeaders(true), 'Prefer': 'return=representation' },
+        body:    JSON.stringify({ value: body.value }),
       }
     )
-    if (!res.ok) {
-      const err = await res.text()
-      console.error('[settings PATCH] Supabase error:', err)
-      return NextResponse.json({ error: 'Failed to save setting', detail: err }, { status: 500 })
+    const patchBody = await patch.json().catch(() => [])
+    const rowsUpdated = Array.isArray(patchBody) ? patchBody.length : (patch.ok ? 1 : 0)
+
+    // Step 2: if no row existed, insert it
+    if (rowsUpdated === 0) {
+      const insert = await fetch(`${SUPA_URL()}/rest/v1/settings`, {
+        method:  'POST',
+        headers: { ...srvHeaders(true), 'Prefer': 'return=minimal' },
+        body:    JSON.stringify({ key: body.key, value: body.value }),
+      })
+      if (!insert.ok) {
+        const err = await insert.text()
+        console.error('[settings insert] Supabase error:', err)
+        return NextResponse.json({ error: 'Failed to save setting', detail: err }, { status: 500 })
+      }
     }
+
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
