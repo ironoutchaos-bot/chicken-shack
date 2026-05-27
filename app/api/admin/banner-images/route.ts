@@ -78,8 +78,9 @@ export async function GET(req: NextRequest) {
 
   try {
     // Ask Supabase to create a signed upload URL (service-role key required)
+    // Correct endpoint: /storage/v1/object/upload/sign/{bucket}/{path}
     const res = await fetch(
-      `${SUPA_URL()}/storage/v1/object/sign/upload/${BUCKET}/${safeName}`,
+      `${SUPA_URL()}/storage/v1/object/upload/sign/${BUCKET}/${safeName}`,
       {
         method:  'POST',
         headers: srvHeaders({ 'Content-Type': 'application/json' }),
@@ -98,9 +99,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: `Supabase error: ${txt}` }, { status: 500 })
     }
 
-    const body      = await res.json()
-    const signedPath = body.signedURL ?? body.url ?? ''   // Supabase returns signedURL
-    const uploadUrl  = `${SUPA_URL()}${signedPath}`
+    const body = await res.json()
+    // upload/sign returns { signedUrl, token, path } — signedUrl is a relative path
+    const signedPath = body.signedUrl ?? body.signedURL ?? body.url ?? ''
+    const uploadUrl  = signedPath.startsWith('http') ? signedPath : `${SUPA_URL()}${signedPath}`
     const publicUrl  = `${SUPA_URL()}/storage/v1/object/public/${BUCKET}/${safeName}`
 
     return NextResponse.json({ uploadUrl, publicUrl })
