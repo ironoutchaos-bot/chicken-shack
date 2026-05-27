@@ -47,13 +47,22 @@ export async function PATCH(
   if (body.driver_phone !== undefined) patch.driver_phone = body.driver_phone
 
   try {
-    // Fetch the order first to get user_id (needed for push notification)
+    // Fetch the order first to get user_id and payment_status
     const orderRes = await fetch(
-      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}&select=user_id`,
+      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}&select=user_id,payment_status`,
       { headers: { 'apikey': SUPA_SRV(), 'Authorization': `Bearer ${SUPA_SRV()}` } }
     )
     const orders = await orderRes.json()
     const userId: string | undefined = orders?.[0]?.user_id
+    const paymentStatus: string | undefined = orders?.[0]?.payment_status
+
+    // Block driver assignment for orders with pending payment
+    if (body.driver_id && paymentStatus === 'pending') {
+      return NextResponse.json(
+        { error: 'Cannot assign a driver to an order with pending payment' },
+        { status: 422 }
+      )
+    }
 
     // Update the order
     const res = await fetch(

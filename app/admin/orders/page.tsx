@@ -561,21 +561,32 @@ function OrderCard({
         {drivers.length > 0 && (
           <div style={{ flex: '1 1 170px' }}>
             <label style={S.label}>Assign Driver</label>
-            <select
-              value={order.driver_id ?? ''}
-              onChange={e => onDriverAssign(e.target.value)}
-              disabled={saving}
-              style={{ ...S.select, borderColor: order.driver_id ? '#8b5cf6' : '#e5e7eb', color: order.driver_id ? '#8b5cf6' : '#6b7280' }}
-            >
-              <option value=''>— Unassigned —</option>
-              {drivers.filter(d => d.is_active).map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
-            {order.driver_name && (
-              <p style={{ fontSize: '0.7rem', color: '#8b5cf6', marginTop: 3, fontWeight: 600 }}>
-                🚗 {order.driver_name}
-              </p>
+            {order.payment_status === 'pending' ? (
+              <div style={{
+                background: '#fef3c7', border: '1.5px solid #fde68a', borderRadius: 8,
+                padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#92400e', fontWeight: 600,
+              }}>
+                ⏳ Payment pending — driver cannot be assigned until payment is confirmed
+              </div>
+            ) : (
+              <>
+                <select
+                  value={order.driver_id ?? ''}
+                  onChange={e => onDriverAssign(e.target.value)}
+                  disabled={saving}
+                  style={{ ...S.select, borderColor: order.driver_id ? '#8b5cf6' : '#e5e7eb', color: order.driver_id ? '#8b5cf6' : '#6b7280' }}
+                >
+                  <option value=''>— Unassigned —</option>
+                  {drivers.filter(d => d.is_active).map(d => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+                {order.driver_name && (
+                  <p style={{ fontSize: '0.7rem', color: '#8b5cf6', marginTop: 3, fontWeight: 600 }}>
+                    🚗 {order.driver_name}
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}
