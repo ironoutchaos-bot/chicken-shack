@@ -80,7 +80,11 @@ export async function GET(req: NextRequest) {
     // Ask Supabase to create a signed upload URL (service-role key required)
     const res = await fetch(
       `${SUPA_URL()}/storage/v1/object/sign/upload/${BUCKET}/${safeName}`,
-      { method: 'POST', headers: srvHeaders({ 'Content-Type': 'application/json' }) }
+      {
+        method:  'POST',
+        headers: srvHeaders({ 'Content-Type': 'application/json' }),
+        body:    '{}',   // Supabase/Fastify requires a body when Content-Type is application/json
+      }
     )
 
     if (!res.ok) {
