@@ -7,21 +7,32 @@ import { X, Download, Share } from 'lucide-react'
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type BeforeInstallPromptEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
 
+const INSTALLED_KEY = 'bf-pwa-installed'
+
 export default function InstallPrompt() {
   const [show,          setShow]          = useState(false)
   const [isIOS,         setIsIOS]         = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
-    // Already running as installed PWA — don't show
-    if (window.matchMedia('(display-mode: standalone)').matches) return
+    // Already running as installed PWA (standalone / fullscreen / minimal-ui)
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.matchMedia('(display-mode: minimal-ui)').matches ||
+      ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
+    if (isStandalone) return
 
-    const ua   = navigator.userAgent
-    const ios  = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
+    // User already installed it in a previous session — never show again
+    try {
+      if (localStorage.getItem(INSTALLED_KEY) === '1') return
+    } catch {}
+
+    const ua  = navigator.userAgent
+    const ios = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
     setIsIOS(ios)
 
     if (ios) {
-      // iOS: show manual instructions after 4s
       const t = setTimeout(() => setShow(true), 4000)
       return () => clearTimeout(t)
     }
@@ -30,18 +41,20 @@ export default function InstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      // Small delay so the page has settled
       setTimeout(() => setShow(true), 3000)
     }
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Also listen for successful install to hide
-    const installed = () => setShow(false)
-    window.addEventListener('appinstalled', installed)
+    // When browser confirms install, mark permanently and hide
+    const onInstalled = () => {
+      try { localStorage.setItem(INSTALLED_KEY, '1') } catch {}
+      setShow(false)
+    }
+    window.addEventListener('appinstalled', onInstalled)
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler)
-      window.removeEventListener('appinstalled', installed)
+      window.removeEventListener('appinstalled', onInstalled)
     }
   }, [])
 
@@ -54,6 +67,7 @@ export default function InstallPrompt() {
     await deferredPrompt.prompt()
     const { outcome } = await deferredPrompt.userChoice
     if (outcome === 'accepted') {
+      try { localStorage.setItem(INSTALLED_KEY, '1') } catch {}
       setShow(false)
     }
     setDeferredPrompt(null)
