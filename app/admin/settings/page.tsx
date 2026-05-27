@@ -344,26 +344,61 @@ function BannerImagesRow({
     if (!files || files.length === 0) return
     setUploading(true)
     setError('')
+
     for (const file of Array.from(files)) {
-      const form = new FormData()
-      form.append('file', file)
+      // Client-side validation
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        setError('Only JPEG, PNG or WebP allowed'); break
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Max file size is 10 MB'); break
+      }
+
       try {
-        const res  = await fetch('/api/admin/banner-images', { method: 'POST', body: form })
-        const text = await res.text()
-        let data: { error?: string; url?: string } = {}
-        try { data = JSON.parse(text) } catch { /* non-JSON response */ }
-        if (!res.ok) {
-          setError(data.error ?? `Upload failed (${res.status}): ${text.slice(0, 200)}`)
+        // Step 1 — get a signed upload URL from the server (no file sent yet)
+        const signRes  = await fetch(`/api/admin/banner-images?filename=${encodeURIComponent(file.name)}`)
+        const signText = await signRes.text()
+        let signData: { uploadUrl?: string; publicUrl?: string; error?: string } = {}
+        try { signData = JSON.parse(signText) } catch {}
+        if (!signRes.ok) {
+          setError(signData.error ?? `Could not get upload URL (${signRes.status})`)
           break
         }
-        if (!data.url) { setError('Upload succeeded but no URL returned'); break }
-        onChange([...images, data.url])
-        images = [...images, data.url]
+
+        // Step 2 — PUT the file directly to Supabase Storage (bypasses Vercel size limit)
+        const uploadRes = await fetch(signData.uploadUrl!, {
+          method:  'PUT',
+          headers: { 'Content-Type': file.type },
+          body:    file,
+        })
+        if (!uploadRes.ok) {
+          const txt = await uploadRes.text().catch(() => '')
+          setError(`Upload failed (${uploadRes.status}): ${txt.slice(0, 200)}`)
+          break
+        }
+
+        // Step 3 — tell the API to record the public URL in settings
+        const recRes  = await fetch('/api/admin/banner-images', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ url: signData.publicUrl }),
+        })
+        const recText = await recRes.text()
+        let recData: { error?: string; url?: string } = {}
+        try { recData = JSON.parse(recText) } catch {}
+        if (!recRes.ok) {
+          setError(recData.error ?? `Failed to save URL (${recRes.status})`)
+          break
+        }
+
+        onChange([...images, signData.publicUrl!])
+        images = [...images, signData.publicUrl!]
       } catch (e) {
         setError(`Network error: ${e instanceof Error ? e.message : String(e)}`)
         break
       }
     }
+
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''
   }
@@ -394,7 +429,7 @@ function BannerImagesRow({
       }}>
         <span style={{ fontSize: 16 }}>📐</span>
         <div>
-          <strong>Recommended size: 800 × 350 px</strong> — landscape JPEG or PNG, under 2 MB each.<br />
+          <strong>Recommended size: 800 × 350 px</strong> — landscape JPEG or PNG, up to 10 MB each.<br />
           This gives a crisp 16:7 banner on all phones. Upload multiple images to enable the auto-cycling slideshow.
         </div>
       </div>

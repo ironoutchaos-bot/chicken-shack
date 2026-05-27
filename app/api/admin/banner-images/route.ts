@@ -1,4 +1,19 @@
-﻿export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic'
+
+/**
+ * Banner image upload — three endpoints:
+ *
+ * GET  /api/admin/banner-images?filename=xxx
+ *   Returns a Supabase signed upload URL so the browser can PUT the file
+ *   directly to Supabase Storage, bypassing the 4.5 MB Vercel function limit.
+ *   Response: { uploadUrl, publicUrl }
+ *
+ * POST /api/admin/banner-images   body: { url: string }
+ *   Appends a public URL (already uploaded by the client) to the settings list.
+ *
+ * DELETE /api/admin/banner-images body: { url: string }
+ *   Removes the file from storage + the settings list.
+ */
 
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -34,7 +49,6 @@ async function getBannerImages(): Promise<string[]> {
 
 async function setBannerImages(urls: string[]) {
   const h = srvHeaders({ 'Content-Type': 'application/json' })
-  // Try to update existing row first; detect 0-row-match via return=representation
   const patch = await fetch(
     `${SUPA_URL()}/rest/v1/settings?key=eq.banner_images`,
     {
@@ -45,7 +59,6 @@ async function setBannerImages(urls: string[]) {
   )
   const patchBody = await patch.json().catch(() => [])
   const updated   = Array.isArray(patchBody) ? patchBody.length : (patch.ok ? 1 : 0)
-
   if (updated === 0) {
     await fetch(`${SUPA_URL()}/rest/v1/settings`, {
       method:  'POST',
@@ -55,62 +68,63 @@ async function setBannerImages(urls: string[]) {
   }
 }
 
-// POST — upload a single image, returns { url }
-export async function POST(req: NextRequest) {
+// ── GET — return a signed upload URL for direct browser → Supabase upload ────
+export async function GET(req: NextRequest) {
   if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const filename = new URL(req.url).searchParams.get('filename') ?? 'banner.jpg'
+  const ext      = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
+  const safeName = `banner_${Date.now()}.${ext}`
+
   try {
-    const form = await req.formData()
-    const file = form.get('file') as File | null
-    if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
-
-    // Validate type
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      return NextResponse.json({ error: 'Only JPEG, PNG or WebP allowed' }, { status: 400 })
-    }
-    // Validate size (2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      return NextResponse.json({ error: 'Max file size is 2 MB' }, { status: 400 })
-    }
-
-    const ext      = file.name.split('.').pop() ?? 'jpg'
-    const filename = `banner_${Date.now()}.${ext}`
-    const buffer   = await file.arrayBuffer()
-
-    const upload = await fetch(
-      `${SUPA_URL()}/storage/v1/object/${BUCKET}/${filename}`,
-      {
-        method: 'POST',
-        headers: srvHeaders({ 'Content-Type': file.type, 'x-upsert': 'true' }),
-        body: buffer,
-      }
+    // Ask Supabase to create a signed upload URL (service-role key required)
+    const res = await fetch(
+      `${SUPA_URL()}/storage/v1/object/sign/upload/${BUCKET}/${safeName}`,
+      { method: 'POST', headers: srvHeaders({ 'Content-Type': 'application/json' }) }
     )
 
-    if (!upload.ok) {
-      const txt = await upload.text().catch(() => '')
-      // Bucket doesn't exist yet
-      if (txt.includes('Bucket not found') || upload.status === 404) {
+    if (!res.ok) {
+      const txt = await res.text()
+      if (txt.includes('Bucket not found') || res.status === 404) {
         return NextResponse.json(
-          { error: 'Storage bucket "banners" not found. Please create it in your Supabase Dashboard → Storage, set it to Public.' },
+          { error: 'Storage bucket "banners" not found. Go to Supabase Dashboard → Storage, create a bucket named "banners" and set it to Public.' },
           { status: 400 }
         )
       }
-      return NextResponse.json({ error: `Upload failed: ${txt}` }, { status: 500 })
+      return NextResponse.json({ error: `Supabase error: ${txt}` }, { status: 500 })
     }
 
-    const publicUrl = `${SUPA_URL()}/storage/v1/object/public/${BUCKET}/${filename}`
+    const body      = await res.json()
+    const signedPath = body.signedURL ?? body.url ?? ''   // Supabase returns signedURL
+    const uploadUrl  = `${SUPA_URL()}${signedPath}`
+    const publicUrl  = `${SUPA_URL()}/storage/v1/object/public/${BUCKET}/${safeName}`
 
-    // Append to existing list
-    const current = await getBannerImages()
-    await setBannerImages([...current, publicUrl])
-
-    return NextResponse.json({ url: publicUrl })
+    return NextResponse.json({ uploadUrl, publicUrl })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
 
-// DELETE — remove an image by URL, body: { url: string }
+// ── POST — record a URL that was already uploaded directly by the client ──────
+export async function POST(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  let body: { url?: string }
+  try { body = await req.json() } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+  if (!body.url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
+
+  try {
+    const current = await getBannerImages()
+    await setBannerImages([...current, body.url])
+    return NextResponse.json({ url: body.url })
+  } catch (e) {
+    return NextResponse.json({ error: String(e) }, { status: 500 })
+  }
+}
+
+// ── DELETE — remove image from storage + settings list ───────────────────────
 export async function DELETE(req: NextRequest) {
   if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -121,7 +135,6 @@ export async function DELETE(req: NextRequest) {
   if (!body.url) return NextResponse.json({ error: 'Missing url' }, { status: 400 })
 
   try {
-    // Extract filename from URL
     const filename = body.url.split(`/public/${BUCKET}/`)[1]
     if (filename) {
       await fetch(
@@ -129,11 +142,8 @@ export async function DELETE(req: NextRequest) {
         { method: 'DELETE', headers: srvHeaders() }
       )
     }
-
-    // Remove from settings list
     const current = await getBannerImages()
     await setBannerImages(current.filter(u => u !== body.url))
-
     return NextResponse.json({ ok: true })
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 })
