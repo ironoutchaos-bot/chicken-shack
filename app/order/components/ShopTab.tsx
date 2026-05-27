@@ -351,10 +351,18 @@ export default function ShopTab({
 
                     {/* Price on image */}
                     <div className="absolute bottom-2 left-2.5">
-                      <span className="font-black text-[19px] leading-none text-white drop-shadow-lg">
-                        ₹{p.price_per_kg}
+                      <span
+                        className="text-[11px] font-medium leading-none block"
+                        style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'line-through' }}
+                      >
+                        ₹{Math.round(p.price_per_kg / 0.75)}
                       </span>
-                      <span className="text-white/70 text-[10px] font-medium ml-0.5">/pc</span>
+                      <div className="flex items-baseline gap-0.5 mt-0.5">
+                        <span className="font-black text-[19px] leading-none text-white drop-shadow-lg">
+                          ₹{p.price_per_kg}
+                        </span>
+                        <span className="text-white/70 text-[10px] font-medium">/pc</span>
+                      </div>
                     </div>
 
                     {/* FRESH badge */}
