@@ -5,33 +5,35 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 
 type Settings = {
-  cod_enabled:           boolean
-  cashfree_enabled:      boolean
-  store_open:            boolean
-  min_order_amount:      number
-  delivery_fee:          number
-  delivery_hours:        string
-  announcement:          string
-  banner_images:         string[]
-  coupon_enabled:        boolean
-  coupon_code:           string
-  coupon_discount_type:  'percent' | 'fixed'
-  coupon_discount_value: number
+  cod_enabled:                boolean
+  cashfree_enabled:           boolean
+  store_open:                 boolean
+  min_order_amount:           number
+  delivery_fee:               number
+  delivery_hours:             string
+  announcement:               string
+  banner_images:              string[]
+  coupon_enabled:             boolean
+  coupon_code:                string
+  coupon_discount_type:       'percent' | 'fixed'
+  coupon_discount_value:      number
+  coupon_max_uses_per_phone:  number
 }
 
 const DEFAULTS: Settings = {
-  cod_enabled:           true,
-  cashfree_enabled:      true,
-  store_open:            true,
-  min_order_amount:      0,
-  delivery_fee:          0,
-  delivery_hours:        '8am – 8pm',
-  announcement:          '',
-  banner_images:         [],
-  coupon_enabled:        false,
-  coupon_code:           '',
-  coupon_discount_type:  'percent',
-  coupon_discount_value: 10,
+  cod_enabled:                true,
+  cashfree_enabled:           true,
+  store_open:                 true,
+  min_order_amount:           0,
+  delivery_fee:               0,
+  delivery_hours:             '8am – 8pm',
+  announcement:               '',
+  banner_images:              [],
+  coupon_enabled:             false,
+  coupon_code:                '',
+  coupon_discount_type:       'percent',
+  coupon_discount_value:      10,
+  coupon_max_uses_per_phone:  0,
 }
 
 export default function AdminSettingsPage() {
@@ -203,6 +205,7 @@ export default function AdminSettingsPage() {
             code={settings.coupon_code}
             discountType={settings.coupon_discount_type}
             discountValue={settings.coupon_discount_value}
+            maxUsesPerPhone={settings.coupon_max_uses_per_phone}
             couponEnabled={settings.coupon_enabled}
             savingCode={saving === 'coupon_code'}
             savedCode={saved === 'coupon_code'}
@@ -210,9 +213,12 @@ export default function AdminSettingsPage() {
             savedType={saved === 'coupon_discount_type'}
             savingValue={saving === 'coupon_discount_value'}
             savedValue={saved === 'coupon_discount_value'}
+            savingMaxUses={saving === 'coupon_max_uses_per_phone'}
+            savedMaxUses={saved === 'coupon_max_uses_per_phone'}
             onSaveCode={v => saveSetting('coupon_code', v)}
             onSaveType={v => saveSetting('coupon_discount_type', v)}
             onSaveValue={v => saveSetting('coupon_discount_value', v)}
+            onSaveMaxUses={v => saveSetting('coupon_max_uses_per_phone', v)}
           />
         </Section>
 
@@ -363,24 +369,29 @@ function TextRow({ label, description, placeholder, value, saving, saved, onSave
   )
 }
 
-function CouponRow({ code, discountType, discountValue, couponEnabled,
-  savingCode, savedCode, savingType, savedType, savingValue, savedValue,
-  onSaveCode, onSaveType, onSaveValue,
+function CouponRow({ code, discountType, discountValue, maxUsesPerPhone, couponEnabled,
+  savingCode, savedCode, savingType, savedType, savingValue, savedValue, savingMaxUses, savedMaxUses,
+  onSaveCode, onSaveType, onSaveValue, onSaveMaxUses,
 }: {
-  code: string; discountType: 'percent' | 'fixed'; discountValue: number; couponEnabled: boolean
+  code: string; discountType: 'percent' | 'fixed'; discountValue: number
+  maxUsesPerPhone: number; couponEnabled: boolean
   savingCode: boolean; savedCode: boolean
   savingType: boolean; savedType: boolean
   savingValue: boolean; savedValue: boolean
+  savingMaxUses: boolean; savedMaxUses: boolean
   onSaveCode: (v: string) => void
   onSaveType: (v: 'percent' | 'fixed') => void
   onSaveValue: (v: number) => void
+  onSaveMaxUses: (v: number) => void
 }) {
-  const [draftCode,  setDraftCode]  = useState(code)
-  const [draftType,  setDraftType]  = useState(discountType)
-  const [draftValue, setDraftValue] = useState(discountValue)
-  useEffect(() => { setDraftCode(code) },           [code])
-  useEffect(() => { setDraftType(discountType) },   [discountType])
-  useEffect(() => { setDraftValue(discountValue) }, [discountValue])
+  const [draftCode,     setDraftCode]     = useState(code)
+  const [draftType,     setDraftType]     = useState(discountType)
+  const [draftValue,    setDraftValue]    = useState(discountValue)
+  const [draftMaxUses,  setDraftMaxUses]  = useState(maxUsesPerPhone)
+  useEffect(() => { setDraftCode(code) },             [code])
+  useEffect(() => { setDraftType(discountType) },     [discountType])
+  useEffect(() => { setDraftValue(discountValue) },   [discountValue])
+  useEffect(() => { setDraftMaxUses(maxUsesPerPhone) }, [maxUsesPerPhone])
 
   function generate() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -522,6 +533,31 @@ function CouponRow({ code, discountType, discountValue, couponEnabled,
         </div>
       </div>
 
+      {/* Max uses per phone row */}
+      <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <p style={S.rowLabel}>Max Uses Per Phone</p>
+          <p style={S.rowDesc}>How many times the same phone number can use this code (0 = unlimited)</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 240, alignItems: 'center' }}>
+          <input
+            type="number" min={0} value={draftMaxUses}
+            onChange={e => setDraftMaxUses(Number(e.target.value))}
+            style={{ ...S.numInput, width: 80 }}
+          />
+          <span style={{ color: '#6b7280', fontSize: '0.8125rem' }}>
+            {draftMaxUses === 0 ? 'unlimited' : `time${draftMaxUses !== 1 ? 's' : ''} per customer`}
+          </span>
+          <button
+            onClick={() => onSaveMaxUses(draftMaxUses)}
+            disabled={savingMaxUses}
+            style={{ ...S.saveBtn, ...(savedMaxUses ? S.saveBtnOk : {}) }}
+          >
+            {savingMaxUses ? '…' : savedMaxUses ? '✓' : 'Save'}
+          </button>
+        </div>
+      </div>
+
       {/* Preview banner */}
       {draftCode && (
         <div style={{
@@ -533,7 +569,8 @@ function CouponRow({ code, discountType, discountValue, couponEnabled,
           <span>🎟️</span>
           <span>
             Code <strong style={{ fontFamily: 'monospace', letterSpacing: 1 }}>{draftCode}</strong> gives{' '}
-            <strong>{draftType === 'percent' ? `${draftValue}% off` : `₹${draftValue} off`}</strong> the order total.
+            <strong>{draftType === 'percent' ? `${draftValue}% off` : `₹${draftValue} off`}</strong> the order total
+            {draftMaxUses > 0 && <>, usable <strong>{draftMaxUses}×</strong> per phone number</>}.
           </span>
         </div>
       )}

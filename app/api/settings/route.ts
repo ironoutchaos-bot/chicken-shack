@@ -55,21 +55,21 @@ export async function PATCH(req: NextRequest) {
   if (!body.key) return NextResponse.json({ error: 'Missing key' }, { status: 400 })
 
   try {
+    // Use Supabase upsert (POST + resolution=merge-duplicates) so it works whether
+    // the row already exists or is brand new. The old PATCH approach silently did
+    // nothing when a key was missing because Supabase returns 204 even for 0 updated rows.
     const res = await fetch(
-      `${SUPA_URL()}/rest/v1/settings?key=eq.${encodeURIComponent(body.key)}`,
+      `${SUPA_URL()}/rest/v1/settings`,
       {
-        method:  'PATCH',
-        headers: { ...srvHeaders(true), 'Prefer': 'return=minimal' },
-        body:    JSON.stringify({ value: body.value, updated_at: new Date().toISOString() }),
+        method:  'POST',
+        headers: { ...srvHeaders(true), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body:    JSON.stringify({ key: body.key, value: body.value }),
       }
     )
-    // If row didn't exist, insert it
-    if (res.status === 404 || (await res.text()).includes('0 rows')) {
-      await fetch(`${SUPA_URL()}/rest/v1/settings`, {
-        method:  'POST',
-        headers: { ...srvHeaders(true), 'Prefer': 'return=minimal' },
-        body:    JSON.stringify({ key: body.key, value: body.value }),
-      })
+    if (!res.ok) {
+      const err = await res.text()
+      console.error('[settings PATCH] Supabase error:', err)
+      return NextResponse.json({ error: 'Failed to save setting', detail: err }, { status: 500 })
     }
     return NextResponse.json({ ok: true })
   } catch {
@@ -78,15 +78,16 @@ export async function PATCH(req: NextRequest) {
 }
 
 const DEFAULTS = {
-  cod_enabled:            true,
-  cashfree_enabled:       true,
-  store_open:             true,
-  min_order_amount:       0,
-  delivery_fee:           0,
-  delivery_hours:         '8am – 8pm',
-  announcement:           '',
-  coupon_enabled:         false,
-  coupon_code:            '',
-  coupon_discount_type:   'percent',   // 'percent' | 'fixed'
-  coupon_discount_value:  10,
+  cod_enabled:                 true,
+  cashfree_enabled:            true,
+  store_open:                  true,
+  min_order_amount:            0,
+  delivery_fee:                0,
+  delivery_hours:              '8am – 8pm',
+  announcement:                '',
+  coupon_enabled:              false,
+  coupon_code:                 '',
+  coupon_discount_type:        'percent',   // 'percent' | 'fixed'
+  coupon_discount_value:       10,
+  coupon_max_uses_per_phone:   0,           // 0 = unlimited
 }
