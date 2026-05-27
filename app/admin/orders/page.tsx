@@ -44,21 +44,26 @@ export default function AdminOrdersPage() {
 
   const supabase = getSupabaseBrowser()
 
-  const loadOrders = useCallback(async () => {
-    setLoading(true)
+  const loadOrders = useCallback(async (showSpinner = true) => {
+    if (showSpinner) setLoading(true)
     try {
       const res = await fetch('/api/orders')
       if (!res.ok) throw new Error('Not authorized')
       const raw = await res.json()
       const data: OrderRow[] = Array.isArray(raw) ? raw : []
       setOrders(data)
-      const map: Record<string, string> = {}
-      data.forEach(o => { map[o.id] = o.eta_minutes?.toString() ?? '' })
-      setEtaInputs(map)
+      setEtaInputs(prev => {
+        const next: Record<string, string> = {}
+        data.forEach(o => {
+          // Preserve any value the admin is actively editing; fill in DB value for new rows
+          next[o.id] = o.id in prev ? prev[o.id] : (o.eta_minutes?.toString() ?? '')
+        })
+        return next
+      })
     } catch (e) {
       console.error(e)
     } finally {
-      setLoading(false)
+      if (showSpinner) setLoading(false)
     }
   }, [])
 
@@ -80,23 +85,23 @@ export default function AdminOrdersPage() {
     if (!authed) return
     const channel = supabase
       .channel('admin:orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => loadOrders())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => loadOrders(false))
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [authed, supabase, loadOrders])
 
-  // Polling fallback (15s) in case the realtime socket drops
+  // Polling fallback every 5s — silent (no spinner)
   useEffect(() => {
     if (!authed) return
-    const t = setInterval(loadOrders, 15_000)
+    const t = setInterval(() => loadOrders(false), 5_000)
     return () => clearInterval(t)
   }, [authed, loadOrders])
 
-  // Instant refresh when SW delivers a push notification to this tab
+  // Instant silent refresh when SW delivers a push notification to this tab
   useEffect(() => {
     if (!authed || !('serviceWorker' in navigator)) return
     const handler = (event: MessageEvent) => {
-      if (event.data?.type === 'ORDER_UPDATE') loadOrders()
+      if (event.data?.type === 'ORDER_UPDATE') loadOrders(false)
     }
     navigator.serviceWorker.addEventListener('message', handler)
     return () => navigator.serviceWorker.removeEventListener('message', handler)
