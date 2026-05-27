@@ -4,7 +4,9 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { OrderRow, DeliveryAddress } from '@/lib/supabase-browser'
-import DriverInstallPrompt from './components/DriverInstallPrompt'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type BeforeInstallPromptEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
 
 type DriverInfo = {
   id: string
@@ -51,6 +53,13 @@ export default function DriverPage() {
   const [pushAsking,    setPushAsking]    = useState(false)
   const [pushDismissed, setPushDismissed] = useState(false)
 
+  // PWA install
+  const [isStandalone,   setIsStandalone]   = useState(true)   // assume installed until checked
+  const [isIOS,          setIsIOS]          = useState(false)
+  const [deferredInstall, setDeferredInstall] = useState<BeforeInstallPromptEvent | null>(null)
+  const [showInstallPopup, setShowInstallPopup] = useState(false)
+  const [installing,     setInstalling]     = useState(false)
+
   // Login form
   const [userId,    setUserId]    = useState('')
   const [password,  setPassword]  = useState('')
@@ -73,6 +82,49 @@ export default function DriverPage() {
       })
       .catch(() => setView('login'))
   }, [])
+
+  // ── PWA install setup ────────────────────────────────────────
+  useEffect(() => {
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
+    setIsStandalone(standalone)
+    if (standalone) return
+
+    const ua  = navigator.userAgent
+    const ios = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
+    setIsIOS(ios)
+
+    const handler = (e: Event) => {
+      e.preventDefault()
+      setDeferredInstall(e as BeforeInstallPromptEvent)
+      // Auto-show popup after 4s
+      setTimeout(() => setShowInstallPopup(true), 4000)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', () => {
+      setIsStandalone(true)
+      setShowInstallPopup(false)
+    })
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function triggerInstall() {
+    if (!deferredInstall) return
+    setInstalling(true)
+    try {
+      await deferredInstall.prompt()
+      const { outcome } = await deferredInstall.userChoice
+      if (outcome === 'accepted') {
+        setIsStandalone(true)
+        setShowInstallPopup(false)
+      }
+    } finally {
+      setInstalling(false)
+      setDeferredInstall(null)
+    }
+  }
 
   // ── Push notifications ───────────────────────────────────────
   async function subscribePush() {
@@ -255,8 +307,66 @@ export default function DriverPage() {
         </div>
       </div>
 
-      {/* PWA Install Prompt */}
-      <DriverInstallPrompt />
+      {/* ── Persistent Install Card ─────────────────────────── */}
+      {!isStandalone && (
+        <div style={{
+          margin: '0.75rem 1rem 0',
+          background: '#1c1c1e',
+          border: '1px solid rgba(255,159,10,0.35)',
+          borderRadius: 16,
+          overflow: 'hidden',
+        }}>
+          <div style={{ height: 3, background: 'linear-gradient(90deg,#ff9f0a,#ff6b00,#ff9f0a)' }} />
+          <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+              background: 'linear-gradient(135deg,#ff9f0a,#ff6b00)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1.375rem',
+            }}>🚗</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 800, color: '#e8e8ed', lineHeight: 1.3 }}>
+                Install BF Driver App
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '0.7rem', color: '#636366', lineHeight: 1.4 }}>
+                {isIOS
+                  ? 'Tap Share → "Add to Home Screen"'
+                  : 'One tap access to your orders'
+                }
+              </p>
+            </div>
+            {isIOS ? (
+              <div style={{
+                background: '#2c2c2e', borderRadius: 10,
+                padding: '8px 10px', fontSize: '0.75rem',
+                color: '#9a9a9f', lineHeight: 1.4, maxWidth: 130,
+              }}>
+                Tap <span style={{ color: '#e8e8ed', fontWeight: 700 }}>⬆ Share</span><br />
+                → <span style={{ color: '#e8e8ed', fontWeight: 700 }}>Add to Home Screen</span>
+              </div>
+            ) : (
+              <button
+                onClick={triggerInstall}
+                disabled={installing || !deferredInstall}
+                style={{
+                  background: deferredInstall
+                    ? 'linear-gradient(135deg,#ff9f0a,#ff6b00)'
+                    : '#2c2c2e',
+                  border: 'none', borderRadius: 10,
+                  padding: '9px 14px',
+                  fontSize: '0.8125rem', fontWeight: 800,
+                  color: deferredInstall ? '#fff' : '#48484e',
+                  cursor: deferredInstall ? 'pointer' : 'default',
+                  whiteSpace: 'nowrap' as const,
+                  flexShrink: 0,
+                }}
+              >
+                {installing ? '…' : deferredInstall ? '⬇ Install' : 'Open in Chrome'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Stats row */}
       <div style={S.statsRow}>
@@ -347,6 +457,99 @@ export default function DriverPage() {
           </>
         )}
       </div>
+
+      {/* ── Auto-popup overlay (fires 4s after page load) ──── */}
+      {showInstallPopup && !isStandalone && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.6)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: 430,
+            background: '#1c1c1e',
+            border: '1px solid rgba(255,159,10,0.3)',
+            borderRadius: '24px 24px 0 0',
+            overflow: 'hidden',
+            boxShadow: '0 -8px 40px rgba(0,0,0,0.7)',
+            animation: 'slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+            paddingBottom: 'env(safe-area-inset-bottom,0px)',
+          }}>
+            <div style={{ height: 3, background: 'linear-gradient(90deg,#ff9f0a,#ff6b00,#ff9f0a)' }} />
+            {/* Handle */}
+            <div style={{ width: 40, height: 4, background: '#3a3a3c', borderRadius: 2, margin: '14px auto 0' }} />
+            <div style={{ padding: '14px 20px 24px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{
+                  width: 54, height: 54, borderRadius: 16, flexShrink: 0,
+                  background: 'linear-gradient(135deg,#ff9f0a,#ff6b00)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '1.75rem',
+                  boxShadow: '0 4px 16px rgba(255,159,10,0.4)',
+                }}>🚗</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#e8e8ed', lineHeight: 1.3 }}>
+                    Add BF Driver to Home Screen
+                  </p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.8125rem', color: '#636366', lineHeight: 1.45 }}>
+                    {isIOS
+                      ? 'Tap Share → "Add to Home Screen" for instant 1-tap access'
+                      : 'Install for 1-tap access to your orders — no browser needed'
+                    }
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowInstallPopup(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#48484e', cursor: 'pointer', fontSize: '1rem', padding: 4, flexShrink: 0, marginTop: -2 }}
+                >✕</button>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                {isIOS ? (
+                  <>
+                    <div style={{
+                      flex: 1, background: '#2c2c2e', borderRadius: 14,
+                      padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 8,
+                    }}>
+                      <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>⬆️</span>
+                      <span style={{ fontSize: '0.8rem', color: '#9a9a9f', lineHeight: 1.4 }}>
+                        Tap <span style={{ color: '#e8e8ed', fontWeight: 700 }}>Share</span>
+                        {' → '}
+                        <span style={{ color: '#e8e8ed', fontWeight: 700 }}>Add to Home Screen</span>
+                      </span>
+                    </div>
+                    <button onClick={() => setShowInstallPopup(false)} style={{ background: 'transparent', border: 'none', padding: '11px 16px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: '#48484e' }}>
+                      Later
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={triggerInstall}
+                      disabled={installing}
+                      style={{
+                        flex: 1,
+                        background: 'linear-gradient(135deg,#ff9f0a,#ff6b00)',
+                        border: 'none', borderRadius: 14,
+                        padding: '13px',
+                        fontSize: '1rem', fontWeight: 800, color: '#fff',
+                        cursor: installing ? 'default' : 'pointer',
+                        letterSpacing: '-0.01em',
+                      }}
+                    >
+                      {installing ? '…' : '⬇ Install App'}
+                    </button>
+                    <button onClick={() => setShowInstallPopup(false)} style={{ background: 'transparent', border: 'none', padding: '13px 18px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: '#48484e' }}>
+                      Not now
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <style>{`@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+        </div>
+      )}
     </div>
   )
 }
