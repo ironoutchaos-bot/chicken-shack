@@ -31,6 +31,31 @@ function srvHeaders(extra?: Record<string, string>) {
   }
 }
 
+// Reliable upsert: PATCH existing row; if 0 rows updated, INSERT new row.
+// Avoids the silent-no-op bug where PATCH returns 204 even for 0 matched rows.
+async function saveSettingKey(key: string, value: unknown) {
+  try {
+    const h = srvHeaders()
+    const patch = await fetch(
+      `${SUPA_URL()}/rest/v1/settings?key=eq.${encodeURIComponent(key)}`,
+      {
+        method:  'PATCH',
+        headers: { ...h, 'Prefer': 'return=representation' },
+        body:    JSON.stringify({ value }),
+      }
+    )
+    const rows = await patch.json().catch(() => [])
+    const updated = Array.isArray(rows) ? rows.length : (patch.ok ? 1 : 0)
+    if (updated === 0) {
+      await fetch(`${SUPA_URL()}/rest/v1/settings`, {
+        method:  'POST',
+        headers: { ...h, 'Prefer': 'return=minimal' },
+        body:    JSON.stringify({ key, value }),
+      })
+    }
+  } catch { /* best-effort */ }
+}
+
 export async function POST(req: NextRequest) {
   let body: Record<string, unknown>
   try { body = await req.json() } catch {
@@ -90,13 +115,9 @@ export async function POST(req: NextRequest) {
         }, { status: 400 })
       }
 
-      // Increment usage tracker (fire-and-forget — don't block order creation)
+      // Increment and save usage tracker — await so it's saved before order goes through
       const updated = { ...tracker, [tKey]: used + 1 }
-      fetch(`${SUPA_URL()}/rest/v1/settings`, {
-        method:  'POST',
-        headers: { ...srvHeaders(), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
-        body:    JSON.stringify({ key: 'coupon_usage_tracker', value: updated }),
-      }).catch(() => {})
+      await saveSettingKey('coupon_usage_tracker', updated)
     }
 
     // Compute actual discount server-side
