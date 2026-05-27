@@ -6,9 +6,14 @@
   "start_url": "/driver",
   "scope": "/driver",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
   "orientation": "portrait",
   "background_color": "#0a0a0b",
   "theme_color": "#0a0a0b",
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/icons/icon-192.png",
