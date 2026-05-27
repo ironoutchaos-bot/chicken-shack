@@ -192,6 +192,9 @@ export default function AdminSettingsPage() {
           />
         </Section>
 
+        {/* ── Danger Zone ──────────────────────────── */}
+        <ResetDataSection />
+
       </div>
     </div>
   )
@@ -525,6 +528,91 @@ function BannerImagesRow({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function ResetDataSection() {
+  const [state,   setState]   = useState<'idle' | 'confirming' | 'running' | 'done' | 'error'>('idle')
+  const [results, setResults] = useState<Record<string, string>>({})
+  const [errMsg,  setErrMsg]  = useState('')
+
+  async function runReset() {
+    setState('running')
+    try {
+      const res  = await fetch('/api/admin/reset-data', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { setErrMsg(data.error ?? `Error ${res.status}`); setState('error'); return }
+      setResults(data.results ?? {})
+      setState('done')
+    } catch (e) {
+      setErrMsg(e instanceof Error ? e.message : String(e))
+      setState('error')
+    }
+  }
+
+  return (
+    <div style={{
+      border: '2px solid #fca5a5', borderRadius: 14, overflow: 'hidden',
+      marginTop: 8,
+    }}>
+      <div style={{ background: '#fef2f2', padding: '1.125rem 1.5rem', borderBottom: '1px solid #fca5a5' }}>
+        <p style={{ fontWeight: 700, color: '#991b1b', fontSize: '0.9375rem', margin: 0 }}>🗑️ Clear All Test Data</p>
+        <p style={{ fontSize: '0.8125rem', color: '#b91c1c', margin: '3px 0 0' }}>
+          Permanently deletes all orders, all customer accounts, and resets coupon usage. Use before launch.
+        </p>
+      </div>
+      <div style={{ padding: '1.25rem 1.5rem' }}>
+        {state === 'idle' && (
+          <button
+            onClick={() => setState('confirming')}
+            style={{ background: '#fee2e2', color: '#991b1b', border: '2px solid #fca5a5', borderRadius: 10, padding: '0.55rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+          >
+            Clear All Test Data…
+          </button>
+        )}
+
+        {state === 'confirming' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p style={{ margin: 0, fontWeight: 700, color: '#991b1b', fontSize: '0.9rem' }}>
+              ⚠️ This will permanently delete ALL orders, ALL users and ALL analytics. Are you sure?
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={runReset}
+                style={{ background: '#dc2626', color: '#fff', border: 'none', borderRadius: 10, padding: '0.55rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+              >
+                Yes, delete everything
+              </button>
+              <button
+                onClick={() => setState('idle')}
+                style={{ background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, padding: '0.55rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {state === 'running' && (
+          <p style={{ color: '#b91c1c', fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>⏳ Deleting data…</p>
+        )}
+
+        {state === 'done' && (
+          <div>
+            <p style={{ color: '#15803d', fontWeight: 700, fontSize: '0.875rem', margin: '0 0 8px' }}>✅ Done! Data cleared:</p>
+            <ul style={{ margin: 0, paddingLeft: 20, fontSize: '0.8125rem', color: '#374151', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {Object.entries(results).map(([k, v]) => (
+                <li key={k}><strong>{k}</strong>: {v}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {state === 'error' && (
+          <p style={{ color: '#dc2626', fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>❌ {errMsg}</p>
+        )}
+      </div>
     </div>
   )
 }
