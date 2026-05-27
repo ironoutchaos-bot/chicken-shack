@@ -203,6 +203,7 @@ export default function AdminSettingsPage() {
             code={settings.coupon_code}
             discountType={settings.coupon_discount_type}
             discountValue={settings.coupon_discount_value}
+            couponEnabled={settings.coupon_enabled}
             savingCode={saving === 'coupon_code'}
             savedCode={saved === 'coupon_code'}
             savingType={saving === 'coupon_discount_type'}
@@ -362,11 +363,11 @@ function TextRow({ label, description, placeholder, value, saving, saved, onSave
   )
 }
 
-function CouponRow({ code, discountType, discountValue,
+function CouponRow({ code, discountType, discountValue, couponEnabled,
   savingCode, savedCode, savingType, savedType, savingValue, savedValue,
   onSaveCode, onSaveType, onSaveValue,
 }: {
-  code: string; discountType: 'percent' | 'fixed'; discountValue: number
+  code: string; discountType: 'percent' | 'fixed'; discountValue: number; couponEnabled: boolean
   savingCode: boolean; savedCode: boolean
   savingType: boolean; savedType: boolean
   savingValue: boolean; savedValue: boolean
@@ -377,20 +378,75 @@ function CouponRow({ code, discountType, discountValue,
   const [draftCode,  setDraftCode]  = useState(code)
   const [draftType,  setDraftType]  = useState(discountType)
   const [draftValue, setDraftValue] = useState(discountValue)
-  useEffect(() => { setDraftCode(code) },          [code])
-  useEffect(() => { setDraftType(discountType) },  [discountType])
+  useEffect(() => { setDraftCode(code) },           [code])
+  useEffect(() => { setDraftType(discountType) },   [discountType])
   useEffect(() => { setDraftValue(discountValue) }, [discountValue])
 
   function generate() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    const code = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-    setDraftCode(code)
+    const newCode = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+    setDraftCode(newCode)
   }
+
+  const isLive = couponEnabled && !!code
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+      {/* ── Live status indicator ── */}
+      <div style={{
+        margin: '1rem 1.5rem 0',
+        padding: '0.75rem 1rem',
+        borderRadius: 12,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        background: isLive ? '#f0fdf4' : '#f9fafb',
+        border: `1.5px solid ${isLive ? '#86efac' : '#e5e7eb'}`,
+      }}>
+        {/* Pulse dot */}
+        <div style={{ position: 'relative', width: 10, height: 10, flexShrink: 0 }}>
+          <div style={{
+            width: 10, height: 10, borderRadius: '50%',
+            background: isLive ? '#22c55e' : '#d1d5db',
+          }} />
+          {isLive && (
+            <div style={{
+              position: 'absolute', inset: -3,
+              borderRadius: '50%',
+              background: 'rgba(34,197,94,0.25)',
+              animation: 'ping 1.5s cubic-bezier(0,0,0.2,1) infinite',
+            }} />
+          )}
+        </div>
+        <div style={{ flex: 1 }}>
+          {isLive ? (
+            <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#15803d' }}>
+              🟢 Coupon is LIVE
+              <span style={{
+                marginLeft: 8, fontFamily: 'monospace', letterSpacing: 1,
+                background: '#dcfce7', padding: '1px 8px', borderRadius: 6,
+                fontSize: '0.8rem', color: '#166534',
+              }}>{code}</span>
+              <span style={{ marginLeft: 6, fontWeight: 400, color: '#16a34a' }}>
+                · {discountType === 'percent' ? `${discountValue}% off` : `₹${discountValue} off`}
+              </span>
+            </p>
+          ) : (
+            <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 600, color: '#6b7280' }}>
+              ⚪ Coupon is inactive
+              {!couponEnabled && <span style={{ marginLeft: 6, fontWeight: 400 }}>— toggle "Enable Coupon" above to activate</span>}
+              {couponEnabled && !code && <span style={{ marginLeft: 6, fontWeight: 400 }}>— set and save a coupon code below</span>}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Ping keyframe injected once */}
+      <style>{`@keyframes ping { 75%,100% { transform: scale(1.8); opacity: 0; } }`}</style>
+
       {/* Code row */}
-      <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
         <div style={{ flex: 1, minWidth: 200 }}>
           <p style={S.rowLabel}>Coupon Code</p>
           <p style={S.rowDesc}>The exact code customers must enter (case-insensitive)</p>
@@ -410,7 +466,6 @@ function CouponRow({ code, discountType, discountValue,
               padding: '0.5rem 0.75rem', fontSize: '0.8125rem', fontWeight: 600,
               cursor: 'pointer', color: '#374151', whiteSpace: 'nowrap' as const,
             }}
-            title="Generate random code"
           >
             🎲 Generate
           </button>
@@ -428,10 +483,9 @@ function CouponRow({ code, discountType, discountValue,
       <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 200 }}>
           <p style={S.rowLabel}>Discount</p>
-          <p style={S.rowDesc}>How much to deduct when code is applied</p>
+          <p style={S.rowDesc}>How much to deduct when the code is applied</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 240, alignItems: 'center' }}>
-          {/* Type toggle */}
           <div style={{ display: 'flex', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
             {(['percent', 'fixed'] as const).map(t => (
               <button
@@ -468,15 +522,15 @@ function CouponRow({ code, discountType, discountValue,
         </div>
       </div>
 
-      {/* Preview */}
+      {/* Preview banner */}
       {draftCode && (
         <div style={{
-          margin: '0 1.5rem 1rem', padding: '0.75rem 1rem',
+          margin: '0 1.5rem 1rem', padding: '0.6rem 1rem',
           background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
           fontSize: '0.8125rem', color: '#78350f',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <span style={{ fontSize: 16 }}>🎟️</span>
+          <span>🎟️</span>
           <span>
             Code <strong style={{ fontFamily: 'monospace', letterSpacing: 1 }}>{draftCode}</strong> gives{' '}
             <strong>{draftType === 'percent' ? `${draftValue}% off` : `₹${draftValue} off`}</strong> the order total.

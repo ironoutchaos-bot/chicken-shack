@@ -121,17 +121,40 @@ export default function CartSheet({
     setAddressOpen(true)
   }
 
-  function applyCoupon() {
+  const [couponChecking, setCouponChecking] = useState(false)
+
+  async function applyCoupon() {
     setCouponError('')
-    const s = couponSettingsRef.current
     const entered = couponInput.trim().toUpperCase()
     if (!entered) { setCouponError('Please enter a coupon code'); return }
-    if (!s || !s.enabled || !s.code) { setCouponError('No active coupon available'); return }
-    if (entered !== s.code) { setCouponError('Invalid coupon code'); return }
-    const amt = s.type === 'percent'
-      ? Math.round((subtotal * s.value) / 100)
+
+    // Always fetch fresh from server so we never use stale/null ref
+    setCouponChecking(true)
+    let s = couponSettingsRef.current
+    try {
+      const d = await fetch('/api/settings').then(r => r.json())
+      s = {
+        code:    String(d.coupon_code ?? '').trim().toUpperCase(),
+        type:    String(d.coupon_discount_type ?? 'percent'),
+        value:   Number(d.coupon_discount_value ?? 0),
+        enabled: d.coupon_enabled === true || d.coupon_enabled === 'true',
+      }
+      couponSettingsRef.current = s
+    } catch {
+      setCouponError('Could not verify coupon. Please try again.')
+      setCouponChecking(false)
+      return
+    }
+    setCouponChecking(false)
+
+    if (!s.enabled || !s.code) { setCouponError('No active coupon right now'); return }
+    if (entered !== s.code)    { setCouponError('Invalid coupon code'); return }
+
+    const base = subtotal + deliveryFee
+    const amt  = s.type === 'percent'
+      ? Math.round((base * s.value) / 100)
       : s.value
-    setCouponDiscount(Math.min(amt, subtotal + deliveryFee))
+    setCouponDiscount(Math.min(amt, base))
     setCouponLabel(s.type === 'percent' ? `${s.value}% off` : `₹${s.value} off`)
     setCouponApplied(true)
   }
@@ -446,10 +469,11 @@ export default function CartSheet({
                       />
                       <button
                         onClick={applyCoupon}
-                        className="px-4 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95"
-                        style={{ background: '#1C1917', color: '#fff' }}
+                        disabled={couponChecking}
+                        className="px-4 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60"
+                        style={{ background: '#1C1917', color: '#fff', whiteSpace: 'nowrap' }}
                       >
-                        Apply
+                        {couponChecking ? <Loader2 size={15} className="animate-spin" /> : 'Apply'}
                       </button>
                     </div>
                   )}
