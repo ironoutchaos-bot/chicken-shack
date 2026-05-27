@@ -212,7 +212,7 @@ export default function OrderApp() {
   ]
 
   return (
-    <div className="bg-stone-100 flex items-start justify-center overflow-hidden lg:overflow-visible" style={{ height: '100dvh' }}>
+    <div className="bg-stone-100 flex items-start justify-center overflow-hidden lg:overflow-visible" style={{ height: '100dvh', colorScheme: 'only light' }}>
       <div className="w-full max-w-[430px] lg:max-w-none h-full bg-white flex flex-col lg:flex-row shadow-app">
 
         {!pincode ? (

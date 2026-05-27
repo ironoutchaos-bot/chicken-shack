@@ -69,7 +69,10 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  color-scheme: light; /* prevent Android/system dark-mode from recolouring the app */
+  color-scheme: only light; /* block Chrome Android Force Dark — "only" means never apply dark transforms */
+  forced-color-adjust: none; /* prevent Windows/Android high-contrast forced colour overrides */
+  -webkit-color-adjust: exact; /* Safari/WebKit: print exact colours, don't adjust */
+  print-color-adjust: exact;
 }
 
 body {

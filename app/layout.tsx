@@ -117,7 +117,7 @@ export default function RootLayout({
     <html lang="en" className={`${outfit.variable} ${playfair.variable} ${fraunces.variable} ${montserrat.variable}`}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="color-scheme" content="light" />
+        <meta name="color-scheme" content="only light" />
         {/* iOS splash screens */}
         <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/icons/splash-1242x2688.png" />
         <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/icons/splash-1125x2436.png" />
