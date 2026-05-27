@@ -5,35 +5,25 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useRef } from 'react'
 
 type Settings = {
-  cod_enabled:                boolean
-  cashfree_enabled:           boolean
-  store_open:                 boolean
-  min_order_amount:           number
-  delivery_fee:               number
-  delivery_hours:             string
-  announcement:               string
-  banner_images:              string[]
-  coupon_enabled:             boolean
-  coupon_code:                string
-  coupon_discount_type:       'percent' | 'fixed'
-  coupon_discount_value:      number
-  coupon_max_uses_per_phone:  number
+  cod_enabled:      boolean
+  cashfree_enabled: boolean
+  store_open:       boolean
+  min_order_amount: number
+  delivery_fee:     number
+  delivery_hours:   string
+  announcement:     string
+  banner_images:    string[]
 }
 
 const DEFAULTS: Settings = {
-  cod_enabled:                true,
-  cashfree_enabled:           true,
-  store_open:                 true,
-  min_order_amount:           0,
-  delivery_fee:               0,
-  delivery_hours:             '8am – 8pm',
-  announcement:               '',
-  banner_images:              [],
-  coupon_enabled:             false,
-  coupon_code:                '',
-  coupon_discount_type:       'percent',
-  coupon_discount_value:      10,
-  coupon_max_uses_per_phone:  0,
+  cod_enabled:      true,
+  cashfree_enabled: true,
+  store_open:       true,
+  min_order_amount: 0,
+  delivery_fee:     0,
+  delivery_hours:   '8am – 8pm',
+  announcement:     '',
+  banner_images:    [],
 }
 
 export default function AdminSettingsPage() {
@@ -191,37 +181,6 @@ export default function AdminSettingsPage() {
           />
         </Section>
 
-        {/* ── Coupon Code ──────────────────────────── */}
-        <Section title="🎟️ Coupon Code" subtitle="Set one active coupon code. Only this code will work in the app.">
-          <ToggleRow
-            label="Enable Coupon"
-            description="When off, no coupon code will be accepted at checkout"
-            value={settings.coupon_enabled}
-            saving={saving === 'coupon_enabled'}
-            saved={saved === 'coupon_enabled'}
-            onChange={v => saveSetting('coupon_enabled', v)}
-          />
-          <CouponRow
-            code={settings.coupon_code}
-            discountType={settings.coupon_discount_type}
-            discountValue={settings.coupon_discount_value}
-            maxUsesPerPhone={settings.coupon_max_uses_per_phone}
-            couponEnabled={settings.coupon_enabled}
-            savingCode={saving === 'coupon_code'}
-            savedCode={saved === 'coupon_code'}
-            savingType={saving === 'coupon_discount_type'}
-            savedType={saved === 'coupon_discount_type'}
-            savingValue={saving === 'coupon_discount_value'}
-            savedValue={saved === 'coupon_discount_value'}
-            savingMaxUses={saving === 'coupon_max_uses_per_phone'}
-            savedMaxUses={saved === 'coupon_max_uses_per_phone'}
-            onSaveCode={v => saveSetting('coupon_code', v)}
-            onSaveType={v => saveSetting('coupon_discount_type', v)}
-            onSaveValue={v => saveSetting('coupon_discount_value', v)}
-            onSaveMaxUses={v => saveSetting('coupon_max_uses_per_phone', v)}
-          />
-        </Section>
-
         {/* ── Banner Images ─────────────────────────── */}
         <Section
           title="🖼️ Shop Banner Images"
@@ -365,215 +324,6 @@ function TextRow({ label, description, placeholder, value, saving, saved, onSave
           {saving ? '…' : saved ? '✓' : 'Save'}
         </button>
       </div>
-    </div>
-  )
-}
-
-function CouponRow({ code, discountType, discountValue, maxUsesPerPhone, couponEnabled,
-  savingCode, savedCode, savingType, savedType, savingValue, savedValue, savingMaxUses, savedMaxUses,
-  onSaveCode, onSaveType, onSaveValue, onSaveMaxUses,
-}: {
-  code: string; discountType: 'percent' | 'fixed'; discountValue: number
-  maxUsesPerPhone: number; couponEnabled: boolean
-  savingCode: boolean; savedCode: boolean
-  savingType: boolean; savedType: boolean
-  savingValue: boolean; savedValue: boolean
-  savingMaxUses: boolean; savedMaxUses: boolean
-  onSaveCode: (v: string) => void
-  onSaveType: (v: 'percent' | 'fixed') => void
-  onSaveValue: (v: number) => void
-  onSaveMaxUses: (v: number) => void
-}) {
-  const [draftCode,     setDraftCode]     = useState(code)
-  const [draftType,     setDraftType]     = useState(discountType)
-  const [draftValue,    setDraftValue]    = useState(discountValue)
-  const [draftMaxUses,  setDraftMaxUses]  = useState(maxUsesPerPhone)
-  useEffect(() => { setDraftCode(code) },             [code])
-  useEffect(() => { setDraftType(discountType) },     [discountType])
-  useEffect(() => { setDraftValue(discountValue) },   [discountValue])
-  useEffect(() => { setDraftMaxUses(maxUsesPerPhone) }, [maxUsesPerPhone])
-
-  function generate() {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    const newCode = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-    setDraftCode(newCode)
-  }
-
-  const isLive = couponEnabled && !!code
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-
-      {/* ── Live status indicator ── */}
-      <div style={{
-        margin: '1rem 1.5rem 0',
-        padding: '0.75rem 1rem',
-        borderRadius: 12,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        background: isLive ? '#f0fdf4' : '#f9fafb',
-        border: `1.5px solid ${isLive ? '#86efac' : '#e5e7eb'}`,
-      }}>
-        {/* Pulse dot */}
-        <div style={{ position: 'relative', width: 10, height: 10, flexShrink: 0 }}>
-          <div style={{
-            width: 10, height: 10, borderRadius: '50%',
-            background: isLive ? '#22c55e' : '#d1d5db',
-          }} />
-          {isLive && (
-            <div style={{
-              position: 'absolute', inset: -3,
-              borderRadius: '50%',
-              background: 'rgba(34,197,94,0.25)',
-              animation: 'ping 1.5s cubic-bezier(0,0,0.2,1) infinite',
-            }} />
-          )}
-        </div>
-        <div style={{ flex: 1 }}>
-          {isLive ? (
-            <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 700, color: '#15803d' }}>
-              🟢 Coupon is LIVE
-              <span style={{
-                marginLeft: 8, fontFamily: 'monospace', letterSpacing: 1,
-                background: '#dcfce7', padding: '1px 8px', borderRadius: 6,
-                fontSize: '0.8rem', color: '#166534',
-              }}>{code}</span>
-              <span style={{ marginLeft: 6, fontWeight: 400, color: '#16a34a' }}>
-                · {discountType === 'percent' ? `${discountValue}% off` : `₹${discountValue} off`}
-              </span>
-            </p>
-          ) : (
-            <p style={{ margin: 0, fontSize: '0.8125rem', fontWeight: 600, color: '#6b7280' }}>
-              ⚪ Coupon is inactive
-              {!couponEnabled && <span style={{ marginLeft: 6, fontWeight: 400 }}>— toggle "Enable Coupon" above to activate</span>}
-              {couponEnabled && !code && <span style={{ marginLeft: 6, fontWeight: 400 }}>— set and save a coupon code below</span>}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Ping keyframe injected once */}
-      <style>{`@keyframes ping { 75%,100% { transform: scale(1.8); opacity: 0; } }`}</style>
-
-      {/* Code row */}
-      <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <p style={S.rowLabel}>Coupon Code</p>
-          <p style={S.rowDesc}>The exact code customers must enter (case-insensitive)</p>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 240, alignItems: 'center' }}>
-          <input
-            type="text"
-            placeholder="e.g. FRESH10"
-            value={draftCode}
-            onChange={e => setDraftCode(e.target.value.toUpperCase())}
-            style={{ ...S.textInput, flex: 1, fontFamily: 'monospace', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase' }}
-          />
-          <button
-            onClick={generate}
-            style={{
-              background: '#f3f4f6', border: '1.5px solid #e5e7eb', borderRadius: 8,
-              padding: '0.5rem 0.75rem', fontSize: '0.8125rem', fontWeight: 600,
-              cursor: 'pointer', color: '#374151', whiteSpace: 'nowrap' as const,
-            }}
-          >
-            🎲 Generate
-          </button>
-          <button
-            onClick={() => onSaveCode(draftCode.trim().toUpperCase())}
-            disabled={savingCode}
-            style={{ ...S.saveBtn, ...(savedCode ? S.saveBtnOk : {}), alignSelf: 'flex-start' }}
-          >
-            {savingCode ? '…' : savedCode ? '✓' : 'Save'}
-          </button>
-        </div>
-      </div>
-
-      {/* Discount type + value row */}
-      <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <p style={S.rowLabel}>Discount</p>
-          <p style={S.rowDesc}>How much to deduct when the code is applied</p>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 240, alignItems: 'center' }}>
-          <div style={{ display: 'flex', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
-            {(['percent', 'fixed'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => { setDraftType(t); onSaveType(t) }}
-                style={{
-                  padding: '0.45rem 0.85rem', fontSize: '0.8125rem', fontWeight: 700,
-                  border: 'none', cursor: 'pointer',
-                  background: draftType === t ? '#d97706' : '#fff',
-                  color: draftType === t ? '#fff' : '#6b7280',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {t === 'percent' ? '% Off' : '₹ Off'}
-              </button>
-            ))}
-          </div>
-          <input
-            type="number" min={0} max={draftType === 'percent' ? 100 : undefined}
-            value={draftValue}
-            onChange={e => setDraftValue(Number(e.target.value))}
-            style={{ ...S.numInput, width: 80 }}
-          />
-          <span style={{ color: '#6b7280', fontWeight: 600, fontSize: '0.875rem' }}>
-            {draftType === 'percent' ? '%' : '₹'}
-          </span>
-          <button
-            onClick={() => onSaveValue(draftValue)}
-            disabled={savingValue}
-            style={{ ...S.saveBtn, ...(savedValue ? S.saveBtnOk : {}) }}
-          >
-            {savingValue ? '…' : savedValue ? '✓' : 'Save'}
-          </button>
-        </div>
-      </div>
-
-      {/* Max uses per phone row */}
-      <div style={{ ...S.row, alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <p style={S.rowLabel}>Max Uses Per Phone</p>
-          <p style={S.rowDesc}>How many times the same phone number can use this code (0 = unlimited)</p>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 240, alignItems: 'center' }}>
-          <input
-            type="number" min={0} value={draftMaxUses}
-            onChange={e => setDraftMaxUses(Number(e.target.value))}
-            style={{ ...S.numInput, width: 80 }}
-          />
-          <span style={{ color: '#6b7280', fontSize: '0.8125rem' }}>
-            {draftMaxUses === 0 ? 'unlimited' : `time${draftMaxUses !== 1 ? 's' : ''} per customer`}
-          </span>
-          <button
-            onClick={() => onSaveMaxUses(draftMaxUses)}
-            disabled={savingMaxUses}
-            style={{ ...S.saveBtn, ...(savedMaxUses ? S.saveBtnOk : {}) }}
-          >
-            {savingMaxUses ? '…' : savedMaxUses ? '✓' : 'Save'}
-          </button>
-        </div>
-      </div>
-
-      {/* Preview banner */}
-      {draftCode && (
-        <div style={{
-          margin: '0 1.5rem 1rem', padding: '0.6rem 1rem',
-          background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
-          fontSize: '0.8125rem', color: '#78350f',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <span>🎟️</span>
-          <span>
-            Code <strong style={{ fontFamily: 'monospace', letterSpacing: 1 }}>{draftCode}</strong> gives{' '}
-            <strong>{draftType === 'percent' ? `${draftValue}% off` : `₹${draftValue} off`}</strong> the order total
-            {draftMaxUses > 0 && <>, usable <strong>{draftMaxUses}×</strong> per phone number</>}.
-          </span>
-        </div>
-      )}
     </div>
   )
 }
