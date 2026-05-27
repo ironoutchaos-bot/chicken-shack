@@ -670,26 +670,22 @@ function OrderCard({
         <span style={{ color: '#48484e', fontSize: '1.1rem', flexShrink: 0 }}>{expanded ? '▲' : '▼'}</span>
       </button>
 
-      {/* Customer phone + Navigate — hidden once delivered */}
+      {/* Items — always visible */}
+      <div style={S.itemsRow}>
+        {order.items.map((item, i) => (
+          <span key={i} style={S.itemChip}>
+            {item.name} × {item.quantity}
+          </span>
+        ))}
+      </div>
+
+      {/* Call + Navigate buttons — hidden once delivered */}
       {!isDone && (order.customer_phone || (order.delivery_address as DeliveryAddress | null)?.lat) && (
-        <div style={S.phoneRow}>
-          {order.customer_phone ? (
-            <>
-              <div style={S.phoneInfo}>
-                <p style={S.phoneLabel}>Customer</p>
-                <p style={S.phoneNumber}>{order.customer_phone}</p>
-              </div>
-              <a href={`tel:${order.customer_phone}`} style={S.callBtn}>
-                📲 Call
-              </a>
-            </>
-          ) : (
-            <div style={S.phoneInfo}>
-              <p style={S.phoneLabel}>Delivery</p>
-              <p style={{ ...S.phoneNumber, fontSize: '0.875rem' }}>
-                {(order.delivery_address as DeliveryAddress | null)?.houseNumber ?? 'See address below'}
-              </p>
-            </div>
+        <div style={S.actionRow}>
+          {order.customer_phone && (
+            <a href={`tel:${order.customer_phone}`} style={{ ...S.callBtn, flex: 1 }}>
+              📲 Call Customer
+            </a>
           )}
           {(() => {
             const a = order.delivery_address as DeliveryAddress | null
@@ -698,9 +694,9 @@ function OrderCard({
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lng}`}
                 target="_blank" rel="noopener noreferrer"
-                style={S.navBtnInline}
+                style={{ ...S.navBtnInline, flex: 1 }}
               >
-                🧭 Nav
+                🧭 Navigate
               </a>
             )
           })()}
@@ -731,18 +727,6 @@ function OrderCard({
               {addr.pincode       && <p style={S.addrDetail}>Pin: {addr.pincode}</p>}
             </div>
           )}
-
-          {/* Items */}
-          <div style={S.itemsBlock}>
-            <p style={S.detailLabel}>🛍 Items</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-              {order.items.map((item, i) => (
-                <span key={i} style={S.itemChip}>
-                  {item.name} × {item.quantity}
-                </span>
-              ))}
-            </div>
-          </div>
 
           {/* Notes */}
           {order.notes && (
@@ -1069,20 +1053,21 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 500,
   },
 
-  // Customer phone
-  phoneRow: {
+  // Items row — always visible on card
+  itemsRow: {
     display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    padding: '0.75rem 1rem',
-    background: 'rgba(48,209,88,0.06)',
-    borderTop: '1px solid rgba(48,209,88,0.12)',
-    borderBottom: '1px solid rgba(255,255,255,0.04)',
+    flexWrap: 'wrap',
+    gap: 6,
+    padding: '0 1rem 0.75rem',
   },
-  phoneInfo:   { flex: 1, minWidth: 0 },
-  phoneLabel:  { fontSize: '0.65rem', fontWeight: 700, color: '#30d158', textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 },
-  phoneNumber: { fontSize: '1.125rem', fontWeight: 800, color: '#e8e8ed', margin: '2px 0 0', fontFamily: 'monospace', letterSpacing: '0.05em' },
+
+  // Call + Nav buttons row
+  actionRow: {
+    display: 'flex',
+    gap: 8,
+    padding: '0 1rem 0.75rem',
+  },
+
   callBtn: {
     background: 'linear-gradient(135deg, #30d158, #25a244)',
     color: '#fff',
