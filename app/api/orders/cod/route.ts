@@ -129,11 +129,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Compute actual discount server-side
-    const base = subtotal + deliveryFee
+    // Specific coupons only apply to eligible items — not the full cart + delivery
+    let discountBase: number
+    if (coupon.applies_to === 'specific' && coupon.product_ids.length > 0) {
+      const allItems = items as { productId: string; pricePerKg: number; quantity: number }[]
+      discountBase = allItems
+        .filter((i: { productId: string }) => coupon.product_ids.includes(i.productId))
+        .reduce((s: number, i: { pricePerKg: number; quantity: number }) => s + Number(i.pricePerKg) * Number(i.quantity), 0)
+    } else {
+      discountBase = subtotal + deliveryFee
+    }
     serverDiscount = coupon.discount_type === 'percent'
-      ? Math.round((base * coupon.discount_value) / 100)
+      ? Math.round((discountBase * coupon.discount_value) / 100)
       : coupon.discount_value
-    serverDiscount = Math.min(serverDiscount, base)
+    serverDiscount = Math.min(serverDiscount, discountBase)
   }
 
   const verifiedTotal = Math.max(0, subtotal + deliveryFee - serverDiscount)

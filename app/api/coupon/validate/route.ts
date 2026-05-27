@@ -119,16 +119,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Calculate discount
-  const cartItems  = body.cart_items ?? []
-  const subtotal   = body.subtotal   ?? cartItems.reduce((s, i) => s + Number(i.pricePerKg) * Number(i.quantity), 0)
+  // Calculate discount — specific coupons only discount eligible items, not the full cart
+  const cartItems   = body.cart_items ?? []
   const deliveryFee = Number(body.delivery_fee ?? 0)
-  const base       = subtotal + deliveryFee
+
+  let discountBase: number
+  if (coupon.applies_to === 'specific' && coupon.product_ids.length > 0) {
+    // Only sum up eligible items — delivery fee and other items are excluded
+    discountBase = cartItems
+      .filter(i => coupon.product_ids.includes(i.productId))
+      .reduce((s, i) => s + Number(i.pricePerKg) * Number(i.quantity), 0)
+  } else {
+    const subtotal = body.subtotal ?? cartItems.reduce((s, i) => s + Number(i.pricePerKg) * Number(i.quantity), 0)
+    discountBase = subtotal + deliveryFee
+  }
 
   let discount = coupon.discount_type === 'percent'
-    ? Math.round((base * coupon.discount_value) / 100)
+    ? Math.round((discountBase * coupon.discount_value) / 100)
     : coupon.discount_value
-  discount = Math.min(discount, base)
+  discount = Math.min(discount, discountBase)
 
   const label = coupon.discount_type === 'percent'
     ? `${coupon.discount_value}% off`

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, ShieldCheck, Banknote, MessageSquare, AlertTriangle, RotateCcw, Tag, CheckCircle2 } from 'lucide-react'
+import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, ShieldCheck, Banknote, AlertTriangle, RotateCcw, Tag, CheckCircle2 } from 'lucide-react'
 import { type CartItem } from '@/lib/supabase-browser'
 import { type AuthUser } from '@/lib/auth-types'
 import { UNIT_LABEL } from '@/lib/units'
@@ -45,7 +45,6 @@ export default function CartSheet({
   const [checkoutMode,   setCheckoutMode]   = useState<CheckoutMode>('cashfree')
   const [codEnabled,     setCodEnabled]     = useState(true)
   const [cfEnabled,      setCfEnabled]      = useState(true)
-  const [notes,          setNotes]          = useState('')
   const [outOfStock,     setOutOfStock]     = useState<string[]>([])
   const [lastAddr,       setLastAddr]       = useState<DeliveryAddress | null>(null)
 
@@ -225,7 +224,7 @@ export default function CartSheet({
             order_status:      'placed',
             cashfree_order_id: order_id,
             delivery_address:  deliveryAddress,
-            notes:             notes.trim() || null,
+            notes:             null,
             customer_phone:    deliveryAddress.customerPhone || null,
             customer_name:     deliveryAddress.customerName  || null,
             coupon_code:       couponApplied ? couponInput.trim().toUpperCase() : null,
@@ -283,7 +282,7 @@ export default function CartSheet({
             payment_status:   'cod',
             order_status:     'placed',
             delivery_address: deliveryAddress,
-            notes:            notes.trim() || null,
+            notes:            null,
             customer_phone:   deliveryAddress.customerPhone || null,
             customer_name:    deliveryAddress.customerName  || null,
             coupon_code:      couponApplied ? couponInput.trim().toUpperCase() : null,
@@ -472,22 +471,6 @@ export default function CartSheet({
                   )}
                 </div>
 
-                {/* Delivery notes */}
-                <div>
-                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 uppercase tracking-widest mb-1.5">
-                    <MessageSquare size={11} />
-                    Delivery Instructions
-                    <span className="text-stone-300 font-normal normal-case tracking-normal">· optional</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="E.g. Ring bell twice, leave at gate, call on arrival…"
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                    maxLength={200}
-                    className="w-full bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 text-sm text-stone-900 outline-none focus:border-amber-400 transition-colors placeholder:text-stone-300 resize-none leading-relaxed"
-                  />
-                </div>
               </>
             )}
           </div>
