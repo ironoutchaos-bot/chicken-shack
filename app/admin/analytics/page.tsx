@@ -36,7 +36,7 @@ type Analytics = {
   pincodeBreakdown?: PincodeItem[]
 }
 
-type Range = '7d' | '30d' | '90d' | 'all'
+type Range = '1d' | '7d' | '30d' | '90d' | 'all'
 
 /* ── Status colours ─────────────────────────────────────────────── */
 
@@ -59,6 +59,7 @@ const STATUS_LABELS: Record<string, string> = {
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 const RANGE_OPTIONS: { label: string; value: Range }[] = [
+  { label: 'Today',    value: '1d'  },
   { label: '7 Days',   value: '7d'  },
   { label: '30 Days',  value: '30d' },
   { label: '90 Days',  value: '90d' },

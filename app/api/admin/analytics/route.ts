@@ -67,7 +67,12 @@ export async function GET(req: NextRequest) {
     // --- Date range filtering ---
     const range = req.nextUrl.searchParams.get('range') ?? '30d'
     let fromDate: Date | null = null
-    if (range === '7d') {
+    if (range === '1d') {
+      // Start of today in IST (UTC+5:30)
+      const nowIST = new Date(Date.now() + 330 * 60 * 1000)
+      const todayStr = nowIST.toISOString().slice(0, 10) // YYYY-MM-DD in IST
+      fromDate = new Date(todayStr + 'T00:00:00+05:30')
+    } else if (range === '7d') {
       fromDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     } else if (range === '30d') {
       fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
@@ -80,7 +85,7 @@ export async function GET(req: NextRequest) {
       : orders
 
     // Number of days for revenueByDate chart (all → cap at 90 for readability)
-    const chartDays = range === '7d' ? 7 : range === '90d' || range === 'all' ? 90 : 30
+    const chartDays = range === '1d' ? 1 : range === '7d' ? 7 : range === '90d' || range === 'all' ? 90 : 30
 
     // --- Summary ---
     const deliveredOrders = filteredOrders.filter(o => o.order_status === 'delivered')
