@@ -589,14 +589,7 @@ function OrderCard({
                 background: '#fef3c7', border: '1.5px solid #fde68a', borderRadius: 8,
                 padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#92400e', fontWeight: 600,
               }}>
-                ⏳ Awaiting payment — driver can only be assigned after payment is confirmed
-              </div>
-            ) : (order.order_status !== 'packed' && order.order_status !== 'on_the_way') ? (
-              <div style={{
-                background: '#f0f9ff', border: '1.5px solid #bae6fd', borderRadius: 8,
-                padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#075985', fontWeight: 600,
-              }}>
-                📦 Mark as <strong>Packed</strong> first — then you can assign a driver
+                ⏳ Awaiting payment — driver will be auto-assigned once payment is confirmed
               </div>
             ) : (
               <>

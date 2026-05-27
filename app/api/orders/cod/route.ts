@@ -19,6 +19,7 @@ export const dynamic = 'force-dynamic'
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { type Coupon } from '@/app/api/coupons/route'
+import { notifyDriverAssignment } from '@/lib/push-notify'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -200,7 +201,14 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json()
-    return NextResponse.json(Array.isArray(data) ? data[0] : data, { status: 201 })
+    const order = Array.isArray(data) ? data[0] : data
+
+    // If the DB trigger auto-assigned a driver (COD orders), notify them now
+    if (order?.driver_id && order?.id) {
+      notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
+    }
+
+    return NextResponse.json(order, { status: 201 })
   } catch (err) {
     console.error('[orders/cod POST] Unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -237,6 +245,21 @@ export async function PATCH(req: NextRequest) {
       console.error('[orders/cod PATCH] Supabase error:', err)
       return NextResponse.json({ error: 'Update failed', detail: err }, { status: 500 })
     }
+
+    // Fetch the updated order to check if DB trigger auto-assigned a driver
+    try {
+      const updated = await fetch(
+        `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,driver_id`,
+        { headers: srvHeaders() }
+      )
+      if (updated.ok) {
+        const rows = await updated.json()
+        const order = rows?.[0]
+        if (order?.driver_id && order?.id) {
+          notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
+        }
+      }
+    } catch { /* notification is best-effort */ }
 
     return NextResponse.json({ ok: true })
   } catch (err) {

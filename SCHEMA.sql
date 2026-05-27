@@ -126,28 +126,48 @@ INSERT INTO settings (key, value) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 
--- ── 7. Auto-assign driver on new order ───────────────────────
+-- ── 7. Auto-assign first active driver on confirmed payment ──
+-- Fires on INSERT (COD orders — payment_status = 'cod' at creation time)
+-- and on UPDATE when an online payment transitions from 'pending' → 'paid'.
+-- Only assigns if no driver is set yet and payment is confirmed.
 CREATE OR REPLACE FUNCTION auto_assign_first_driver()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
-DECLARE d RECORD;
+DECLARE
+  v_driver_id    UUID;
+  v_driver_name  TEXT;
+  v_driver_phone TEXT;
 BEGIN
-  IF NEW.driver_id IS NULL THEN
-    SELECT id, name, phone INTO d
-    FROM drivers WHERE is_active = true ORDER BY created_at ASC LIMIT 1;
-    IF d IS NOT NULL THEN
-      NEW.driver_id   := d.id;
-      NEW.driver_name := d.name;
-      NEW.driver_phone := d.phone;
+  IF NEW.payment_status IN ('cod', 'paid') AND NEW.driver_id IS NULL THEN
+    SELECT id, name, phone
+      INTO v_driver_id, v_driver_name, v_driver_phone
+    FROM drivers
+    WHERE is_active = true
+    ORDER BY created_at
+    LIMIT 1;
+
+    IF v_driver_id IS NOT NULL THEN
+      NEW.driver_id    := v_driver_id;
+      NEW.driver_name  := v_driver_name;
+      NEW.driver_phone := v_driver_phone;
     END IF;
   END IF;
   RETURN NEW;
 END;
 $$;
 
+-- INSERT trigger: catches COD orders
 DROP TRIGGER IF EXISTS orders_auto_assign_driver ON orders;
 CREATE TRIGGER orders_auto_assign_driver
   BEFORE INSERT ON orders
   FOR EACH ROW EXECUTE PROCEDURE auto_assign_first_driver();
+
+-- UPDATE trigger: catches online payments going from pending → paid
+DROP TRIGGER IF EXISTS orders_auto_assign_driver_on_pay ON orders;
+CREATE TRIGGER orders_auto_assign_driver_on_pay
+  BEFORE UPDATE ON orders
+  FOR EACH ROW
+  WHEN (OLD.payment_status = 'pending' AND NEW.payment_status = 'paid' AND NEW.driver_id IS NULL)
+  EXECUTE PROCEDURE auto_assign_first_driver();
 
 
 -- ── 8. updated_at triggers ────────────────────────────────────

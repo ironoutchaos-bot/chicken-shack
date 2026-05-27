@@ -47,33 +47,23 @@ export async function PATCH(
   if (body.driver_phone !== undefined) patch.driver_phone = body.driver_phone
 
   try {
-    // Fetch the order first to get user_id, payment_status, and order_status
+    // Fetch the order first to get user_id and payment_status
     const orderRes = await fetch(
-      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}&select=user_id,payment_status,order_status`,
+      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}&select=user_id,payment_status`,
       { headers: { 'apikey': SUPA_SRV(), 'Authorization': `Bearer ${SUPA_SRV()}` } }
     )
     const orders = await orderRes.json()
     const userId: string | undefined = orders?.[0]?.user_id
     const paymentStatus: string | undefined = orders?.[0]?.payment_status
-    const orderStatus: string | undefined = orders?.[0]?.order_status
 
-    // Block driver assignment unless:
-    //   1. Payment is confirmed (COD or online paid), AND
-    //   2. Order has been packed (status is 'packed' or 'on_the_way' — not just 'placed')
-    // Fail-safe: if we couldn't read the statuses (undefined/null), block too.
+    // Block manual driver assignment if payment is not yet confirmed.
+    // Fail-safe: if we couldn't read the status (undefined/null), block too.
+    // Allowed: 'cod' (cash on delivery) or 'paid' (online payment confirmed).
     if (body.driver_id) {
-      const paymentConfirmed = paymentStatus === 'cod' || paymentStatus === 'paid'
-      const orderReady = orderStatus === 'packed' || orderStatus === 'on_the_way'
-
-      if (!paymentConfirmed) {
+      const confirmed = paymentStatus === 'cod' || paymentStatus === 'paid'
+      if (!confirmed) {
         return NextResponse.json(
           { error: 'Cannot assign a driver until payment is confirmed (COD or paid online)' },
-          { status: 422 }
-        )
-      }
-      if (!orderReady) {
-        return NextResponse.json(
-          { error: 'Cannot assign a driver until the order is marked as Packed' },
           { status: 422 }
         )
       }

@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic'
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
+import { notifyDriverAssignment } from '@/lib/push-notify'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
@@ -137,6 +138,22 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('[cashfree/webhook] ✓ Order marked paid:', dbOrder.id, '| cf_order:', cfOrderId)
+
+    // Fetch updated order to check if DB trigger auto-assigned a driver
+    try {
+      const updatedRes = await fetch(
+        `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(dbOrder.id)}&select=id,driver_id`,
+        { headers: srvHeaders() }
+      )
+      if (updatedRes.ok) {
+        const rows = await updatedRes.json()
+        const driverId = rows?.[0]?.driver_id
+        if (driverId) {
+          notifyDriverAssignment(driverId, dbOrder.id).catch(() => {})
+        }
+      }
+    } catch { /* notification is best-effort */ }
+
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error('[cashfree/webhook] Unexpected error:', err)
