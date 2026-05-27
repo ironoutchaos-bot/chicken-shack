@@ -14,13 +14,8 @@ function srvHeaders() {
   }
 }
 
-function getAdminToken(req: NextRequest): string | undefined {
-  const cookieHeader = req.headers.get('cookie') ?? ''
-  return cookieHeader
-    .split(';')
-    .find(c => c.trim().startsWith('admin_token='))
-    ?.split('=')[1]
-    ?.trim()
+function isAdmin(req: NextRequest) {
+  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
 }
 
 interface OrderItem {
@@ -50,22 +45,24 @@ interface Profile {
 
 export async function GET(req: NextRequest) {
   // Admin auth check
-  const token = getAdminToken(req)
-  if (token !== process.env.ADMIN_PASSWORD) {
+  if (!isAdmin(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    // Fetch all orders and profiles in parallel
-    const [ordersRes, profilesRes] = await Promise.all([
+    // Fetch all orders, profiles, and shop visit count in parallel
+    const [ordersRes, profilesRes, visitsRes] = await Promise.all([
       fetch(`${SUPA_URL()}/rest/v1/orders?select=*`, { headers: srvHeaders() }),
       fetch(`${SUPA_URL()}/rest/v1/profiles?select=id,phone_number,full_name,created_at`, {
         headers: srvHeaders(),
       }),
+      fetch(`${SUPA_URL()}/rest/v1/settings?key=eq.shop_visits&select=value`, { headers: srvHeaders() }),
     ])
 
     const orders: Order[] = await ordersRes.json()
     const profiles: Profile[] = await profilesRes.json()
+    const visitsRows: { value: unknown }[] = await visitsRes.json().catch(() => [])
+    const shopVisits = typeof visitsRows[0]?.value === 'number' ? visitsRows[0].value : 0
 
     // --- Date range filtering ---
     const range = req.nextUrl.searchParams.get('range') ?? '30d'
@@ -102,6 +99,7 @@ export async function GET(req: NextRequest) {
       activeOrders: activeOrders.length,
       avgOrderValue,
       totalCustomers: profiles.length,
+      shopVisits,
     }
 
     // --- Status breakdown ---

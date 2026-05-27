@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
       {
         method:  'POST',
         headers: srvHeaders({ 'Content-Type': 'application/json' }),
-        body:    '{}',   // Supabase/Fastify requires a body when Content-Type is application/json
+        body:    JSON.stringify({ expiresIn: 3600 }),
       }
     )
 

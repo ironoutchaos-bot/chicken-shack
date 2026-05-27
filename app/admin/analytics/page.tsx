@@ -14,6 +14,7 @@ type Summary = {
   activeOrders: number
   avgOrderValue: number
   totalCustomers: number
+  shopVisits: number
 }
 
 type StatusItem      = { status: string; count: number }
@@ -204,6 +205,15 @@ export default function AdminAnalyticsPage() {
             <SummaryCard label="Cancelled"         value={data.summary.cancelledOrders} />
             <SummaryCard label="Avg Order Value"   value={fmt(data.summary.avgOrderValue)} />
             <SummaryCard label="Total Customers"   value={data.summary.totalCustomers} />
+            <SummaryCard label="Shop Visitors"     value={(data.summary.shopVisits ?? 0).toLocaleString('en-IN')} />
+            <SummaryCard
+              label="Order Conversion"
+              value={
+                (data.summary.shopVisits ?? 0) > 0
+                  ? `${Math.round((data.summary.totalOrders / data.summary.shopVisits) * 100)}%`
+                  : '—'
+              }
+            />
           </div>
 
           {/* Revenue Target tracker */}

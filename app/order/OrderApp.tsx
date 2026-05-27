@@ -12,6 +12,7 @@ import LoginDrawer from './components/LoginDrawer'
 import CartSheet from './components/CartSheet'
 import PincodeGate from './components/PincodeGate'
 import InstallPrompt from './components/InstallPrompt'
+import VisitTracker from './components/VisitTracker'
 import { usePushNotifications } from './hooks/usePushNotifications'
 
 export type Tab = 'shop' | 'active' | 'history'
@@ -463,6 +464,7 @@ export default function OrderApp() {
           </>
         )}
 
+        <VisitTracker />
         <InstallPrompt />
 
         <LoginDrawer
