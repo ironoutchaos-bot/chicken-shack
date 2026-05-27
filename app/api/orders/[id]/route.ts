@@ -56,12 +56,17 @@ export async function PATCH(
     const userId: string | undefined = orders?.[0]?.user_id
     const paymentStatus: string | undefined = orders?.[0]?.payment_status
 
-    // Block driver assignment for orders with pending payment
-    if (body.driver_id && paymentStatus === 'pending') {
-      return NextResponse.json(
-        { error: 'Cannot assign a driver to an order with pending payment' },
-        { status: 422 }
-      )
+    // Block driver assignment unless payment is definitively confirmed.
+    // Fail-safe: if we couldn't read the status (undefined/null), block too.
+    // Allowed: 'cod' (cash on delivery) or 'paid' (online payment confirmed).
+    if (body.driver_id) {
+      const confirmed = paymentStatus === 'cod' || paymentStatus === 'paid'
+      if (!confirmed) {
+        return NextResponse.json(
+          { error: 'Cannot assign a driver until payment is confirmed (COD or paid online)' },
+          { status: 422 }
+        )
+      }
     }
 
     // Update the order

@@ -561,12 +561,12 @@ function OrderCard({
         {drivers.length > 0 && (
           <div style={{ flex: '1 1 170px' }}>
             <label style={S.label}>Assign Driver</label>
-            {order.payment_status === 'pending' ? (
+            {order.payment_status !== 'cod' && order.payment_status !== 'paid' ? (
               <div style={{
                 background: '#fef3c7', border: '1.5px solid #fde68a', borderRadius: 8,
                 padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#92400e', fontWeight: 600,
               }}>
-                ⏳ Payment pending — driver cannot be assigned until payment is confirmed
+                ⏳ Payment unconfirmed — driver cannot be assigned until payment is confirmed
               </div>
             ) : (
               <>
