@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react'
 import { X, Download, Share } from 'lucide-react'
 
-const DISMISSED_KEY = 'bf-install-dismissed'
-const DISMISS_DAYS  = 7   // don't show again for this many days after "Not now"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type BeforeInstallPromptEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
@@ -17,16 +15,6 @@ export default function InstallPrompt() {
   useEffect(() => {
     // Already running as installed PWA — don't show
     if (window.matchMedia('(display-mode: standalone)').matches) return
-
-    // Check dismiss cooldown
-    try {
-      const ts = localStorage.getItem(DISMISSED_KEY)
-      if (ts) {
-        const dismissedAt = parseInt(ts, 10)
-        const daysSince   = (Date.now() - dismissedAt) / (1000 * 60 * 60 * 24)
-        if (daysSince < DISMISS_DAYS) return
-      }
-    } catch {}
 
     const ua   = navigator.userAgent
     const ios  = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
@@ -59,7 +47,6 @@ export default function InstallPrompt() {
 
   function dismiss() {
     setShow(false)
-    try { localStorage.setItem(DISMISSED_KEY, String(Date.now())) } catch {}
   }
 
   async function install() {
