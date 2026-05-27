@@ -1,6 +1,6 @@
-// B'LURU FRESH Service Worker — v5
+// B'LURU FRESH Service Worker — v6
 // Bump the version any time sw.js changes so the browser installs the update.
-const CACHE = 'blurufresh-v5'
+const CACHE = 'blurufresh-v6'
 
 // ── NO pre-caching on install ─────────────────────────────────────────────────
 // Previously we pre-cached HTML pages in the install event using cache.addAll().
@@ -95,7 +95,7 @@ self.addEventListener('push', (event) => {
       vibrate:  [100, 50, 100],
       tag:      'order-update',
       renotify: true,
-      data:     { url: '/order' },
+      data:     { url: data.url ?? '/order' },
     })
   )
 })

@@ -143,12 +143,15 @@ export default function DriverPage() {
         ).buffer as ArrayBuffer,
       })
 
-      await fetch('/api/push/driver-subscribe', {
+      const saveRes = await fetch('/api/push/driver-subscribe', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ subscription: sub.toJSON() }),
       })
-      setPushStatus('subscribed')
+      if (saveRes.ok) {
+        setPushStatus('subscribed')
+      }
+      // If save failed, leave status as 'idle' so the banner stays and driver can retry
     } catch {
       // leave as idle
     } finally {
