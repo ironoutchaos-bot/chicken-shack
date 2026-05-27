@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { OrderRow, DeliveryAddress } from '@/lib/supabase-browser'
+import DriverInstallPrompt from './components/DriverInstallPrompt'
 
 type DriverInfo = {
   id: string
@@ -11,9 +12,6 @@ type DriverInfo = {
   user_id: string
   phone: string | null
 }
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BeforeInstallPromptEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -53,12 +51,6 @@ export default function DriverPage() {
   const [pushAsking,    setPushAsking]    = useState(false)
   const [pushDismissed, setPushDismissed] = useState(false)
 
-  // PWA install prompt
-  const [showInstall,      setShowInstall]      = useState(false)
-  const [isIOS,            setIsIOS]            = useState(false)
-  const [installDismissed, setInstallDismissed] = useState(false)
-  const deferredInstall = useRef<BeforeInstallPromptEvent | null>(null)
-
   // Login form
   const [userId,    setUserId]    = useState('')
   const [password,  setPassword]  = useState('')
@@ -66,29 +58,6 @@ export default function DriverPage() {
   const [loginErr,  setLoginErr]  = useState('')
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  // ── PWA install prompt setup ─────────────────────────────────
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    if (window.matchMedia('(display-mode: standalone)').matches) return
-
-    const ua  = navigator.userAgent
-    const ios = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
-    setIsIOS(ios)
-
-    if (ios) {
-      // Show iOS instructions after 5s when logged in
-      return
-    }
-
-    const handler = (e: Event) => {
-      e.preventDefault()
-      deferredInstall.current = e as BeforeInstallPromptEvent
-    }
-    window.addEventListener('beforeinstallprompt', handler)
-    window.addEventListener('appinstalled', () => setShowInstall(false))
-    return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [])
 
   // ── Auth check on mount ─────────────────────────────────────
   useEffect(() => {
@@ -159,16 +128,7 @@ export default function DriverPage() {
     if (view !== 'dashboard') return
     loadOrders()
     pollRef.current = setInterval(loadOrders, 20_000)
-
-    // Show install prompt 5s after dashboard loads
-    if (!installDismissed && typeof window !== 'undefined' &&
-        !window.matchMedia('(display-mode: standalone)').matches) {
-      const t = setTimeout(() => setShowInstall(true), 5000)
-      return () => { if (pollRef.current) clearInterval(pollRef.current); clearTimeout(t) }
-    }
-
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, loadOrders])
 
   // ── Login ────────────────────────────────────────────────────
@@ -295,41 +255,8 @@ export default function DriverPage() {
         </div>
       </div>
 
-      {/* PWA Install Banner */}
-      {showInstall && !installDismissed && (
-        <div style={S.installBanner}>
-          <div style={S.installInner}>
-            <div style={S.installIcon}>🚗</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={S.installTitle}>Add BF Driver to Home Screen</p>
-              <p style={S.installSub}>
-                {isIOS
-                  ? 'Tap the Share icon → "Add to Home Screen" for quick access'
-                  : 'Install for quick 1-tap access to your orders'
-                }
-              </p>
-            </div>
-            <button
-              onClick={() => { setShowInstall(false); setInstallDismissed(true) }}
-              style={S.installClose}
-            >✕</button>
-          </div>
-          {!isIOS && deferredInstall.current && (
-            <button
-              onClick={async () => {
-                if (!deferredInstall.current) return
-                await deferredInstall.current.prompt()
-                const { outcome } = await deferredInstall.current.userChoice
-                if (outcome === 'accepted') setShowInstall(false)
-                deferredInstall.current = null
-              }}
-              style={S.installBtn}
-            >
-              Install App
-            </button>
-          )}
-        </div>
-      )}
+      {/* PWA Install Prompt */}
+      <DriverInstallPrompt />
 
       {/* Stats row */}
       <div style={S.statsRow}>
@@ -778,25 +705,6 @@ const S: Record<string, React.CSSProperties> = {
     fontWeight: 600,
     padding: '0.5rem 0.25rem',
   },
-
-  // Install banner
-  installBanner: {
-    margin: '0 1rem 0.75rem',
-    background: '#1c1c1e',
-    border: '1px solid rgba(255,159,10,0.3)',
-    borderRadius: 16,
-    overflow: 'hidden',
-    padding: '0.875rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 10,
-  },
-  installInner: { display: 'flex', alignItems: 'flex-start', gap: 10 },
-  installIcon:  { fontSize: '1.5rem', flexShrink: 0, lineHeight: 1 },
-  installTitle: { fontSize: '0.875rem', fontWeight: 700, color: '#e8e8ed', margin: 0, lineHeight: 1.3 },
-  installSub:   { fontSize: '0.75rem', color: '#636366', margin: '3px 0 0', lineHeight: 1.4 },
-  installClose: { background: 'transparent', border: 'none', color: '#48484e', cursor: 'pointer', fontSize: '0.875rem', padding: '0.25rem', flexShrink: 0 },
-  installBtn:   { background: 'linear-gradient(135deg, #ff9f0a, #ff6b00)', border: 'none', borderRadius: 10, padding: '0.625rem', fontSize: '0.875rem', fontWeight: 700, color: '#fff', cursor: 'pointer', width: '100%' },
 
   // Top bar
   topBar: {
