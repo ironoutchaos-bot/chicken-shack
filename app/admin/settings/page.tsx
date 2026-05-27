@@ -598,12 +598,21 @@ function BannerImagesRow({
       const form = new FormData()
       form.append('file', file)
       try {
-        const res = await fetch('/api/admin/banner-images', { method: 'POST', body: form })
-        const data = await res.json()
-        if (!res.ok) { setError(data.error ?? 'Upload failed'); break }
+        const res  = await fetch('/api/admin/banner-images', { method: 'POST', body: form })
+        const text = await res.text()
+        let data: { error?: string; url?: string } = {}
+        try { data = JSON.parse(text) } catch { /* non-JSON response */ }
+        if (!res.ok) {
+          setError(data.error ?? `Upload failed (${res.status}): ${text.slice(0, 200)}`)
+          break
+        }
+        if (!data.url) { setError('Upload succeeded but no URL returned'); break }
         onChange([...images, data.url])
-        images = [...images, data.url] // update for next iteration
-      } catch { setError('Network error'); break }
+        images = [...images, data.url]
+      } catch (e) {
+        setError(`Network error: ${e instanceof Error ? e.message : String(e)}`)
+        break
+      }
     }
     setUploading(false)
     if (fileRef.current) fileRef.current.value = ''

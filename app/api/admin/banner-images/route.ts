@@ -36,24 +36,12 @@ async function getBannerImages(): Promise<string[]> {
 }
 
 async function setBannerImages(urls: string[]) {
-  // Try PATCH first (update existing row)
-  const patch = await fetch(
-    `${SUPA_URL()}/rest/v1/settings?key=eq.banner_images`,
-    {
-      method: 'PATCH',
-      headers: { ...srvHeaders({ 'Content-Type': 'application/json' }), 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ value: urls, updated_at: new Date().toISOString() }),
-    }
-  )
-  const patched = patch.ok && patch.status !== 404
-  if (!patched) {
-    // Row doesn't exist yet — insert
-    await fetch(`${SUPA_URL()}/rest/v1/settings`, {
-      method: 'POST',
-      headers: { ...srvHeaders({ 'Content-Type': 'application/json' }), 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ key: 'banner_images', value: urls }),
-    })
-  }
+  // Use proper upsert — works whether the row exists or not
+  await fetch(`${SUPA_URL()}/rest/v1/settings`, {
+    method:  'POST',
+    headers: { ...srvHeaders({ 'Content-Type': 'application/json' }), 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+    body:    JSON.stringify({ key: 'banner_images', value: urls }),
+  })
 }
 
 // POST — upload a single image, returns { url }
