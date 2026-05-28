@@ -11,6 +11,7 @@ import HistoryTab from './components/HistoryTab'
 import LoginDrawer from './components/LoginDrawer'
 import CartSheet from './components/CartSheet'
 import PincodeGate from './components/PincodeGate'
+import EntryPage from './components/EntryPage'
 import InstallPrompt from './components/InstallPrompt'
 import VisitTracker from './components/VisitTracker'
 import { usePushNotifications } from './hooks/usePushNotifications'
@@ -26,7 +27,8 @@ export default function OrderApp() {
   const [activeCount,          setActiveCount]          = useState(0)
   const [activeOrdersRefresh,  setActiveOrdersRefresh]  = useState(0)
 
-  // Pincode gate
+  // Entry / pincode gate
+  const [entryDone, setEntryDone] = useState(false)
   const [pincode,  setPincode]  = useState<string | null>(null)
   const [areaName, setAreaName] = useState('')
 
@@ -215,7 +217,9 @@ export default function OrderApp() {
     <div className="bg-stone-100 flex items-start justify-center overflow-hidden lg:overflow-visible" style={{ height: '100dvh', colorScheme: 'only light' }}>
       <div className="w-full max-w-[430px] lg:max-w-none h-full bg-white flex flex-col lg:flex-row shadow-app">
 
-        {!pincode ? (
+        {!entryDone ? (
+          <EntryPage onContinue={() => setEntryDone(true)} />
+        ) : !pincode ? (
           <PincodeGate onVerified={handlePincodeVerified} />
         ) : (
           <>
