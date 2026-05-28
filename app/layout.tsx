@@ -118,6 +118,23 @@ export default function RootLayout({
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="color-scheme" content="only light" />
+        {/* Force light mode — inline so it can't be cached separately */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          :root, html, body, #__next {
+            color-scheme: only light !important;
+            forced-color-adjust: none !important;
+            -webkit-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            background-color: #ffffff !important;
+          }
+          @media (prefers-color-scheme: dark) {
+            :root, html, body, #__next {
+              color-scheme: only light !important;
+              background-color: #ffffff !important;
+              color: #1a1109 !important;
+            }
+          }
+        `}} />
         {/* iOS splash screens */}
         <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="/icons/splash-1242x2688.png" />
         <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="/icons/splash-1125x2436.png" />
