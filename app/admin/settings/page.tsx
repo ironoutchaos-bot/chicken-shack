@@ -193,6 +193,7 @@ export default function AdminSettingsPage() {
         </Section>
 
         {/* ── Danger Zone ──────────────────────────── */}
+        <ResetVisitorsSection />
         <ResetDataSection />
 
       </div>
@@ -502,6 +503,74 @@ function BannerImagesRow({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function ResetVisitorsSection() {
+  const [state,  setState]  = useState<'idle' | 'confirming' | 'running' | 'done' | 'error'>('idle')
+  const [errMsg, setErrMsg] = useState('')
+
+  async function runReset() {
+    setState('running')
+    try {
+      const res  = await fetch('/api/admin/reset-visitors', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { setErrMsg(data.error ?? `Error ${res.status}`); setState('error'); return }
+      setState('done')
+    } catch (e) {
+      setErrMsg(e instanceof Error ? e.message : String(e))
+      setState('error')
+    }
+  }
+
+  return (
+    <div style={{ border: '2px solid #bfdbfe', borderRadius: 14, overflow: 'hidden', marginTop: 8 }}>
+      <div style={{ background: '#eff6ff', padding: '1.125rem 1.5rem', borderBottom: '1px solid #bfdbfe' }}>
+        <p style={{ fontWeight: 700, color: '#1d4ed8', fontSize: '0.9375rem', margin: 0 }}>📊 Reset Visitor Counts</p>
+        <p style={{ fontSize: '0.8125rem', color: '#1e40af', margin: '3px 0 0' }}>
+          Resets total visits and unique device counts to zero. Does not affect orders or customer data.
+        </p>
+      </div>
+      <div style={{ padding: '1.25rem 1.5rem' }}>
+        {state === 'idle' && (
+          <button
+            onClick={() => setState('confirming')}
+            style={{ background: '#dbeafe', color: '#1d4ed8', border: '2px solid #bfdbfe', borderRadius: 10, padding: '0.55rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+          >
+            Reset Visitor Counts…
+          </button>
+        )}
+        {state === 'confirming' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <p style={{ margin: 0, fontWeight: 700, color: '#1d4ed8', fontSize: '0.9rem' }}>
+              Reset total visits and unique devices to 0?
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={runReset}
+                style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: 10, padding: '0.55rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+              >
+                Yes, reset
+              </button>
+              <button
+                onClick={() => setState('idle')}
+                style={{ background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, padding: '0.55rem 1.25rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {state === 'running' && <p style={{ color: '#1d4ed8', fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>⏳ Resetting…</p>}
+        {state === 'done'    && <p style={{ color: '#15803d', fontWeight: 700, fontSize: '0.875rem', margin: 0 }}>✅ Visitor counts reset to zero.</p>}
+        {state === 'error'   && <p style={{ color: '#dc2626', fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>❌ {errMsg}</p>}
+        {state === 'done' && (
+          <button onClick={() => setState('idle')} style={{ marginTop: 10, background: '#f3f4f6', color: '#374151', border: 'none', borderRadius: 10, padding: '0.45rem 1rem', fontWeight: 600, fontSize: '0.8125rem', cursor: 'pointer' }}>
+            Done
+          </button>
+        )}
+      </div>
     </div>
   )
 }
