@@ -15,14 +15,14 @@ const promises = [
     body: 'It is a promise.',
   },
   {
+    icon: '⏱️',
+    heading: 'We only start the process',
+    body: 'once your order is placed.',
+  },
+  {
     icon: '🚫',
     heading: 'We never sell stored meat.',
     body: 'Fresh, directly to your kitchen.',
-  },
-  {
-    icon: '⏱️',
-    heading: 'We only start cutting',
-    body: 'once your order is placed.',
   },
 ]
 
@@ -121,10 +121,10 @@ export default function EntryPage({ onContinue }: Props) {
         />
 
         <p
-          className="text-xs text-center leading-relaxed"
-          style={{ color: '#6B5744' }}
+          className="text-base font-semibold text-center italic"
+          style={{ color: '#D97706' }}
         >
-          FSSAI Licensed · No preservatives · Farm to kitchen
+          Because we care.
         </p>
       </div>
 
