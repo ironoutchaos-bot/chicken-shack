@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
     const total        = parseInt(contentRange.split('/')[1] ?? '0', 10)
     const sequence     = (isNaN(total) ? 0 : total) + 1  // this order is #(count_before + 1)
 
-    const invoiceNumber = `BLURU_${String(sequence).padStart(2, '0')}`
+    const invoiceNumber = `BF${String(sequence).padStart(5, '0')}`
     return NextResponse.json({ invoice_number: invoiceNumber })
 
   } catch (err) {

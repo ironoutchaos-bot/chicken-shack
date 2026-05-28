@@ -87,7 +87,7 @@ async function downloadInvoice(order: OrderRow) {
   const dateStr     = date.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
 
   // Fetch sequential invoice number from server
-  let invoiceNo = `BLURU_${order.id.slice(0, 4).toUpperCase()}`
+  let invoiceNo = `BF00001`
   try {
     const r = await fetch(`/api/orders/invoice-number?order_id=${encodeURIComponent(order.id)}`)
     if (r.ok) {
@@ -146,7 +146,7 @@ async function downloadInvoice(order: OrderRow) {
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>Tax Invoice ${invoiceNo}</title>
+  <title>Tax Invoice - ${invoiceNo} - B'LURU Fresh Chicken</title>
   <style>
     *  { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; font-size: 11px; color: #111; background: #fff; padding: 28px 32px; }
@@ -188,9 +188,6 @@ async function downloadInvoice(order: OrderRow) {
 
     /* ── Grand total ── */
     .grand-total { text-align: right; font-size: 16px; font-weight: 700; margin: 18px 0 4px; }
-    .signatory { text-align: right; margin-top: 32px; font-size: 11px; }
-    .signatory .company { font-weight: 700; font-size: 12px; }
-    .sig-line { border-top: 1px solid #aaa; margin: 40px 0 4px; width: 180px; display: inline-block; }
 
     /* ── Footer ── */
     .footer-bar { border-top: 1px solid #aaa; margin-top: 24px; padding-top: 10px; font-size: 9.5px; color: #555; line-height: 1.6; }
@@ -207,7 +204,7 @@ async function downloadInvoice(order: OrderRow) {
       <p class="page-title" style="text-align:left">Tax Invoice</p>
       <div class="seller">
         <span class="sold-by">Sold By: B'LURU Fresh Chicken,</span><br/>
-        <span class="ship-addr">Ship-from Address: No. 951, Thirumenahalli Main Road, Agrahara Layout, Yelahanka, Bengaluru North, Karnataka – 560064</span><br/>
+        <span class="ship-addr">Ship-from Address: Thirumenahalli Main Road, Agrahara Layout, Yelahanka, Bengaluru – 560064, Karnataka</span><br/>
         <span class="gstin">GSTIN – 29MFHPS1801R1ZI</span><br/>
         <span class="gstin">FSSAI License No – 11226331000344</span>
       </div>
@@ -252,12 +249,12 @@ async function downloadInvoice(order: OrderRow) {
         <th>Product</th>
         <th>Title</th>
         <th class="num">Qty</th>
-        <th class="num">Gross Amount ₹</th>
-        <th class="num">Discounts ₹</th>
-        <th class="num">Taxable Value ₹</th>
-        <th class="num">SGST/UTGST ₹</th>
-        <th class="num">CGST ₹</th>
-        <th class="num">Total ₹</th>
+        <th class="num">Gross Amt (Rs.)</th>
+        <th class="num">Discounts (Rs.)</th>
+        <th class="num">Taxable Value (Rs.)</th>
+        <th class="num">SGST/UTGST (Rs.)</th>
+        <th class="num">CGST (Rs.)</th>
+        <th class="num">Total (Rs.)</th>
       </tr>
     </thead>
     <tbody>
@@ -278,19 +275,13 @@ async function downloadInvoice(order: OrderRow) {
     </tfoot>
   </table>
 
-  <!-- Grand total + signatory -->
-  <div class="grand-total">Grand Total &nbsp; ₹ ${order.total_amount.toFixed(2)}</div>
-  <div class="signatory">
-    <div class="company">B'LURU Fresh Chicken</div>
-    <br/><br/><br/>
-    <div class="sig-line"></div><br/>
-    Authorized Signatory
-  </div>
+  <!-- Grand total -->
+  <div class="grand-total">Grand Total &nbsp; Rs. ${order.total_amount.toFixed(2)}</div>
 
   <!-- Footer -->
   <div class="footer-bar">
     <strong>Note:</strong> Fresh chicken is exempt from GST under HSN 0207 (unprocessed poultry meat). SGST and CGST are 0%.<br/>
-    Regd. office: B'LURU Fresh Chicken, No. 951, Thirumenahalli Main Road, Agrahara Layout, Yelahanka, Bengaluru – 560064, Karnataka<br/>
+    Regd. office: B'LURU Fresh Chicken, Thirumenahalli Main Road, Agrahara Layout, Yelahanka, Bengaluru – 560064, Karnataka<br/>
     Contact: +91 70124 88951 | contact@blurufresh.com | www.blurufresh.com
     <div class="eoe">
       <span>E. &amp; O.E.</span>
