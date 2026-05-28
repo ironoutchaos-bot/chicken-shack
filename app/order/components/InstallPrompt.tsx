@@ -104,52 +104,39 @@ export default function InstallPrompt() {
               <p className="text-white font-bold text-lg leading-snug mb-1">
                 Add to your Home Screen
               </p>
-              <p className="text-stone-400 text-sm leading-relaxed mb-5">
-                Get the full app experience — faster loading, easy reordering, and one-tap access every time.
+              <p className="text-stone-400 text-sm leading-relaxed mb-4">
+                3 quick steps — takes less than 10 seconds.
               </p>
 
-              {/* Step-by-step instructions */}
-              <div className="space-y-3 mb-5">
+              {/* Steps */}
+              <div className="space-y-2.5 mb-5">
                 {[
-                  { step: '1', icon: <Share2 size={16} className="text-amber-400" />, text: <>Tap the <span className="text-white font-bold">Share</span> button — the <span className="text-white font-bold">box with an arrow ↑</span> at the <span className="text-white font-bold">bottom centre</span> of your Safari browser</> },
-                  { step: '2', icon: <span className="text-amber-400 text-base leading-none">⊞</span>, text: <>Scroll down and tap <span className="text-white font-bold">"Add to Home Screen"</span></> },
-                  { step: '3', icon: <span className="text-amber-400 text-base leading-none">✓</span>, text: <>Tap <span className="text-white font-bold">Add</span> — done!</> },
+                  { step: '1', icon: '↑', text: <>Tap the <span className="text-white font-bold">Share ↑</span> button at the <span className="text-white font-bold">bottom of Safari</span></> },
+                  { step: '2', icon: '+', text: <>Tap <span className="text-white font-bold">"Add to Home Screen"</span></> },
+                  { step: '3', icon: '✓', text: <>Tap <span className="text-white font-bold">Add</span></> },
                 ].map(({ step, icon, text }) => (
                   <div
                     key={step}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5"
                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}
                   >
                     <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black"
-                      style={{ background: 'rgba(245,158,11,0.18)', color: '#F59E0B' }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-black text-sm"
+                      style={{ background: 'rgba(245,158,11,0.2)', color: '#F59E0B' }}
                     >
                       {step}
                     </div>
-                    <div className="flex items-center gap-2 flex-1">
-                      {icon}
-                      <p className="text-stone-300 text-sm leading-snug">{text}</p>
-                    </div>
+                    <p className="text-stone-300 text-sm leading-snug flex-1">{text}</p>
+                    <span className="text-lg">{icon}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Arrow pointing down to Safari toolbar */}
-              <div className="flex flex-col items-center gap-1.5 mb-1">
-                <div
-                  className="w-full flex items-center gap-2 rounded-2xl px-4 py-2.5"
-                  style={{ background: 'rgba(245,158,11,0.1)', border: '1px dashed rgba(245,158,11,0.35)' }}
-                >
-                  <Share2 size={15} className="text-amber-400 shrink-0" />
-                  <p className="text-amber-300 text-xs leading-snug">
-                    Can&apos;t find it? The Share button looks like a <span className="font-bold text-white">box with an upward arrow ↑</span> and sits in the <span className="font-bold text-white">middle of the bottom bar</span> in Safari.
-                  </p>
-                </div>
-                <div className="w-px h-3" style={{ background: 'rgba(245,158,11,0.4)' }} />
-                <div
-                  className="w-0 h-0"
-                  style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '6px solid rgba(245,158,11,0.5)' }}
-                />
+              {/* Arrow pointing to Safari bar */}
+              <div className="flex flex-col items-center gap-1 mb-1">
+                <p className="text-stone-600 text-xs">Share button is down here</p>
+                <div className="w-px h-3" style={{ background: 'rgba(245,158,11,0.35)' }} />
+                <div className="w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '6px solid rgba(245,158,11,0.45)' }} />
               </div>
             </div>
           </div>
