@@ -148,6 +148,29 @@ export async function POST(req: NextRequest) {
 
   const verifiedTotal = Math.max(0, subtotal + deliveryFee - serverDiscount)
 
+  // ── Ensure profile exists (guards against FK violation after DB reset) ──────
+  try {
+    const profileCheck = await fetch(
+      `${SUPA_URL()}/rest/v1/profiles?id=eq.${encodeURIComponent(String(user_id))}&select=id&limit=1`,
+      { headers: srvHeaders(), signal: AbortSignal.timeout(6_000) }
+    )
+    if (profileCheck.ok) {
+      const rows = await profileCheck.json()
+      if (!Array.isArray(rows) || rows.length === 0) {
+        // Profile missing — create a minimal one so the FK constraint passes
+        await fetch(`${SUPA_URL()}/rest/v1/profiles`, {
+          method:  'POST',
+          headers: srvHeaders({ 'Prefer': 'return=minimal' }),
+          body: JSON.stringify({
+            id:           user_id,
+            phone_number: body.customer_phone ?? '',
+            full_name:    body.customer_name  ?? '',
+          }),
+        })
+      }
+    }
+  } catch { /* best-effort — insert will surface the FK error if it still fails */ }
+
   // ── Build insert payload ───────────────────────────────────────────────────
   const insert: Record<string, unknown> = {
     user_id,
