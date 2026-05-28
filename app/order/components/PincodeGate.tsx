@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { MapPin, Loader2, RotateCcw } from 'lucide-react'
+import Image from 'next/image'
 
 interface Props {
   onVerified: (pincode: string, areaName: string) => void
@@ -16,35 +17,22 @@ export default function PincodeGate({ onVerified }: Props) {
   const [status,    setStatus]    = useState<'idle' | 'not_found' | 'error'>('idle')
   const [checking,  setChecking]  = useState(false)  // kept for legacy; no longer blocks UI
 
-  // On mount: restore saved pincode INSTANTLY from localStorage — no API call
-  // needed on every refresh. The area name is also cached so the header shows
-  // the right label straight away.
-  //
-  // We do a background re-verify (fire-and-forget) ONLY to handle the edge case
-  // where a pincode was removed from the delivery zone. If it fails or the network
-  // is unavailable, the user still gets into the app; invalid pincodes are caught
-  // again at order placement time (AddressSheet validates before confirming).
   useEffect(() => {
     const saved     = localStorage.getItem(STORAGE_KEY)
     const savedArea = localStorage.getItem(STORAGE_AREA_KEY) ?? ''
 
     if (!saved) { return }
 
-    // Immediately unblock the UI with the cached values — zero network latency
     onVerified(saved, savedArea)
 
-    // Background re-verify: silently clear the cache if the pincode is no longer
-    // in the delivery zone (e.g. it was removed by admin). Non-blocking.
     fetch('/api/pincodes')
       .then(r => r.json())
       .then((list: { pincode: string; area_name: string }[]) => {
         const match = list.find(p => p.pincode === saved)
         if (!match) {
-          // Pincode removed from zone — clear cache; next app open will show gate
           localStorage.removeItem(STORAGE_KEY)
           localStorage.removeItem(STORAGE_AREA_KEY)
         } else if (match.area_name !== savedArea) {
-          // Area name changed — update the cache
           localStorage.setItem(STORAGE_AREA_KEY, match.area_name)
         }
       })
@@ -75,66 +63,34 @@ export default function PincodeGate({ onVerified }: Props) {
 
   if (checking) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center" style={{ background: '#FDF8F0' }}>
         <Loader2 size={28} className="animate-spin text-amber-500" />
       </div>
     )
   }
 
   return (
-    <div className="flex-1 flex flex-col" style={{ background: '#FDF8F0' }}>
-      {/* Top brand bar */}
-      <div
-        style={{
-          background: 'linear-gradient(180deg, #0D0601 0%, #180C02 100%)',
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
-        }}
-        className="px-5 py-4 flex items-center gap-3"
-      >
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{
-            background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-            boxShadow: '0 0 16px rgba(251,191,36,0.45)',
-          }}
-        >
-          <span className="text-[16px] leading-none">🐔</span>
-        </div>
-        <div>
-          <span
-            className="font-black text-sm tracking-widest block"
-            style={{ color: '#F59E0B', letterSpacing: '0.12em' }}
-          >
-            B&apos;LURU FRESH
-          </span>
-          <span className="text-[10px] font-medium" style={{ color: '#6B5744' }}>Fresh Chicken Delivery</span>
-        </div>
-      </div>
-
+    <div
+      className="flex-1 flex flex-col items-center justify-center px-6"
+      style={{
+        background: '#FDF8F0',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
+      }}
+    >
       {status !== 'not_found' ? (
-        /* ── Enter pincode ── */
-        <div className="flex-1 flex flex-col items-center justify-center px-6 gap-7">
-          {/* Hero */}
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div
-              className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl"
-              style={{
-                background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
-                boxShadow: '0 8px 24px rgba(217,119,6,0.2)',
-              }}
-            >
-              📍
-            </div>
-            <div>
-              <h2 className="text-xl font-black tracking-tight" style={{ color: '#1C0F00' }}>
-                Where should we deliver?
-              </h2>
-              <p className="text-sm mt-1.5 leading-snug" style={{ color: '#8B7355' }}>
-                Enter your pincode and we&apos;ll check<br />if we deliver to your area.
-              </p>
-            </div>
-          </div>
+        <div className="w-full max-w-sm flex flex-col items-center gap-8">
+          {/* Logo */}
+          <Image
+            src="/bluru_logo.png"
+            alt="B'LURU Fresh"
+            width={180}
+            height={180}
+            className="object-contain"
+            priority
+          />
 
+          {/* Pincode input */}
           <div className="w-full space-y-3">
             <input
               type="tel"
@@ -143,7 +99,7 @@ export default function PincodeGate({ onVerified }: Props) {
               value={pincode}
               onChange={e => { setPincode(e.target.value.replace(/\D/g, '')); setStatus('idle') }}
               onKeyDown={e => e.key === 'Enter' && check()}
-              placeholder="6-digit pincode"
+              placeholder="Enter your pincode"
               autoFocus
               className="w-full text-center text-2xl font-black tracking-[0.3em] rounded-2xl px-4 py-4 outline-none transition-all placeholder:tracking-normal placeholder:text-base placeholder:font-normal"
               style={{
@@ -151,8 +107,14 @@ export default function PincodeGate({ onVerified }: Props) {
                 border: '2px solid #FDE68A',
                 color: '#1C0F00',
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = '#D97706'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(217,119,6,0.12)' }}
-              onBlur={e => { e.currentTarget.style.borderColor = '#FDE68A'; e.currentTarget.style.boxShadow = 'none' }}
+              onFocus={e => {
+                e.currentTarget.style.borderColor = '#D97706'
+                e.currentTarget.style.boxShadow = '0 0 0 4px rgba(217,119,6,0.12)'
+              }}
+              onBlur={e => {
+                e.currentTarget.style.borderColor = '#FDE68A'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
             />
 
             {status === 'error' && (
@@ -172,29 +134,20 @@ export default function PincodeGate({ onVerified }: Props) {
               {loading ? 'Checking…' : 'Check Availability'}
             </button>
           </div>
-
-          {/* Trust badges */}
-          <div className="flex items-center gap-3 flex-wrap justify-center">
-            {['⚡ Delivery within 1 hour', '🥩 Farm fresh', '🔒 FSSAI Licensed'].map(tag => (
-              <span
-                key={tag}
-                className="text-[10px] font-semibold px-2.5 py-1.5 rounded-full"
-                style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
         </div>
       ) : (
         /* ── Not in delivery zone ── */
-        <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6 text-center">
-          <div
-            className="w-24 h-24 rounded-3xl flex items-center justify-center text-5xl"
-            style={{ background: '#FEF3C7', boxShadow: '0 8px 24px rgba(217,119,6,0.15)' }}
-          >
-            🗺️
-          </div>
+        <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
+          {/* Logo */}
+          <Image
+            src="/bluru_logo.png"
+            alt="B'LURU Fresh"
+            width={140}
+            height={140}
+            className="object-contain"
+            priority
+          />
+
           <div className="space-y-2">
             <h2 className="text-xl font-black" style={{ color: '#1C0F00' }}>We&apos;ll be there soon!</h2>
             <p className="text-sm leading-relaxed" style={{ color: '#8B7355' }}>
