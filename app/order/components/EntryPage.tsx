@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react'
 
-const SEEN_KEY = 'bf-entry-seen'
-
 interface Props {
   onContinue: () => void
 }
@@ -30,18 +28,11 @@ export default function EntryPage({ onContinue }: Props) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    // Skip if already seen
-    if (localStorage.getItem(SEEN_KEY)) {
-      onContinue()
-      return
-    }
-    // Fade in
     const t = setTimeout(() => setVisible(true), 60)
     return () => clearTimeout(t)
-  }, [onContinue])
+  }, [])
 
   function handleContinue() {
-    localStorage.setItem(SEEN_KEY, '1')
     onContinue()
   }
 
@@ -124,7 +115,7 @@ export default function EntryPage({ onContinue }: Props) {
           className="text-base font-semibold text-center italic"
           style={{ color: '#D97706' }}
         >
-          Because we care.
+          Because we care. ❤️
         </p>
       </div>
 
