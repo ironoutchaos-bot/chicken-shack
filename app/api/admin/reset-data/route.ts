@@ -84,7 +84,25 @@ export async function POST(req: NextRequest) {
     results.auth_users = `error: ${e}`
   }
 
-  // ── 4. Reset coupon usage tracker ──────────────────────────────────────
+  // ── 4. Reset visitor counters ──────────────────────────────────────────
+  try {
+    for (const key of ['shop_visits', 'shop_unique_devices', 'shop_device_ids']) {
+      const defaultVal = key === 'shop_device_ids' ? {} : 0
+      await fetch(
+        `${SUPA_URL()}/rest/v1/settings?key=eq.${encodeURIComponent(key)}`,
+        {
+          method:  'PATCH',
+          headers: srvHeaders({ 'Prefer': 'return=minimal' }),
+          body:    JSON.stringify({ value: defaultVal }),
+        }
+      )
+    }
+    results.visitors = 'reset'
+  } catch (e) {
+    results.visitors = `error: ${e}`
+  }
+
+  // ── 5. Reset coupon usage tracker ──────────────────────────────────────
   try {
     // PATCH to empty object — same reliable upsert pattern
     const patch = await fetch(

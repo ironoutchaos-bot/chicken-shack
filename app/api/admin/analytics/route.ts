@@ -56,13 +56,15 @@ export async function GET(req: NextRequest) {
       fetch(`${SUPA_URL()}/rest/v1/profiles?select=id,phone_number,full_name,created_at`, {
         headers: srvHeaders(),
       }),
-      fetch(`${SUPA_URL()}/rest/v1/settings?key=eq.shop_visits&select=value`, { headers: srvHeaders() }),
+      fetch(`${SUPA_URL()}/rest/v1/settings?key=in.(shop_visits,shop_unique_devices)&select=key,value`, { headers: srvHeaders() }),
     ])
 
     const orders: Order[] = await ordersRes.json()
     const profiles: Profile[] = await profilesRes.json()
-    const visitsRows: { value: unknown }[] = await visitsRes.json().catch(() => [])
-    const shopVisits = typeof visitsRows[0]?.value === 'number' ? visitsRows[0].value : 0
+    const visitsRows: { key: string; value: unknown }[] = await visitsRes.json().catch(() => [])
+    const visitsMap  = Object.fromEntries(visitsRows.map(r => [r.key, r.value]))
+    const shopVisits        = typeof visitsMap['shop_visits']         === 'number' ? visitsMap['shop_visits']         : 0
+    const shopUniqueDevices = typeof visitsMap['shop_unique_devices'] === 'number' ? visitsMap['shop_unique_devices'] : 0
 
     // --- Date range filtering ---
     const range = req.nextUrl.searchParams.get('range') ?? '30d'
@@ -105,6 +107,7 @@ export async function GET(req: NextRequest) {
       avgOrderValue,
       totalCustomers: profiles.length,
       shopVisits,
+      shopUniqueDevices,
     }
 
     // --- Status breakdown ---

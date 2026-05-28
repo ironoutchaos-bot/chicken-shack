@@ -15,6 +15,7 @@ type Summary = {
   avgOrderValue: number
   totalCustomers: number
   shopVisits: number
+  shopUniqueDevices: number
 }
 
 type StatusItem      = { status: string; count: number }
@@ -206,7 +207,8 @@ export default function AdminAnalyticsPage() {
             <SummaryCard label="Cancelled"         value={data.summary.cancelledOrders} />
             <SummaryCard label="Avg Order Value"   value={fmt(data.summary.avgOrderValue)} />
             <SummaryCard label="Total Customers"   value={data.summary.totalCustomers} />
-            <SummaryCard label="Shop Visitors"     value={(data.summary.shopVisits ?? 0).toLocaleString('en-IN')} />
+            <SummaryCard label="Total Visits"      value={(data.summary.shopVisits ?? 0).toLocaleString('en-IN')} />
+            <SummaryCard label="Unique Devices"    value={(data.summary.shopUniqueDevices ?? 0).toLocaleString('en-IN')} />
             <SummaryCard
               label="Order Conversion"
               value={
