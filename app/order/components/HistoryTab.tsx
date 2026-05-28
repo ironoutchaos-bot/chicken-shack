@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, Loader2, RotateCcw, ChevronDown, Archive, Scissors, CheckCircle2, XCircle } from 'lucide-react'
+import { RefreshCw, Loader2, RotateCcw, ChevronDown, Archive, Scissors, CheckCircle2, XCircle, Download } from 'lucide-react'
 import { type OrderRow, type CartItem } from '@/lib/supabase-browser'
 import type { AuthUser } from '@/lib/auth-types'
 
@@ -78,6 +78,160 @@ function GroupHeader({ label }: { label: string }) {
       <div className="flex-1 h-px" style={{ background: 'rgba(217,119,6,0.15)' }} />
     </div>
   )
+}
+
+// ─── Invoice PDF generator ────────────────────────────────────────────────────
+
+function downloadInvoice(order: OrderRow) {
+  const date     = new Date(order.created_at)
+  const dateStr  = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+  const timeStr  = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+  const invoiceNo = `BF-${order.id.slice(0, 8).toUpperCase()}`
+
+  const subtotal    = order.items.reduce((s, i) => s + i.pricePerKg * i.quantity, 0)
+  const deliveryFee = Math.max(0, order.total_amount - subtotal)
+
+  const itemRows = order.items.map((item, i) => `
+    <tr>
+      <td class="sl">${i + 1}</td>
+      <td>${item.name}</td>
+      <td class="num">${item.quantity} kg</td>
+      <td class="num">₹${item.pricePerKg}/kg</td>
+      <td class="num">₹${(item.pricePerKg * item.quantity).toFixed(2)}</td>
+    </tr>
+  `).join('')
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice ${invoiceNo} — B'LURU Fresh</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; color: #1C0F00; background: #fff; padding: 36px; font-size: 13px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #D97706; padding-bottom: 18px; margin-bottom: 24px; }
+    .brand-name { font-size: 22px; font-weight: 900; color: #B45309; letter-spacing: 0.06em; }
+    .brand-sub  { font-size: 10px; color: #A8896A; margin-top: 2px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .brand-fssai { font-size: 9px; color: #C4A882; margin-top: 6px; }
+    .invoice-meta { text-align: right; }
+    .invoice-meta h2 { font-size: 18px; font-weight: 900; color: #D97706; letter-spacing: 0.04em; }
+    .invoice-meta p  { font-size: 11px; color: #78716C; margin-top: 3px; }
+    .invoice-meta .inv-no { font-size: 12px; font-weight: 700; color: #1C0F00; margin-top: 6px; }
+    .section-title { font-size: 9px; font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; color: #B45309; margin-bottom: 8px; }
+    .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+    .detail-box { background: #FFFDF9; border: 1px solid rgba(217,119,6,0.18); border-radius: 8px; padding: 12px 14px; }
+    .detail-box p { font-size: 12px; line-height: 1.7; color: #374151; }
+    .detail-box strong { color: #1C0F00; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    thead tr { background: #FEF3C7; }
+    thead th { padding: 9px 10px; text-align: left; font-size: 9px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; color: #92400E; border-bottom: 1.5px solid #FDE68A; }
+    thead th.num { text-align: right; }
+    tbody tr { border-bottom: 1px solid rgba(217,119,6,0.1); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody td { padding: 9px 10px; font-size: 12px; color: #374151; }
+    tbody td.sl { color: #C4A882; font-size: 10px; width: 28px; }
+    tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .totals { margin-left: auto; width: 260px; border: 1px solid rgba(217,119,6,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
+    .totals-row { display: flex; justify-content: space-between; padding: 9px 14px; font-size: 12px; border-bottom: 1px solid rgba(217,119,6,0.1); }
+    .totals-row:last-child { border-bottom: none; background: #FEF3C7; font-weight: 900; font-size: 14px; color: #1C0F00; }
+    .totals-row .label { color: #78716C; }
+    .totals-row.gst .label { color: #A8896A; font-style: italic; }
+    .totals-row .value { font-variant-numeric: tabular-nums; color: #1C0F00; }
+    .totals-row.gst .value { color: #6B7280; }
+    .footer { border-top: 1px dashed rgba(217,119,6,0.3); padding-top: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .footer p { font-size: 10px; color: #A8896A; line-height: 1.6; }
+    .thank-you { font-size: 13px; font-weight: 900; color: #B45309; }
+    @media print {
+      body { padding: 20px; }
+      @page { margin: 1cm; size: A4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand-name">B'LURU FRESH</div>
+      <div class="brand-sub">Fresh Chicken Delivery · Yelahanka, Bangalore</div>
+      <div class="brand-fssai">FSSAI: 11226331000344 · contact@blurufresh.com</div>
+    </div>
+    <div class="invoice-meta">
+      <h2>INVOICE</h2>
+      <div class="inv-no">${invoiceNo}</div>
+      <p>${dateStr}</p>
+      <p>${timeStr}</p>
+    </div>
+  </div>
+
+  <div class="details-grid">
+    <div class="detail-box">
+      <div class="section-title">Billed To</div>
+      <p>
+        <strong>${order.customer_name ?? 'Customer'}</strong><br/>
+        ${order.customer_phone ? order.customer_phone + '<br/>' : ''}
+        ${order.delivery_address ? [order.delivery_address.houseNumber, order.delivery_address.streetAddress, order.delivery_address.landmark].filter(Boolean).join(', ') + (order.delivery_address.pincode ? '<br/>' + order.delivery_address.pincode : '') : ''}
+      </p>
+    </div>
+    <div class="detail-box">
+      <div class="section-title">Order Info</div>
+      <p>
+        <strong>Order ID:</strong> ${invoiceNo}<br/>
+        <strong>Status:</strong> ${order.order_status.replace(/_/g, ' ')}<br/>
+        <strong>Payment:</strong> ${order.payment_status.toUpperCase()}
+      </p>
+    </div>
+  </div>
+
+  <div class="section-title">Items Ordered</div>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Item</th>
+        <th class="num">Qty</th>
+        <th class="num">Rate</th>
+        <th class="num">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${itemRows}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="totals-row">
+      <span class="label">Subtotal</span>
+      <span class="value">₹${subtotal.toFixed(2)}</span>
+    </div>
+    <div class="totals-row">
+      <span class="label">Delivery Fee</span>
+      <span class="value">${deliveryFee === 0 ? 'FREE' : '₹' + deliveryFee.toFixed(2)}</span>
+    </div>
+    <div class="totals-row gst">
+      <span class="label">GST / Tax</span>
+      <span class="value">₹0.00</span>
+    </div>
+    <div class="totals-row">
+      <span class="label">Total Paid</span>
+      <span class="value">₹${order.total_amount.toFixed(2)}</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>
+      <p>No. 951, Thirumenahalli Main Road, Agrahara Layout<br/>Yelahanka, Bangalore – 560064</p>
+      <p style="margin-top:4px">+91 70124 88951 · www.blurufresh.com</p>
+    </div>
+    <div class="thank-you">Thank you! 🐔</div>
+  </div>
+
+  <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`
+
+  const win = window.open('', '_blank')
+  if (!win) return
+  win.document.write(html)
+  win.document.close()
 }
 
 // ─── Receipt card ─────────────────────────────────────────────────────────────
@@ -231,21 +385,36 @@ function ReceiptCard({
               </span>
             </div>
 
-            {/* Reorder */}
-            {delivered && (
+            {/* Actions */}
+            <div className={`flex gap-2 ${delivered ? '' : 'justify-end'}`}>
+              {delivered && (
+                <button
+                  onClick={() => onReorder(order)}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-black active:scale-[0.98] transition-all"
+                  style={{
+                    background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 55%, #B45309 100%)',
+                    boxShadow: '0 4px 16px rgba(217,119,6,0.38)',
+                    color: '#fff',
+                  }}
+                >
+                  <RotateCcw size={13} strokeWidth={2.5} />
+                  Reorder
+                </button>
+              )}
               <button
-                onClick={() => onReorder(order)}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-black active:scale-[0.98] transition-all"
+                onClick={() => downloadInvoice(order)}
+                className="flex items-center justify-center gap-2 rounded-2xl py-3.5 px-4 text-sm font-black active:scale-[0.98] transition-all"
                 style={{
-                  background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 55%, #B45309 100%)',
-                  boxShadow: '0 4px 16px rgba(217,119,6,0.38)',
-                  color: '#fff',
+                  background: '#FFFFFF',
+                  border: '1.5px solid rgba(217,119,6,0.25)',
+                  color: '#B45309',
+                  boxShadow: '0 2px 8px rgba(124,45,18,0.07)',
                 }}
               >
-                <RotateCcw size={13} strokeWidth={2.5} />
-                Reorder
+                <Download size={13} strokeWidth={2.5} />
+                Invoice
               </button>
-            )}
+            </div>
           </div>
         </>
       )}
