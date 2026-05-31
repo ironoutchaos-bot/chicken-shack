@@ -32,18 +32,40 @@ async function getDriverId(req: NextRequest): Promise<string | null> {
   return driverId
 }
 
-// GET /api/driver/orders — return orders assigned to this driver
+// GET /api/driver/orders — return orders assigned to this driver + all unassigned active orders
 export async function GET(req: NextRequest) {
   const driverId = await getDriverId(req)
   if (!driverId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const res = await fetch(
-    `${SUPA_URL()}/rest/v1/orders?driver_id=eq.${encodeURIComponent(driverId)}&order=created_at.desc&select=*`,
-    { headers: srvHeaders() }
-  )
+  // Fetch both in parallel:
+  // 1. Orders explicitly assigned to this driver (any status, including delivered history)
+  // 2. Unassigned active orders (so driver sees new orders even if auto-assign didn't fire)
+  const [assignedRes, unassignedRes] = await Promise.all([
+    fetch(
+      `${SUPA_URL()}/rest/v1/orders?driver_id=eq.${encodeURIComponent(driverId)}&order=created_at.desc&select=*`,
+      { headers: srvHeaders() }
+    ),
+    fetch(
+      `${SUPA_URL()}/rest/v1/orders?driver_id=is.null&order_status=not.in.(delivered,cancelled)&order=created_at.desc&select=*`,
+      { headers: srvHeaders() }
+    ),
+  ])
 
-  if (!res.ok) return NextResponse.json({ error: 'DB error' }, { status: 500 })
+  if (!assignedRes.ok || !unassignedRes.ok) {
+    return NextResponse.json({ error: 'DB error' }, { status: 500 })
+  }
 
-  const data = await res.json()
-  return NextResponse.json(Array.isArray(data) ? data : [])
+  const assigned:   object[] = await assignedRes.json().catch(() => [])
+  const unassigned: object[] = await unassignedRes.json().catch(() => [])
+
+  // Merge, deduplicate by id, keep assigned first (they may overlap after trigger fires)
+  const seen   = new Set<string>()
+  const merged = [...assigned, ...unassigned].filter((o: object) => {
+    const id = (o as { id: string }).id
+    if (seen.has(id)) return false
+    seen.add(id)
+    return true
+  })
+
+  return NextResponse.json(merged)
 }
