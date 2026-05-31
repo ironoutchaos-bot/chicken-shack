@@ -1,13 +1,27 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getIronSession } from 'iron-session'
+import { cookies } from 'next/headers'
+import { sessionOptions, type SessionData } from '@/lib/session'
+import { randomUUID } from 'crypto'
 
 export async function POST(req: NextRequest) {
-  const { amount_inr, customer_id, customer_name, customer_email, customer_phone, return_url } = await req.json()
+  // Require authenticated session — prevents third parties creating orders
+  // on the merchant's Cashfree account
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+  if (!session.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { amount_inr, customer_name, customer_email, customer_phone, return_url } = await req.json()
 
   if (!amount_inr || amount_inr < 1) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
   }
+
+  // Use authenticated user ID from session — ignore any client-supplied customer_id
+  const customer_id = session.userId
 
   const APP_ID  = process.env.CASHFREE_APP_ID
   const SECRET  = process.env.CASHFREE_SECRET_KEY
@@ -15,7 +29,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Payment not configured' }, { status: 503 })
   }
 
-  const order_id = `cf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  // Use a cryptographically random UUID to prevent order ID collisions/guessing
+  const order_id = `cf_${randomUUID().replace(/-/g, '').slice(0, 16)}`
 
   const cfRes = await fetch('https://api.cashfree.com/pg/orders', {
     method: 'POST',

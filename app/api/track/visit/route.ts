@@ -56,7 +56,10 @@ async function setSetting(key: string, value: unknown) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
-    const deviceId: string = typeof body.device_id === 'string' ? body.device_id : 'dev_unknown'
+    // Truncate device ID to prevent oversized keys in the device set JSON
+    const deviceId: string = typeof body.device_id === 'string'
+      ? body.device_id.slice(0, 64)
+      : 'dev_unknown'
 
     // ── 1. Increment total session visits ─────────────────────────────────
     const currentVisits = typeof await getSetting('shop_visits') === 'number'

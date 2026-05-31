@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { notifyDriverAssignment } from '@/lib/push-notify'
+import { isAdminRequest } from '@/app/api/admin/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
@@ -22,12 +23,8 @@ function srvHeaders(extra?: Record<string, string>) {
   }
 }
 
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
-}
-
 export async function POST(req: NextRequest) {
-  if (!isAdmin(req)) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

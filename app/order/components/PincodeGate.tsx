@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { MapPin, Loader2, RotateCcw } from 'lucide-react'
 
 interface Props {
@@ -15,6 +15,9 @@ export default function PincodeGate({ onVerified }: Props) {
   const [loading,   setLoading]   = useState(false)
   const [status,    setStatus]    = useState<'idle' | 'not_found' | 'error'>('idle')
   const [checking,  setChecking]  = useState(false)  // kept for legacy; no longer blocks UI
+  // Run-once guard: prevents the restore effect from firing a second time if
+  // the parent re-renders and produces a new onVerified reference.
+  const restoredRef = useRef(false)
 
   // On mount: restore saved pincode INSTANTLY from localStorage — no API call
   // needed on every refresh. The area name is also cached so the header shows
@@ -25,6 +28,9 @@ export default function PincodeGate({ onVerified }: Props) {
   // is unavailable, the user still gets into the app; invalid pincodes are caught
   // again at order placement time (AddressSheet validates before confirming).
   useEffect(() => {
+    if (restoredRef.current) return
+    restoredRef.current = true
+
     const saved     = localStorage.getItem(STORAGE_KEY)
     const savedArea = localStorage.getItem(STORAGE_AREA_KEY) ?? ''
 

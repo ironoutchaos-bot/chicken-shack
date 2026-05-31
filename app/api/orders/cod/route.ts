@@ -18,6 +18,9 @@ export const dynamic = 'force-dynamic'
  * to prevent anonymous abuse.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { getIronSession } from 'iron-session'
+import { cookies } from 'next/headers'
+import { sessionOptions, type SessionData } from '@/lib/session'
 import { type Coupon } from '@/app/api/coupons/route'
 import { notifyDriverAssignment } from '@/lib/push-notify'
 
@@ -59,13 +62,21 @@ async function saveSettingKey(key: string, value: unknown) {
 }
 
 export async function POST(req: NextRequest) {
+  // Enforce authenticated user — read user_id from session, ignore body value
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+  if (!session.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   let body: Record<string, unknown>
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { user_id, items, payment_status, order_status } = body
-  if (!user_id || !items || !payment_status) {
+  // Override any client-supplied user_id with the authenticated session value
+  const user_id      = session.userId
+  const { items, payment_status, order_status } = body
+  if (!items || !payment_status) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
@@ -239,6 +250,12 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  // Require authenticated session — prevents anonymous payment status manipulation
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+  if (!session.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   let body: Record<string, unknown>
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -247,6 +264,25 @@ export async function PATCH(req: NextRequest) {
   const { cashfree_order_id, payment_status } = body
   if (!cashfree_order_id || !payment_status) {
     return NextResponse.json({ error: 'Missing cashfree_order_id or payment_status' }, { status: 400 })
+  }
+
+  // When marking as paid, verify with Cashfree server-side first
+  if (payment_status === 'paid') {
+    const APP_ID = process.env.CASHFREE_APP_ID
+    const SECRET = process.env.CASHFREE_SECRET_KEY
+    if (APP_ID && SECRET) {
+      try {
+        const cfRes = await fetch(`https://api.cashfree.com/pg/orders/${cashfree_order_id}`, {
+          headers: { 'x-api-version': '2023-08-01', 'x-client-id': APP_ID, 'x-client-secret': SECRET },
+        })
+        if (cfRes.ok) {
+          const cfData = await cfRes.json()
+          if (cfData.order_status !== 'PAID') {
+            return NextResponse.json({ error: 'Payment not confirmed by Cashfree' }, { status: 400 })
+          }
+        }
+      } catch { /* If Cashfree is unreachable, proceed — webhook is the safety net */ }
+    }
   }
 
   try {

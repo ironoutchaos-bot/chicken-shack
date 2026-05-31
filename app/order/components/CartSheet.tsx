@@ -186,7 +186,9 @@ export default function CartSheet({
 
     try {
       // Use user prop directly — no Supabase network calls at all
-      const returnUrl = `https://blurufresh.com/order?cashfree_order_id={order_id}`
+      // Derive base URL from the current window so staging/dev redirects work too
+      const baseUrl   = typeof window !== 'undefined' ? window.location.origin : 'https://blurufresh.com'
+      const returnUrl = `${baseUrl}/order?cashfree_order_id={order_id}`
 
       const orderRes = await fetch('/api/cashfree/create-order', {
         method: 'POST',

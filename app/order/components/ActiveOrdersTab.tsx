@@ -47,7 +47,7 @@ export default function ActiveOrdersTab({ user, onTabCountChange, refreshTrigger
   const loadOrders = useCallback(async () => {
     setSpinning(true)
     try {
-      const res = await fetch(`/api/orders/active?user_id=${encodeURIComponent(user.id)}`)
+      const res = await fetch('/api/orders/active')
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const all: OrderRow[] = await res.json()
       const rows = all.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled')

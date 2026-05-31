@@ -51,22 +51,22 @@ export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
     }, 1_000)
   }
 
-  const MSG91_TOKEN     = process.env.NEXT_PUBLIC_MSG91_TOKEN     ?? ''
-  const MSG91_WIDGET_ID = process.env.NEXT_PUBLIC_MSG91_WIDGET_ID ?? ''
-  const MSG91_HEADERS   = { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+  // All OTP calls go through server routes — MSG91 credentials are never
+  // sent to the browser or included in the compiled JS bundle.
 
   async function handleSendOtp() {
     setError('')
     if (!/^\d{10}$/.test(phone.trim())) { setError('Enter a valid 10-digit number'); return }
     setLoading(true)
     try {
-      const res = await fetch('https://api.msg91.com/api/v5/widget/sendOtp', {
-        method: 'POST', headers: MSG91_HEADERS,
-        body: JSON.stringify({ tokenAuth: MSG91_TOKEN, widgetId: MSG91_WIDGET_ID, identifier: `${COUNTRY_CODE}${phone.trim()}` }),
+      const res  = await fetch('/api/auth/send-otp', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ phone: phone.trim(), countryCode: COUNTRY_CODE }),
       })
       const data = await res.json()
-      if (data.type !== 'success') { setError(data.message ?? 'Failed to send OTP'); return }
-      setReqId(data.message); setStep('otp'); startResendTimer()
+      if (!res.ok) { setError(data.error ?? 'Failed to send OTP'); return }
+      setReqId(data.reqId); setStep('otp'); startResendTimer()
     } catch { setError('Network error — please try again') }
     finally { setLoading(false) }
   }
@@ -77,19 +77,11 @@ export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
     if (otpValue.length < OTP_LEN) { setError('Enter the OTP sent to your phone'); return }
     setLoading(true)
     try {
-      const msg91Res = await fetch('https://api.msg91.com/api/v5/widget/verifyOtp', {
-        method: 'POST', headers: MSG91_HEADERS,
-        body: JSON.stringify({ tokenAuth: MSG91_TOKEN, widgetId: MSG91_WIDGET_ID, reqId, otp: otpValue }),
-      })
-      const msg91Data = await msg91Res.json()
-      if (msg91Data.type !== 'success') {
-        const isInvalid = msg91Data.code === 705 || msg91Data.code === '705'
-        setError(isInvalid ? 'Incorrect OTP — please try again' : (msg91Data.message ?? 'Verification failed'))
-        return
-      }
-      const res = await fetch('/api/auth/verify-otp', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.trim(), countryCode: COUNTRY_CODE }),
+      // Server verifies OTP with MSG91 and creates the session in one secure call
+      const res  = await fetch('/api/auth/verify-otp', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ phone: phone.trim(), countryCode: COUNTRY_CODE, reqId, otp: otpValue }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Sign in failed'); return }
@@ -103,13 +95,14 @@ export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
     if (countdown > 0) return
     setError(''); setOtp(''); setLoading(true)
     try {
-      const res = await fetch('https://api.msg91.com/api/v5/widget/sendOtp', {
-        method: 'POST', headers: MSG91_HEADERS,
-        body: JSON.stringify({ tokenAuth: MSG91_TOKEN, widgetId: MSG91_WIDGET_ID, identifier: `${COUNTRY_CODE}${phone.trim()}` }),
+      const res  = await fetch('/api/auth/send-otp', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ phone: phone.trim(), countryCode: COUNTRY_CODE }),
       })
       const data = await res.json()
-      if (data.type !== 'success') { setError(data.message ?? 'Failed to resend OTP'); return }
-      setReqId(data.message); startResendTimer()
+      if (!res.ok) { setError(data.error ?? 'Failed to resend OTP'); return }
+      setReqId(data.reqId); startResendTimer()
     } catch { setError('Network error — please try again') }
     finally { setLoading(false) }
   }

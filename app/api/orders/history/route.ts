@@ -1,35 +1,37 @@
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/orders/history?user_id=<uuid>&offset=0&limit=10
+ * GET /api/orders/history?offset=0&limit=10
  *
- * Returns paginated delivered orders for a user.
- * Uses service-role key to bypass RLS.
+ * Returns paginated delivered orders for the authenticated user.
+ * user_id is read from the iron-session cookie — not from the query string.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { getIronSession } from 'iron-session'
+import { cookies } from 'next/headers'
+import { sessionOptions, type SessionData } from '@/lib/session'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const userId = searchParams.get('user_id')
-  const offset = parseInt(searchParams.get('offset') ?? '0', 10)
-  const limit  = parseInt(searchParams.get('limit')  ?? '10', 10)
-
-  if (!userId) {
-    return NextResponse.json({ error: 'user_id is required' }, { status: 400 })
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+  if (!session.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const rangeEnd = offset + Math.min(limit, 50) - 1  // cap at 50
+  const { searchParams } = new URL(req.url)
+  const offset  = parseInt(searchParams.get('offset') ?? '0', 10)
+  const limit   = Math.min(parseInt(searchParams.get('limit') ?? '10', 10), 50)
+  const rangeEnd = offset + limit - 1
 
   try {
     const res = await fetch(
       `${SUPA_URL()}/rest/v1/orders?select=*` +
-      `&user_id=eq.${encodeURIComponent(userId)}` +
+      `&user_id=eq.${encodeURIComponent(session.userId)}` +
       `&order_status=eq.delivered` +
       `&order=created_at.desc` +
-      `&offset=${offset}&limit=${rangeEnd - offset + 1}`,
+      `&offset=${offset}&limit=${limit}`,
       {
         headers: {
           'apikey':        SUPA_SRV(),

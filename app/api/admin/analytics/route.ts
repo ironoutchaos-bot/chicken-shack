@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdminRequest } from '@/app/api/admin/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
@@ -12,10 +13,6 @@ function srvHeaders() {
     Authorization: 'Bearer ' + key,
     'Content-Type': 'application/json',
   }
-}
-
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
 }
 
 interface OrderItem {
@@ -45,7 +42,7 @@ interface Profile {
 
 export async function GET(req: NextRequest) {
   // Admin auth check
-  if (!isAdmin(req)) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

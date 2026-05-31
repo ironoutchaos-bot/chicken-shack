@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic'
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdminRequest } from '@/app/api/admin/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -26,10 +27,6 @@ function srvHeaders(extra: Record<string, string> = {}) {
     'Authorization': `Bearer ${SUPA_SRV()}`,
     ...extra,
   }
-}
-
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
 }
 
 async function getBannerImages(): Promise<string[]> {
@@ -69,7 +66,7 @@ async function setBannerImages(urls: string[]) {
 
 // ── GET — return a signed upload URL (kept for reference) ─────────────────────
 export async function GET(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const filename = new URL(req.url).searchParams.get('filename') ?? 'banner.jpg'
   const ext      = filename.split('.').pop()?.toLowerCase() ?? 'jpg'
@@ -109,7 +106,7 @@ export async function GET(req: NextRequest) {
 
 // ── POST — upload file through server (no CORS) and record URL ────────────────
 export async function POST(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const contentType = req.headers.get('content-type') ?? ''
 
@@ -171,7 +168,7 @@ export async function POST(req: NextRequest) {
 
 // ── DELETE — remove image from storage + settings list ───────────────────────
 export async function DELETE(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: { url?: string }
   try { body = await req.json() } catch {

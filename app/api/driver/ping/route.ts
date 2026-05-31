@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyDriverToken } from '@/app/api/driver/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -14,12 +15,7 @@ function srvHeaders() {
 
 // GET /api/driver/ping — validate driver session, return driver info
 export async function GET(req: NextRequest) {
-  const cookieHeader = req.headers.get('cookie') ?? ''
-  const driverId = cookieHeader
-    .split(';')
-    .find(c => c.trim().startsWith('driver_token='))
-    ?.split('=')[1]?.trim()
-
+  const driverId = verifyDriverToken(req.cookies.get('driver_token')?.value ?? '')
   if (!driverId) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
   const res = await fetch(

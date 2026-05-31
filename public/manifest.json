@@ -2,7 +2,7 @@
   "id": "/order",
   "name": "B'LURU FRESH – Fresh Chicken",
   "short_name": "B'LURU FRESH",
-  "description": "Order fresh chicken online — cut fresh, delivered same day.",
+  "description": "Order fresh chicken online — cut fresh after your order, delivered within 1 hour. No preservatives. FSSAI licensed.",
   "start_url": "/order",
   "scope": "/order",
   "display": "standalone",
@@ -38,6 +38,22 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "B'LURU Fresh home screen — fresh chicken ordering"
+    },
+    {
+      "src": "/icons/screenshot-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "B'LURU Fresh on desktop"
     }
   ],
   "categories": ["food", "shopping"],

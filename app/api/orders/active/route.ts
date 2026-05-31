@@ -1,36 +1,32 @@
 export const dynamic = 'force-dynamic'
 
 /**
- * GET /api/orders/active?user_id=<uuid>
+ * GET /api/orders/active
  *
- * Returns all non-delivered, non-cancelled orders for a user.
- * Uses the service-role key so this works regardless of whether Supabase
- * RLS SELECT policies are configured on the orders table.
- *
- * Security: user_id is a non-guessable UUID. The endpoint is intentionally
- * public (no auth cookie required) because the customer app uses the anon
- * Supabase client and there is no server-side session token to validate.
+ * Returns all non-delivered, non-cancelled orders for the authenticated user.
+ * Requires a valid iron-session cookie — user_id is read from the session,
+ * not from a query param, so one user cannot access another's orders.
  */
 import { NextRequest, NextResponse } from 'next/server'
+import { getIronSession } from 'iron-session'
+import { cookies } from 'next/headers'
+import { sessionOptions, type SessionData } from '@/lib/session'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url)
-  const userId = searchParams.get('user_id')
-
-  if (!userId) {
-    return NextResponse.json({ error: 'user_id is required' }, { status: 400 })
+export async function GET(_req: NextRequest) {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
+  if (!session.userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Use PostgREST `in` filter with unquoted values — most compatible syntax
   const statuses = 'placed,packed,on_the_way'
 
   try {
     const res = await fetch(
       `${SUPA_URL()}/rest/v1/orders?select=*` +
-      `&user_id=eq.${encodeURIComponent(userId)}` +
+      `&user_id=eq.${encodeURIComponent(session.userId)}` +
       `&order_status=in.(${statuses})` +
       `&payment_status=neq.pending` +
       `&order=created_at.desc`,
@@ -39,7 +35,6 @@ export async function GET(req: NextRequest) {
           'apikey':        SUPA_SRV(),
           'Authorization': `Bearer ${SUPA_SRV()}`,
         },
-        // 10-second timeout via AbortSignal (Node 18+)
         signal: AbortSignal.timeout(10_000),
       }
     )

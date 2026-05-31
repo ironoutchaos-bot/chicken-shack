@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { notifyUserOrderStatus } from '@/lib/push-notify'
+import { verifyDriverToken } from '@/app/api/driver/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -16,12 +17,7 @@ function srvHeaders(extras?: Record<string, string>) {
 }
 
 function getDriverId(req: NextRequest): string | null {
-  const cookieHeader = req.headers.get('cookie') ?? ''
-  const driverId = cookieHeader
-    .split(';')
-    .find(c => c.trim().startsWith('driver_token='))
-    ?.split('=')[1]?.trim()
-  return driverId || null
+  return verifyDriverToken(req.cookies.get('driver_token')?.value ?? '')
 }
 
 // PATCH /api/driver/orders/[id] — driver updates order status

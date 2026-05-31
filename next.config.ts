@@ -1,12 +1,52 @@
 import type { NextConfig } from 'next'
 
+const securityHeaders = [
+  // Prevent clickjacking
+  { key: 'X-Frame-Options',        value: 'SAMEORIGIN' },
+  // Stop MIME-type sniffing
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  // Referrer policy
+  { key: 'Referrer-Policy',        value: 'strict-origin-when-cross-origin' },
+  // Permissions policy — restrict unused browser APIs
+  {
+    key:   'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=(self), payment=(self "https://sdk.cashfree.com")',
+  },
+  // Content Security Policy
+  // - self: our own origin
+  // - Supabase, Cashfree, MSG91 explicitly whitelisted
+  // - unsafe-inline for Next.js inline scripts/styles (required for HMR + styled components)
+  {
+    key: 'Content-Security-Policy',
+    value: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "img-src 'self' data: blob: https://*.supabase.co https://www.blurufresh.com",
+      "connect-src 'self' https://*.supabase.co https://api.cashfree.com https://api.msg91.com https://sdk.cashfree.com",
+      "frame-src 'self' https://sdk.cashfree.com",
+      "worker-src 'self' blob:",
+      "manifest-src 'self'",
+    ].join('; '),
+  },
+]
+
 const nextConfig: NextConfig = {
-  // API routes (Razorpay, Supabase) require server-side rendering — no static export
   images: {
     unoptimized: true,
   },
   reactStrictMode: true,
   transpilePackages: ['@heroui/react', '@heroui/theme', '@heroui/system', '@heroui/shared-utils'],
+  async headers() {
+    return [
+      {
+        // Apply security headers to all routes
+        source: '/(.*)',
+        headers: securityHeaders,
+      },
+    ]
+  },
 }
 
 export default nextConfig

@@ -99,13 +99,17 @@ async function downloadInvoice(order: OrderRow) {
   const subtotal    = order.items.reduce((s, i) => s + i.pricePerKg * i.quantity, 0)
   const deliveryFee = Math.max(0, order.total_amount - subtotal)
 
+  // Escape user-supplied strings before injecting into HTML to prevent XSS
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
   const addr = order.delivery_address
-  const addrLines = addr
+  const addrLines = esc(addr
     ? [addr.houseNumber, addr.streetAddress, addr.landmark].filter(Boolean).join(', ')
-    : ''
-  const addrPincode = addr?.pincode ?? ''
-  const custName  = order.customer_name ?? 'Customer'
-  const custPhone = order.customer_phone ?? ''
+    : '')
+  const addrPincode = esc(addr?.pincode ?? '')
+  const custName  = esc(order.customer_name ?? 'Customer')
+  const custPhone = esc(order.customer_phone ?? '')
 
   const itemRows = order.items.map((item) => {
     const gross = (item.pricePerKg * item.quantity).toFixed(2)
@@ -113,7 +117,7 @@ async function downloadInvoice(order: OrderRow) {
     <tr>
       <td class="cat">Fresh Chicken<br/><span class="hsn">HSN: 0207</span></td>
       <td>
-        <strong>${item.name}</strong><br/>
+        <strong>${esc(item.name)}</strong><br/>
         <span class="tax-rate">SGST/UTGST: 0.0%</span><br/>
         <span class="tax-rate">CGST: 0.0%</span>
       </td>
@@ -515,7 +519,7 @@ export default function HistoryTab({ user, onReorder }: { user: AuthUser; onReor
     else setLoadingMore(true)
 
     try {
-      const res  = await fetch(`/api/orders/history?user_id=${encodeURIComponent(user.id)}&offset=${start}&limit=${PAGE_SIZE}`)
+      const res  = await fetch(`/api/orders/history?offset=${start}&limit=${PAGE_SIZE}`)
       const rows: OrderRow[] = res.ok ? await res.json() : []
       if (reset) setOrders(rows)
       else setOrders(prev => [...prev, ...rows])

@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdminRequest } from '@/app/api/admin/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
@@ -12,10 +13,6 @@ function srvHeaders(extra: Record<string, string> = {}) {
     'Content-Type':  'application/json',
     ...extra,
   }
-}
-
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
 }
 
 async function resetKey(key: string, defaultVal: unknown) {
@@ -38,7 +35,7 @@ async function resetKey(key: string, defaultVal: unknown) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isAdmin(req)) {
+  if (!isAdminRequest(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

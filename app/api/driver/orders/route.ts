@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { verifyDriverToken } from '@/app/api/driver/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -13,21 +14,17 @@ function srvHeaders() {
 }
 
 async function getDriverId(req: NextRequest): Promise<string | null> {
-  const cookieHeader = req.headers.get('cookie') ?? ''
-  const driverId = cookieHeader
-    .split(';')
-    .find(c => c.trim().startsWith('driver_token='))
-    ?.split('=')[1]?.trim()
-
+  const token    = req.cookies.get('driver_token')?.value ?? ''
+  const driverId = verifyDriverToken(token)   // verifies HMAC signature
   if (!driverId) return null
 
-  // Validate the driver exists and is active
+  // Confirm driver still exists and is active
   const res = await fetch(
     `${SUPA_URL()}/rest/v1/drivers?id=eq.${encodeURIComponent(driverId)}&select=id,is_active`,
     { headers: srvHeaders() }
   )
   const drivers = await res.json()
-  const driver = Array.isArray(drivers) ? drivers[0] : null
+  const driver  = Array.isArray(drivers) ? drivers[0] : null
   if (!driver?.is_active) return null
   return driverId
 }
