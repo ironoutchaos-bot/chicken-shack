@@ -43,19 +43,26 @@
   "screenshots": [
     {
       "src": "/icons/screenshot-mobile.png",
-      "sizes": "390x844",
+      "sizes": "722x1600",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "B'LURU Fresh home screen — fresh chicken ordering"
     },
     {
       "src": "/icons/screenshot-wide.png",
-      "sizes": "1280x800",
+      "sizes": "1600x850",
       "type": "image/png",
       "form_factor": "wide",
       "label": "B'LURU Fresh on desktop"
     }
   ],
   "categories": ["food", "shopping"],
-  "lang": "en-IN"
+  "lang": "en-IN",
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.blurufresh.app",
+      "id": "com.blurufresh.app"
+    }
+  ]
 }
