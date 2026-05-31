@@ -87,7 +87,7 @@ export default function PrivacyPage() {
           <li><strong>Opt-Out:</strong> Unsubscribe from marketing communications at any time.</li>
           <li><strong>Withdraw Consent:</strong> Withdraw consent for data processing (note: this may affect your ability to use the Platform).</li>
         </ul>
-        <p style={{ marginTop: 8 }}>To exercise any of these rights, contact us at: <a href="mailto:contact@blurufresh.com" style={S.link}>contact@blurufresh.com</a> or <a href="tel:+917012488951" style={S.link}>+91 7012488951</a>.</p>
+        <p style={{ marginTop: 8 }}>To exercise any of these rights, contact us at: <a href="mailto:admin@blurufresh.com" style={S.link}>admin@blurufresh.com</a> or <a href="tel:+917012488951" style={S.link}>+91 7012488951</a>.</p>
       </Section>
 
       <Section title="8. Children's Privacy">

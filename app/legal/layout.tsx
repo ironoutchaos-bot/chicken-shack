@@ -29,7 +29,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
       {/* Footer */}
       <footer style={{ borderTop: '1px solid #e5e7eb', padding: '1.5rem', textAlign: 'center', fontSize: '0.8125rem', color: '#9ca3af' }}>
         © {new Date().getFullYear()} The Chicken Shack · B&apos;LURU Fresh ·{' '}
-        <a href="mailto:contact@blurufresh.com" style={{ color: '#d97706', textDecoration: 'none' }}>contact@blurufresh.com</a>
+        <a href="mailto:admin@blurufresh.com" style={{ color: '#d97706', textDecoration: 'none' }}>admin@blurufresh.com</a>
       </footer>
     </div>
   )

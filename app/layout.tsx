@@ -143,7 +143,7 @@ export default function RootLayout({
               "image": "https://www.blurufresh.com/assets/raw_chicken_breast.jpg",
               "description": "Farm-fresh chicken order to cut and delivery within 1 hour across Yelahanka, Bangalore. No preservatives, FSSAI certified.",
               "telephone": "+917012488951",
-              "email": "contact@blurufresh.com",
+              "email": "admin@blurufresh.com",
               "address": {
                 "@type": "PostalAddress",
                 "streetAddress": "No. 951, Thirumenahalli Main Road, Agrahara Layout",

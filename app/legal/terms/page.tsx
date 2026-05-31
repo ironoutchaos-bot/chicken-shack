@@ -29,7 +29,7 @@ export default function TermsPage() {
         <ul style={S.ul}>
           <li>To place orders, you may need to create an account using a valid phone number.</li>
           <li>You are responsible for maintaining the confidentiality of your login credentials.</li>
-          <li>You agree to notify us immediately at <a href="mailto:contact@blurufresh.com" style={S.link}>contact@blurufresh.com</a> if you suspect any unauthorized use of your account.</li>
+          <li>You agree to notify us immediately at <a href="mailto:admin@blurufresh.com" style={S.link}>admin@blurufresh.com</a> if you suspect any unauthorized use of your account.</li>
           <li>We reserve the right to suspend or terminate accounts that violate these Terms.</li>
         </ul>
       </Section>
@@ -119,7 +119,7 @@ export default function TermsPage() {
           <p><strong>B&apos;LURU Fresh</strong></p>
           <p>The Chicken Shack, No. 951, Thirumenahalli Main Road, Agrahara Layout, Yelahanka, B.B.M.P North, Bangalore, Karnataka – 560064</p>
           <p>Phone: <a href="tel:+917012488951" style={S.link}>+91 7012488951</a></p>
-          <p>Email: <a href="mailto:contact@blurufresh.com" style={S.link}>contact@blurufresh.com</a></p>
+          <p>Email: <a href="mailto:admin@blurufresh.com" style={S.link}>admin@blurufresh.com</a></p>
         </div>
       </Section>
 

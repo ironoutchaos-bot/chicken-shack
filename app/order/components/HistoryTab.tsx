@@ -286,7 +286,7 @@ async function downloadInvoice(order: OrderRow) {
   <div class="footer-bar">
     <strong>Note:</strong> Fresh chicken is exempt from GST under HSN 0207 (unprocessed poultry meat). SGST and CGST are 0%.<br/>
     Regd. office: B'LURU Fresh Chicken, Thirumenahalli Main Road, Agrahara Layout, Yelahanka, Bengaluru – 560064, Karnataka<br/>
-    Contact: +91 70124 88951 | contact@blurufresh.com | www.blurufresh.com
+    Contact: +91 70124 88951 | admin@blurufresh.com | www.blurufresh.com
     <div class="eoe">
       <span>E. &amp; O.E.</span>
       <span>page 1 of 1</span>
