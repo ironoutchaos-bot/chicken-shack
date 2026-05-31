@@ -41,7 +41,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Apply security headers to all routes
+        // Serve assetlinks.json with correct content-type (required for TWA verification)
+        source: '/.well-known/assetlinks.json',
+        headers: [
+          { key: 'Content-Type', value: 'application/json' },
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
+        ],
+      },
+      {
+        // Apply security headers to all other routes
         source: '/(.*)',
         headers: securityHeaders,
       },
