@@ -161,6 +161,22 @@ export default function AdminOrdersPage() {
     } finally { setSaving(null) }
   }
 
+  async function confirmPayment(orderId: string) {
+    setSaving(orderId + '-confirm')
+    setOrderError(null)
+    try {
+      const res = await fetch('/api/admin/confirm-payment', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ order_id: orderId }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setOrderError(data.error ?? 'Confirm failed'); return }
+      // Reload orders so driver assignment + payment status update shows
+      await loadOrders(false)
+    } finally { setSaving(null) }
+  }
+
   async function assignDriver(orderId: string, driverId: string) {
     setSaving(orderId + '-driver')
     setOrderError(null)
@@ -393,11 +409,13 @@ export default function AdminOrdersPage() {
             order={order}
             drivers={drivers}
             saving={saving === order.id || saving === order.id + '-eta' || saving === order.id + '-driver'}
+            confirmPending={saving === order.id + '-confirm'}
             etaValue={etaInputs[order.id] ?? ''}
             onEtaChange={val => setEtaInputs(prev => ({ ...prev, [order.id]: val }))}
             onStatusChange={s => updateStatus(order.id, s)}
             onEtaSave={() => updateEta(order.id)}
             onDriverAssign={dId => assignDriver(order.id, dId)}
+            onConfirmPayment={() => confirmPayment(order.id)}
             checked={selected.has(order.id)}
             onToggleCheck={() => toggleSelected(order.id)}
           />
@@ -446,16 +464,18 @@ export default function AdminOrdersPage() {
 }
 
 function OrderCard({
-  order, drivers, saving, etaValue, onEtaChange, onStatusChange, onEtaSave, onDriverAssign, checked, onToggleCheck,
+  order, drivers, saving, confirmPending, etaValue, onEtaChange, onStatusChange, onEtaSave, onDriverAssign, onConfirmPayment, checked, onToggleCheck,
 }: {
   order: OrderRow
   drivers: DriverRow[]
   saving: boolean
+  confirmPending: boolean
   etaValue: string
   onEtaChange: (v: string) => void
   onStatusChange: (s: OrderRow['order_status']) => void
   onEtaSave: () => void
   onDriverAssign: (driverId: string) => void
+  onConfirmPayment: () => void
   checked: boolean
   onToggleCheck: () => void
 }) {
@@ -607,11 +627,24 @@ function OrderCard({
           <div style={{ flex: '1 1 170px' }}>
             <label style={S.label}>Assign Driver</label>
             {(order.payment_status !== 'cod' && order.payment_status !== 'paid') ? (
-              <div style={{
-                background: '#fef3c7', border: '1.5px solid #fde68a', borderRadius: 8,
-                padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#92400e', fontWeight: 600,
-              }}>
-                ⏳ Awaiting payment — driver will be auto-assigned once payment is confirmed
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{
+                  background: '#fef3c7', border: '1.5px solid #fde68a', borderRadius: 8,
+                  padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#92400e', fontWeight: 600,
+                }}>
+                  ⏳ Awaiting payment confirmation
+                </div>
+                <button
+                  onClick={() => onConfirmPayment()}
+                  disabled={confirmPending}
+                  style={{
+                    background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8,
+                    padding: '0.45rem 0.9rem', fontWeight: 700, fontSize: '0.8125rem',
+                    cursor: 'pointer', opacity: confirmPending ? 0.6 : 1,
+                  }}
+                >
+                  {confirmPending ? '⏳ Confirming…' : '✓ Confirm Payment Received'}
+                </button>
               </div>
             ) : (
               <>

@@ -91,37 +91,48 @@ export default function OrderApp() {
     localStorage.removeItem('bf-pending-payment')
 
     async function completePayment() {
-      // The order was already saved to DB with payment_status:'pending' before
-      // the redirect — so clear the cart and show active orders immediately.
-      // Then verify + update payment status in the background.
       setCart([])
       setActiveTab('active')
 
-      // Verify with Cashfree, then mark the DB order as paid
-      try {
-        const vRes = await fetch('/api/cashfree/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order_id: cfOrderId }),
-        })
-        if (!vRes.ok) {
-          console.error('[completePayment] Cashfree verify failed:', await vRes.text().catch(() => ''))
-          return // webhook will handle it if payment did go through
+      // Retry verify + patch up to 3 times with 3s gaps
+      // (handles cases where Cashfree is slow to mark the payment as PAID)
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          if (attempt > 1) await new Promise(r => setTimeout(r, 3000 * attempt))
+
+          const vRes = await fetch('/api/cashfree/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order_id: cfOrderId }),
+          })
+
+          if (!vRes.ok) {
+            const errText = await vRes.text().catch(() => '')
+            console.warn(`[completePayment] verify attempt ${attempt} failed:`, errText)
+            if (attempt < 3) continue
+            console.error('[completePayment] All verify attempts failed — webhook will handle it')
+            return
+          }
+
+          // Verify succeeded — patch the DB order
+          const patchRes = await fetch('/api/orders/cod', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              cashfree_order_id: cfOrderId,
+              payment_status:    'paid',
+            }),
+          })
+
+          if (patchRes.ok) {
+            setActiveOrdersRefresh(k => k + 1)
+            return  // success
+          } else {
+            console.warn(`[completePayment] PATCH attempt ${attempt} failed:`, await patchRes.text().catch(() => ''))
+          }
+        } catch (err) {
+          console.warn(`[completePayment] attempt ${attempt} error:`, err)
         }
-
-        await fetch('/api/orders/cod', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            cashfree_order_id: cfOrderId,
-            payment_status:    'paid',
-          }),
-        }).catch(err => console.error('[completePayment] PATCH error:', err))
-
-        // Force ActiveOrdersTab to re-fetch now that payment_status is 'paid'
-        setActiveOrdersRefresh(k => k + 1)
-      } catch (err) {
-        console.error('[completePayment] error:', err)
       }
     }
 
