@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Download, Share2 } from 'lucide-react'
+import { X, Download } from 'lucide-react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type BeforeInstallPromptEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
 
 export default function InstallPrompt() {
   const [show,           setShow]           = useState(false)
-  const [isIOS,          setIsIOS]          = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
   useEffect(() => {
@@ -22,13 +21,7 @@ export default function InstallPrompt() {
 
     const ua  = navigator.userAgent
     const ios = /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
-    setIsIOS(ios)
-
-    if (ios) {
-      // Show every visit — no localStorage skip — so it keeps nudging until installed
-      const t = setTimeout(() => setShow(true), 2000)
-      return () => clearTimeout(t)
-    }
+    if (ios) return  // No install prompt on iOS
 
     // Android/Chrome: show as soon as the browser fires beforeinstallprompt
     const handler = (e: Event) => {
@@ -54,98 +47,6 @@ export default function InstallPrompt() {
 
   if (!show) return null
 
-  // ── iOS — full-screen modal style ──────────────────────────────
-  if (isIOS) {
-    return (
-      <div className="fixed inset-0 z-[70] flex items-end justify-center pointer-events-none">
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 pointer-events-auto"
-          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setShow(false)}
-        />
-
-        <div
-          className="relative w-full max-w-[430px] pointer-events-auto animate-slide-up"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-        >
-          <div
-            className="mx-3 mb-3 rounded-3xl overflow-hidden"
-            style={{ background: 'linear-gradient(160deg, #1C0A02 0%, #0D0601 100%)', boxShadow: '0 -4px 40px rgba(0,0,0,0.6)' }}
-          >
-            {/* Top accent */}
-            <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-amber-500 to-amber-400" />
-
-            <div className="px-5 pt-5 pb-5">
-              {/* Header row */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 0 20px rgba(251,191,36,0.4)' }}
-                  >
-                    🐔
-                  </div>
-                  <div>
-                    <p className="font-black text-white text-base leading-tight">B&apos;luru Fresh</p>
-                    <p className="text-amber-400 text-xs font-semibold mt-0.5">Fresh Chicken Delivery</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShow(false)}
-                  className="p-2 rounded-full transition-colors shrink-0"
-                  style={{ background: 'rgba(255,255,255,0.08)' }}
-                >
-                  <X size={16} className="text-stone-400" />
-                </button>
-              </div>
-
-              {/* Main message */}
-              <p className="text-white font-bold text-lg leading-snug mb-1">
-                Add to your Home Screen
-              </p>
-              <p className="text-stone-400 text-sm leading-relaxed mb-4">
-                3 quick steps — takes less than 10 seconds.
-              </p>
-
-              {/* Steps */}
-              <div className="space-y-2.5 mb-5">
-                {[
-                  { step: '1', icon: '↑', text: <>Tap the <span className="text-white font-bold">Share ↑</span> button at the <span className="text-white font-bold">bottom of Safari</span></> },
-                  { step: '2', icon: '+', text: <>Tap <span className="text-white font-bold">"Add to Home Screen"</span></> },
-                  { step: '3', icon: '✓', text: <>Tap <span className="text-white font-bold">Add</span></> },
-                ].map(({ step, icon, text }) => (
-                  <div
-                    key={step}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3.5"
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}
-                  >
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-black text-sm"
-                      style={{ background: 'rgba(245,158,11,0.2)', color: '#F59E0B' }}
-                    >
-                      {step}
-                    </div>
-                    <p className="text-stone-300 text-sm leading-snug flex-1">{text}</p>
-                    <span className="text-lg">{icon}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Arrow pointing to Safari bar */}
-              <div className="flex flex-col items-center gap-1 mb-1">
-                <p className="text-stone-600 text-xs">Share button is down here</p>
-                <div className="w-px h-3" style={{ background: 'rgba(245,158,11,0.35)' }} />
-                <div className="w-0 h-0" style={{ borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderTop: '6px solid rgba(245,158,11,0.45)' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Android — compact bottom card (unchanged) ──────────────────
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[70] flex justify-center pointer-events-none">
       <div
