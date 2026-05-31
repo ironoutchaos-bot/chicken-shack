@@ -20,6 +20,7 @@ export type Tab = 'shop' | 'active' | 'history'
 
 export default function OrderApp() {
   const [user,       setUser]       = useState<AuthUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)  // true until /api/auth/me resolves
   const [activeTab,  setActiveTab]  = useState<Tab>('shop')
   const [cart,       setCart]       = useState<CartItem[]>([])
   const [loginOpen,  setLoginOpen]  = useState(false)
@@ -27,8 +28,11 @@ export default function OrderApp() {
   const [activeCount,          setActiveCount]          = useState(0)
   const [activeOrdersRefresh,  setActiveOrdersRefresh]  = useState(0)
 
-  // Entry / pincode gate
-  const [entryDone, setEntryDone] = useState(false)
+  // Entry / pincode gate — skip if returning from Cashfree payment
+  const [entryDone, setEntryDone] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return new URLSearchParams(window.location.search).has('cashfree_order_id')
+  })
   const [pincode,  setPincode]  = useState<string | null>(null)
   const [areaName, setAreaName] = useState('')
 
@@ -58,6 +62,7 @@ export default function OrderApp() {
       .then(r => r.json())
       .then(data => { if (data.user) setUser(data.user) })
       .catch(() => {})
+      .finally(() => setAuthLoading(false))
   }, [])
 
   async function handleLogout() {
@@ -186,12 +191,13 @@ export default function OrderApp() {
 
   // ── Tab switch with auth guard ────────────────────────────────
   const goToTab = useCallback((tab: Tab) => {
-    if ((tab === 'active' || tab === 'history') && !user) {
+    // Don't show login while auth is still hydrating — wait for the result first
+    if ((tab === 'active' || tab === 'history') && !user && !authLoading) {
       setLoginOpen(true)
       return
     }
     setActiveTab(tab)
-  }, [user])
+  }, [user, authLoading])
 
   const handlePincodeVerified = useCallback((pc: string, area: string) => {
     setPincode(pc)
@@ -487,7 +493,8 @@ export default function OrderApp() {
           onUpdateQty={updateCartQty}
           onClear={clearCart}
           user={user}
-          onLoginRequired={() => { setCartOpen(false); setLoginOpen(true) }}
+          authLoading={authLoading}
+          onLoginRequired={() => { if (!authLoading) { setCartOpen(false); setLoginOpen(true) } }}
           savedPincode={pincode ?? undefined}
           minOrderAmount={minOrder}
           deliveryFee={deliveryFee}

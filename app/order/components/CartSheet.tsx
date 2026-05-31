@@ -16,6 +16,7 @@ interface Props {
   onUpdateQty: (productId: string, qty: number) => void
   onClear: () => void
   user: AuthUser | null
+  authLoading?: boolean
   onLoginRequired: () => void
   onOrderPlaced: () => void
   savedPincode?: string
@@ -34,7 +35,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, msg: string): Promise<T
 
 export default function CartSheet({
   open, onClose, cart, onUpdateQty, onClear,
-  user, onLoginRequired, onOrderPlaced, savedPincode,
+  user, authLoading = false, onLoginRequired, onOrderPlaced, savedPincode,
   minOrderAmount = 0, deliveryFee = 0,
 }: Props) {
   const [loading,        setLoading]        = useState(false)
@@ -106,7 +107,8 @@ export default function CartSheet({
   const showCF  = cfEnabled
 
   function handleCheckout(mode: CheckoutMode) {
-    if (!user) { onClose(); onLoginRequired(); return }
+    if (!user && !authLoading) { onClose(); onLoginRequired(); return }
+    if (!user && authLoading) return  // still loading — ignore tap, spinner shows
     if (cart.length === 0) return
     setError('')
     setCheckoutMode(mode)
