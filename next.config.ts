@@ -23,7 +23,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://*.supabase.co https://www.blurufresh.com",
+      "img-src 'self' data: blob: https:",
       "connect-src 'self' https://*.supabase.co https://api.cashfree.com https://api.msg91.com https://sdk.cashfree.com",
       "frame-src 'self' https://sdk.cashfree.com",
       "worker-src 'self' blob:",
