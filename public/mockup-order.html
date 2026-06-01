@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Order Page Mockup — B'LURU FRESH</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Unbounded:wght@400;700;900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --g:#91d852;--gd:#6ab82e;--p:#9318cc;--pl:#c44ef5;
+  --ink:#16140f;--ink2:#3d3a30;
+  --cream:#faf7f0;--cream2:#f2ede0;--cream3:#e8e2d0;
+  --white:#ffffff;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--cream);font-family:'DM Mono',monospace;overflow-x:hidden;color:var(--ink);}
+
+/* ── PHONE FRAME ── */
+.frame{
+  width:390px;height:844px;
+  background:var(--cream);
+  margin:24px auto;
+  border-radius:44px;
+  box-shadow:0 0 0 12px #111, 0 32px 80px rgba(0,0,0,0.5);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+  position:relative;
+}
+
+/* ── STATUS BAR ── */
+.status-bar{
+  background:var(--ink);
+  padding:14px 24px 8px;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-shrink:0;
+}
+.status-bar .time{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.02em;}
+.status-bar .icons{display:flex;gap:6px;align-items:center;}
+.status-bar .icons span{font-size:12px;color:rgba(255,255,255,.7);}
+
+/* ── HEADER ── */
+.header{
+  background:var(--ink);
+  padding:10px 16px 12px;
+  flex-shrink:0;
+}
+.header-row1{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.brand{display:flex;align-items:center;gap:8px;}
+.brand-icon{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--g),var(--gd));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  box-shadow:0 0 12px rgba(145,216,82,.4);
+}
+.brand-name{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:900;color:#fff;letter-spacing:.02em;}
+.brand-name em{color:var(--g);font-style:normal;}
+.header-actions{display:flex;gap:8px;}
+.hbtn{
+  width:34px;height:34px;border-radius:10px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;cursor:pointer;
+}
+
+/* Location pill */
+.location-pill{
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:8px 12px;
+}
+.loc-left{display:flex;align-items:center;gap:8px;}
+.loc-dot{width:6px;height:6px;border-radius:50%;background:var(--g);box-shadow:0 0 6px var(--g);}
+.loc-text{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.05em;}
+.loc-area{font-size:13px;font-weight:700;color:#fff;margin-top:1px;}
+.loc-change{font-size:10px;color:var(--g);font-weight:700;letter-spacing:.08em;}
+
+/* ── TICKER ── */
+.ticker{
+  background:var(--g);
+  padding:5px 0;overflow:hidden;display:flex;flex-shrink:0;
+}
+.ticker-track{display:flex;gap:20px;animation:tick 10s linear infinite;white-space:nowrap;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--ink);flex-shrink:0;display:flex;align-items:center;gap:12px;font-family:'DM Mono',monospace;}
+.ti-sep{color:rgba(22,20,15,.4);}
+
+/* ── SCROLLABLE BODY ── */
+.body{flex:1;overflow-y:auto;background:var(--cream);scrollbar-width:none;}
+.body::-webkit-scrollbar{display:none;}
+
+/* Banner */
+.banner{
+  margin:12px;border-radius:16px;overflow:hidden;
+  background:linear-gradient(135deg,var(--ink) 0%,#2a1a05 100%);
+  padding:16px;
+  display:flex;justify-content:space-between;align-items:center;
+  border:1px solid rgba(145,216,82,.15);
+  position:relative;
+}
+.banner-text{}
+.banner-tag{font-size:9px;letter-spacing:.18em;color:var(--g);text-transform:uppercase;margin-bottom:6px;}
+.banner-h{font-family:'Archivo Black',sans-serif;font-size:18px;color:#fff;line-height:1.1;letter-spacing:-.01em;}
+.banner-h span{color:var(--g);}
+.banner-sub{font-size:9px;color:rgba(255,255,255,.4);margin-top:6px;letter-spacing:.08em;}
+.banner-btn{
+  background:var(--g);color:var(--ink);border:none;
+  padding:8px 14px;border-radius:8px;
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:.1em;white-space:nowrap;cursor:pointer;
+  text-transform:uppercase;
+}
+.banner-emoji{position:absolute;right:100px;top:50%;transform:translateY(-50%);font-size:36px;opacity:.15;}
+
+/* Section header */
+.section-hdr{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:16px 12px 10px;
+}
+.section-kicker{font-size:9px;letter-spacing:.2em;color:var(--p);text-transform:uppercase;margin-bottom:4px;}
+.section-h{font-family:'Unbounded',sans-serif;font-weight:900;font-size:20px;letter-spacing:-.02em;color:var(--ink);}
+.live-badge{
+  display:flex;align-items:center;gap:5px;
+  background:var(--ink);color:#fff;
+  padding:5px 10px;border-radius:20px;
+  font-size:9px;font-weight:700;letter-spacing:.08em;
+}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--g);animation:blink 1.2s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Product grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 12px 12px;}
+
+.pcard{
+  background:var(--white);border-radius:16px;overflow:hidden;
+  border:1px solid rgba(22,20,15,.06);
+  cursor:pointer;transition:transform .2s;
+  position:relative;
+}
+.pcard:hover{transform:translateY(-2px);}
+.pcard-img{
+  width:100%;height:130px;object-fit:cover;
+  background:var(--cream2);
+  position:relative;overflow:hidden;
+}
+.pcard-img img{width:100%;height:100%;object-fit:cover;}
+.fresh-badge{
+  position:absolute;top:8px;right:8px;
+  background:var(--gd);color:#fff;
+  font-size:8px;font-weight:700;letter-spacing:.1em;
+  padding:3px 7px;border-radius:20px;
+  font-family:'DM Mono',monospace;
+}
+.pcard-body{padding:10px;}
+.pcard-name{font-family:'Archivo Black',sans-serif;font-size:12px;color:var(--ink);letter-spacing:-.01em;line-height:1.3;margin-bottom:2px;}
+.pcard-weight{font-size:9px;color:rgba(22,20,15,.35);letter-spacing:.05em;margin-bottom:8px;}
+.pcard-price-row{display:flex;align-items:baseline;gap:5px;margin-bottom:8px;}
+.pcard-old{font-size:10px;color:rgba(22,20,15,.3);text-decoration:line-through;}
+.pcard-price{font-family:'Unbounded',sans-serif;font-weight:700;font-size:16px;color:var(--p);}
+.pcard-unit{font-size:9px;color:rgba(22,20,15,.35);}
+.add-btn{
+  width:100%;background:linear-gradient(135deg,#F59E0B,#D97706);
+  color:#fff;border:none;border-radius:10px;padding:7px;
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:700;
+  letter-spacing:.08em;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+
+/* Out of stock card */
+.pcard.oos .pcard-img{filter:grayscale(.6);}
+.pcard.oos .pcard-img::after{
+  content:'';position:absolute;inset:0;
+  background:rgba(250,247,240,.5);
+}
+.oos-btn{
+  width:100%;background:rgba(22,20,15,.06);
+  color:rgba(22,20,15,.3);border:none;border-radius:10px;padding:7px;
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:700;
+  letter-spacing:.08em;
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  background:var(--ink);
+  padding:10px 16px 18px;
+  display:flex;justify-content:space-around;
+  flex-shrink:0;
+  border-top:1px solid rgba(145,216,82,.1);
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;
+}
+.nav-icon{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  transition:background .2s;
+}
+.nav-item.active .nav-icon{background:rgba(145,216,82,.15);}
+.nav-label{font-size:8px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.35);text-transform:uppercase;}
+.nav-item.active .nav-label{color:var(--g);}
+.nav-pip{width:4px;height:4px;border-radius:50%;background:var(--g);margin-top:1px;}
+
+/* Cart fab */
+.cart-fab{
+  position:absolute;bottom:80px;right:16px;
+  background:var(--p);
+  color:#fff;border:none;border-radius:14px;
+  padding:10px 16px;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:700;
+  letter-spacing:.06em;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:0 4px 20px rgba(147,24,204,.5);
+  cursor:pointer;
+  animation:bobCart 2.5s ease-in-out infinite;
+}
+@keyframes bobCart{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.cart-count{
+  background:var(--g);color:var(--ink);
+  width:18px;height:18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:900;
+}
+
+/* Page wrapper */
+body{background:#1a1a1a;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:24px;}
+.label{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.3);text-align:center;margin-bottom:8px;letter-spacing:.1em;text-transform:uppercase;}
+.note{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.2);text-align:center;margin-top:12px;max-width:390px;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="label">B'LURU FRESH — Order Page Redesign (Mockup)</div>
+
+<div class="frame">
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="icons">
+      <span>📶</span><span>🔋</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-row1">
+      <div class="brand">
+        <div class="brand-icon">🐔</div>
+        <div>
+          <div class="brand-name">B'<em>LURU</em> FRESH</div>
+          <div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.05em;margin-top:1px;">Farm-fresh chicken</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="hbtn">📞</div>
+        <div class="hbtn">👤</div>
+      </div>
+    </div>
+    <div class="location-pill">
+      <div class="loc-left">
+        <div class="loc-dot"></div>
+        <div>
+          <div class="loc-text">DELIVERING TO</div>
+          <div class="loc-area">Agrahara · 560064</div>
+        </div>
+      </div>
+      <div class="loc-change">CHANGE ›</div>
+    </div>
+  </div>
+
+  <!-- Ticker -->
+  <div class="ticker">
+    <div class="ticker-track">
+      <div class="ti">⚡ DELIVERY IN 1 HOUR<span class="ti-sep">✦</span></div>
+      <div class="ti">🔪 CUT AFTER ORDER<span class="ti-sep">✦</span></div>
+      <div class="ti">🌿 NO PRESERVATIVES<span class="ti-sep">✦</span></div>
+      <div class="ti">🔬 FSSAI LICENSED<span class="ti-sep">✦</span></div>
+      <div class="ti">⚡ DELIVERY IN 1 HOUR<span class="ti-sep">✦</span></div>
+      <div class="ti">🔪 CUT AFTER ORDER<span class="ti-sep">✦</span></div>
+      <div class="ti">🌿 NO PRESERVATIVES<span class="ti-sep">✦</span></div>
+      <div class="ti">🔬 FSSAI LICENSED<span class="ti-sep">✦</span></div>
+    </div>
+  </div>
+
+  <!-- Scrollable body -->
+  <div class="body">
+
+    <!-- Banner -->
+    <div class="banner">
+      <div class="banner-text">
+        <div class="banner-tag">● Launching Offer</div>
+        <div class="banner-h">25% OFF<br/><span>Everything</span></div>
+        <div class="banner-sub">FREE DELIVERY · LIMITED TIME</div>
+      </div>
+      <div class="banner-emoji">🐔</div>
+      <button class="banner-btn">ORDER NOW ⚡</button>
+    </div>
+
+    <!-- Menu section -->
+    <div class="section-hdr">
+      <div>
+        <div class="section-kicker">Menu</div>
+        <div class="section-h">FRESH CUTS.</div>
+      </div>
+      <div class="live-badge"><div class="live-dot"></div>LIVE & FRESH</div>
+    </div>
+
+    <!-- Product grid -->
+    <div class="grid">
+
+      <!-- Card 1 -->
+      <div class="pcard">
+        <div class="pcard-img">
+          <img src="https://assets.tendercuts.in/product/P/R/c770bfb6-bb8a-48b9-abe3-df519a0c7954.webp" alt="Curry Cut"/>
+          <div class="fresh-badge">FRESH</div>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-name">Curry Cut</div>
+          <div class="pcard-weight">400–450g · Without skin</div>
+          <div class="pcard-price-row">
+            <span class="pcard-old">₹239</span>
+            <span class="pcard-price">₹179</span>
+            <span class="pcard-unit">/pc</span>
+          </div>
+          <button class="add-btn">+ ADD TO CART</button>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="pcard">
+        <div class="pcard-img">
+          <img src="https://assets.tendercuts.in/product/C/H/a6b6b1db-2b6b-4129-a557-fbd9811c8888.webp" alt="Biriyani Cut"/>
+          <div class="fresh-badge">FRESH</div>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-name">Biriyani Cut</div>
+          <div class="pcard-weight">400–450g · Without skin</div>
+          <div class="pcard-price-row">
+            <span class="pcard-old">₹233</span>
+            <span class="pcard-price">₹175</span>
+            <span class="pcard-unit">/pc</span>
+          </div>
+          <button class="add-btn">+ ADD TO CART</button>
+        </div>
+      </div>
+
+      <!-- Card 3 — out of stock -->
+      <div class="pcard oos">
+        <div class="pcard-img" style="position:relative;">
+          <img src="https://static.freshtohome.com/cdn-cgi/image/width=600/https://static.freshtohome.com/media/catalog/product/c/h/chicken_breast_fillet_1.jpg" alt="Breast"/>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-name">Chicken Breast</div>
+          <div class="pcard-weight">400–450g · Boneless</div>
+          <div class="pcard-price-row">
+            <span class="pcard-price" style="color:rgba(22,20,15,.3);">₹289</span>
+            <span class="pcard-unit">/pc</span>
+          </div>
+          <button class="oos-btn">OUT OF STOCK</button>
+        </div>
+      </div>
+
+      <!-- Card 4 — out of stock -->
+      <div class="pcard oos">
+        <div class="pcard-img" style="position:relative;">
+          <img src="https://assets.tendercuts.in/product/C/H/a62a73e9-a7d5-4f79-86c1-9f6127e7026e.jpg" alt="Drumsticks"/>
+        </div>
+        <div class="pcard-body">
+          <div class="pcard-name">Drumsticks</div>
+          <div class="pcard-weight">400–450g · Premium</div>
+          <div class="pcard-price-row">
+            <span class="pcard-price" style="color:rgba(22,20,15,.3);">₹219</span>
+            <span class="pcard-unit">/pc</span>
+          </div>
+          <button class="oos-btn">OUT OF STOCK</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Cart FAB -->
+  <button class="cart-fab">
+    🛒 VIEW CART
+    <div class="cart-count">2</div>
+  </button>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <div class="nav-icon">🛒</div>
+      <div class="nav-label">Shop</div>
+      <div class="nav-pip"></div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📋</div>
+      <div class="nav-label">Orders</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📜</div>
+      <div class="nav-label">History</div>
+    </div>
+  </div>
+</div>
+
+<div class="note">↑ This is a preview mockup only — nothing has been changed in the live app.<br/>Tell me if you'd like to approve this design and I'll implement it.</div>
+
+</body>
+</html>
