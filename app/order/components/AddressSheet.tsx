@@ -117,6 +117,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     setLocError('')
     setLocDenied(false)
     try {
+      // ── Step 1: Get GPS coordinates ───────────────────────────────────────
       const pos = await new Promise<GeolocationPosition>((res, rej) =>
         navigator.geolocation.getCurrentPosition(res, rej, { timeout: 12_000, enableHighAccuracy: true })
       )
@@ -124,19 +125,27 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setLat(latitude); setLng(longitude)
       cachedLatRef.current = latitude; cachedLngRef.current = longitude
 
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-        { headers: { 'Accept-Language': 'en' } }
-      )
-      const data = await r.json()
-      const addr = data.address ?? {}
-      const road   = addr.road ?? addr.pedestrian ?? addr.neighbourhood ?? addr.hamlet ?? ''
-      const area   = addr.suburb ?? addr.quarter ?? addr.city_district ?? addr.village ?? ''
-      const street = [road, area].filter(Boolean).join(', ')
-      setStreetAddress(street)
-      cachedStreetRef.current = street
-      if (addr.postcode) { setPincode(addr.postcode); cachedPincodeRef.current = addr.postcode }
+      // ── Step 2: Reverse geocode for street name (optional — never blocks) ──
+      // If Nominatim fails for any reason, the location is still captured
+      // and the user can proceed. We silently ignore the error.
+      try {
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
+          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(8_000) }
+        )
+        const data = await r.json()
+        const addr = data.address ?? {}
+        const road   = addr.road ?? addr.pedestrian ?? addr.neighbourhood ?? addr.hamlet ?? ''
+        const area   = addr.suburb ?? addr.quarter ?? addr.city_district ?? addr.village ?? ''
+        const street = [road, area].filter(Boolean).join(', ')
+        setStreetAddress(street)
+        cachedStreetRef.current = street
+        if (addr.postcode) { setPincode(addr.postcode); cachedPincodeRef.current = addr.postcode }
+      } catch {
+        // Nominatim unavailable — GPS coords are still valid, user can proceed
+      }
     } catch (err: unknown) {
+      // GPS itself failed
       const geoErr = err as GeolocationPositionError
       if (geoErr?.code === 1) {
         setLocDenied(true)
