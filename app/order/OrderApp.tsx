@@ -383,6 +383,9 @@ export default function OrderApp() {
                   activeTab={activeTab}
                   onTabChange={goToTab}
                   activeOrderCount={activeCount}
+                  cartTotal={cartTotal}
+                  cartItemCount={cartItemCount}
+                  onOpenCart={() => setCartOpen(true)}
                 />
               </div>
             </div>

@@ -1,12 +1,19 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Minus, AlertCircle, User, LogOut, ChevronDown, MapPin, ChevronRight, Phone } from 'lucide-react'
+import { AlertCircle, LogOut, User } from 'lucide-react'
 import { type ProductRow, type CartItem } from '@/lib/supabase-browser'
 import type { AuthUser } from '@/lib/auth-types'
 import { UNIT_LABEL } from '@/lib/units'
 import Image from 'next/image'
-import BannerCarousel from './BannerCarousel'
+
+// ── colour tokens (from mockup) ─────────────────────────────────
+const G   = '#91d852'
+const GD  = '#6ab82e'
+const P   = '#9318cc'
+// const PL  = '#c44ef5'
+const INK = '#16140f'
+// const CREAM = '#faf7f0'
 
 const PRODUCT_IMAGES: Record<string, string> = {
   'boneless':  '/assets/raw_chicken_breast.jpg',
@@ -40,7 +47,7 @@ interface Props {
 
 export default function ShopTab({
   user, cart, onAddToCart, onUpdateQty, onOpenCart, onLoginRequired, onLogout, onChangeArea,
-  cartTotal, cartItemCount, areaName, pincode, storeOpen = true, announcement, bannerImages = [],
+  cartTotal, cartItemCount, areaName, pincode, storeOpen = true, announcement,
 }: Props) {
   const [products,     setProducts]     = useState<ProductRow[]>([])
   const [loading,      setLoading]      = useState(true)
@@ -79,86 +86,88 @@ export default function ShopTab({
   }
 
   const hasCart = cartItemCount > 0
+  const heroProduct  = products[0] ?? null
+  const gridProducts = products.slice(1)
+
+  const locationText = areaName
+    ? `${areaName}${pincode ? ` · ${pincode}` : ''}`
+    : pincode ?? 'Select area'
 
   return (
-    <div className="min-h-full" style={{ background: '#FDF8F0' }}>
+    <div style={{ minHeight: '100%', background: '#faf7f0', fontFamily: "'DM Mono', monospace" }}>
 
-      {/* ── Header ── */}
-      <div
-        className="sticky top-0 z-20"
-        style={{
-          background: 'linear-gradient(145deg, #7C2D12 0%, #B45309 55%, #D97706 100%)',
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          boxShadow: '0 4px 24px rgba(124,45,18,0.45)',
-        }}
-      >
-        {/* Row 1: brand + actions */}
-        <div className="px-4 pt-3.5 pb-2 flex items-center justify-between gap-2">
+      {/* ══ DARK HEADER ══ */}
+      <div className="sticky top-0 z-20" style={{ background: INK, flexShrink: 0 }}>
 
+        {/* Row 1: brand + buttons */}
+        <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Brand */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.25)' }}
-            >
-              <svg width="20" height="20" viewBox="0 0 28 28" aria-hidden="true">
-                <circle cx="14" cy="11" r="7" fill="white"/>
-                <rect x="12.5" y="15.5" width="3" height="9" rx="1.5" fill="white"/>
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <p className="font-black text-[13px] text-white leading-none tracking-widest" style={{ letterSpacing: '0.13em' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 38, height: 38, borderRadius: 12,
+              background: `linear-gradient(135deg,${G},${GD})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20,
+              boxShadow: `0 0 20px rgba(145,216,82,.5)`,
+            }}>🐔</div>
+            <div>
+              <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11.5, color: G, letterSpacing: '0.04em' }}>
                 B&apos;LURU FRESH
-              </p>
-              <p className="text-[10px] font-medium leading-none mt-0.5" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              </div>
+              <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,.28)', marginTop: 1.5, letterSpacing: '0.06em' }}>
                 Farm-fresh chicken, Yelahanka
-              </p>
+              </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 6 }}>
             <a
               href="tel:7259516664"
-              className="w-9 h-9 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
-              style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
-            >
-              <Phone size={15} className="text-white" strokeWidth={2.2} />
-            </a>
+              style={{
+                width: 36, height: 36, borderRadius: 11,
+                background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.09)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+                textDecoration: 'none',
+              }}
+            >📞</a>
 
-            <div className="relative" ref={menuRef}>
+            <div style={{ position: 'relative' }} ref={menuRef}>
               {user ? (
                 <>
                   <button
                     onClick={() => setUserMenuOpen(v => !v)}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center active:scale-90 transition-transform"
-                    style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.2)' }}
+                    style={{
+                      width: 36, height: 36, borderRadius: 11,
+                      background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.09)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    }}
                   >
-                    <User size={16} className="text-white" strokeWidth={2.5} />
+                    <User size={16} color="white" strokeWidth={2.5} />
                   </button>
-
                   {userMenuOpen && (
-                    <div
-                      className="fixed w-56 bg-white rounded-2xl overflow-hidden z-[200] animate-fade-in"
-                      style={{
-                        top: 'calc(env(safe-area-inset-top, 0px) + 4rem)',
-                        right: '1rem',
-                        boxShadow: '0 8px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)',
-                        border: '1px solid rgba(217,119,6,0.12)',
-                      }}
-                    >
-                      <div className="px-4 py-3" style={{ background: '#FEF9EE', borderBottom: '1px solid #FDE68A' }}>
-                        <p className="text-[9px] font-black uppercase tracking-widest" style={{ color: '#B45309' }}>Signed in as</p>
-                        <p className="text-xs font-semibold mt-0.5 truncate" style={{ color: '#78350F' }}>
+                    <div style={{
+                      position: 'fixed', width: 220, background: '#fff', borderRadius: 16,
+                      overflow: 'hidden', zIndex: 200,
+                      top: 'calc(env(safe-area-inset-top, 0px) + 4rem)', right: '1rem',
+                      boxShadow: '0 8px 40px rgba(0,0,0,.18)',
+                      border: '1px solid rgba(147,24,204,.12)',
+                    }}>
+                      <div style={{ padding: '10px 16px', background: '#f3e8ff', borderBottom: `1px solid rgba(147,24,204,.15)` }}>
+                        <p style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: P }}>Signed in as</p>
+                        <p style={{ fontSize: 12, fontWeight: 600, marginTop: 2, color: INK, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {user.name ?? `+91 ${user.phone}`}
                         </p>
                       </div>
                       <button
                         onClick={() => { setUserMenuOpen(false); onLogout() }}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 text-red-500 active:bg-red-50 transition-colors"
+                        style={{
+                          width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '12px 16px', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer',
+                        }}
                       >
                         <LogOut size={14} strokeWidth={2} />
-                        <span className="text-sm font-semibold">Sign out</span>
+                        <span style={{ fontSize: 14, fontWeight: 600 }}>Sign out</span>
                       </button>
                     </div>
                   )}
@@ -166,396 +175,453 @@ export default function ShopTab({
               ) : (
                 <button
                   onClick={onLoginRequired}
-                  className="text-[11px] font-black px-4 py-2.5 rounded-xl active:scale-95 transition-all text-white"
-                  style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)' }}
-                >
-                  Sign in
-                </button>
+                  style={{
+                    width: 36, height: 36, borderRadius: 11,
+                    background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.09)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 15, cursor: 'pointer',
+                  }}
+                >👤</button>
               )}
             </div>
           </div>
         </div>
 
-        {/* Row 2: delivery location pill */}
-        <div className="px-4 pb-3">
-          <button
-            onClick={onChangeArea}
-            className="w-full flex items-center gap-2.5 rounded-2xl px-4 py-2.5 active:opacity-80 transition-opacity"
-            style={{ background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.12)' }}
-          >
-            <MapPin size={13} className="text-white/70 shrink-0" />
-            <div className="flex-1 text-left min-w-0">
-              <span className="text-[10px] font-semibold block leading-none" style={{ color: 'rgba(255,255,255,0.55)' }}>
-                Delivering to
-              </span>
-              <span className="text-[13px] font-bold text-white leading-snug truncate block mt-0.5">
-                {areaName ? `${areaName}${pincode ? ` · ${pincode}` : ''}` : pincode ?? 'Select your area'}
-              </span>
+        {/* Delivery stats strip */}
+        <div style={{
+          display: 'flex', alignItems: 'stretch',
+          borderTop: '1px solid rgba(255,255,255,.06)',
+          borderBottom: '1px solid rgba(255,255,255,.06)',
+          marginTop: 10,
+        }}>
+          {[
+            { num: '1hr',  label: 'Delivery',    active: true },
+            { num: '0%',   label: 'Preservatives', active: false },
+            { num: '100%', label: 'Cut-to-order',  active: false },
+          ].map(({ num, label, active }, i) => (
+            <div key={label} style={{
+              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              padding: '9px 4px', position: 'relative',
+              borderRight: i < 2 ? '1px solid rgba(255,255,255,.06)' : 'none',
+            }}>
+              {active && (
+                <div style={{
+                  position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+                  width: 20, height: 2, background: G, borderRadius: 2,
+                }} />
+              )}
+              <div style={{
+                fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 15,
+                color: active ? G : 'rgba(255,255,255,.07)', lineHeight: 1,
+              }}>{num}</div>
+              <div style={{
+                fontSize: 7.5, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1,
+                color: active ? `rgba(145,216,82,.7)` : 'rgba(255,255,255,.28)',
+              }}>{label}</div>
             </div>
-            <div
-              className="flex items-center gap-1 rounded-full px-2.5 py-1 shrink-0"
-              style={{ background: 'rgba(255,255,255,0.15)' }}
-            >
-              <span className="text-[10px] font-bold text-white/90">Change</span>
-              <ChevronRight size={10} className="text-white/70" />
-            </div>
-          </button>
+          ))}
         </div>
 
-        {/* Row 3: scrollable trust strip */}
-        <div
-          className="overflow-x-auto pb-2.5"
-          style={{ scrollbarWidth: 'none' } as React.CSSProperties}
-        >
-          <div className="flex items-center gap-4 px-4">
-            {[
-              { icon: '⚡', text: 'Delivery within 1 hour' },
-              { icon: '✂️', text: 'Order to cut' },
-              { icon: '🥩', text: 'Farm fresh daily' },
-              { icon: '🌿', text: 'No preservatives' },
-              { icon: '🛡️', text: 'FSSAI licensed' },
-            ].map(({ icon, text }) => (
-              <div key={text} className="flex items-center gap-1 shrink-0">
-                <span className="text-[11px] leading-none">{icon}</span>
-                <span className="text-[10px] font-semibold whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                  {text}
-                </span>
+        {/* Location row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            {/* Pulsing green dot via keyframes injected inline */}
+            <style>{`
+              @keyframes locpulse {
+                0%,100%{box-shadow:0 0 0 3px rgba(145,216,82,.2),0 0 0 6px rgba(145,216,82,.06)}
+                50%{box-shadow:0 0 0 5px rgba(145,216,82,.3),0 0 0 10px rgba(145,216,82,.1)}
+              }
+              @keyframes tickerscroll {
+                from{transform:translateX(0)}
+                to{transform:translateX(-50%)}
+              }
+              @keyframes heroBlink {
+                0%,100%{opacity:1}50%{opacity:.2}
+              }
+              @keyframes heroGlowBtn {
+                0%,100%{box-shadow:0 4px 20px rgba(145,216,82,.4)}
+                50%{box-shadow:0 4px 30px rgba(145,216,82,.7)}
+              }
+            `}</style>
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%', background: G, flexShrink: 0,
+              animation: 'locpulse 2s ease-in-out infinite',
+            }} />
+            <div>
+              <div style={{ fontSize: 8, letterSpacing: '0.12em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>
+                Delivering to
               </div>
-            ))}
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginTop: 1 }}>
+                {locationText}
+              </div>
+            </div>
           </div>
+          <button
+            onClick={onChangeArea}
+            style={{
+              fontSize: 8, fontWeight: 700, color: `rgba(145,216,82,.8)`,
+              border: `1px solid rgba(145,216,82,.25)`,
+              padding: '5px 10px', borderRadius: 20, letterSpacing: '0.08em',
+              background: 'none', cursor: 'pointer',
+            }}
+          >CHANGE ›</button>
         </div>
       </div>
 
-      {/* ── Banners ── */}
+      {/* ══ GREEN TICKER STRIP ══ */}
+      <div style={{ background: G, padding: '6px 0', overflow: 'hidden', display: 'flex', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 18, animation: 'tickerscroll 9s linear infinite', whiteSpace: 'nowrap' }}>
+          {['NO FOUL SMELL', 'CUT AFTER ORDER', '1 HOUR DELIVERY', 'ZERO PRESERVATIVES', 'FSSAI LICENSED',
+            'NO FOUL SMELL', 'CUT AFTER ORDER', '1 HOUR DELIVERY', 'ZERO PRESERVATIVES', 'FSSAI LICENSED'].map((t, i) => (
+            <span key={i} style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.15em', color: INK, flexShrink: 0 }}>
+              {t} <span style={{ opacity: 0.3 }}>✦</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ══ ANNOUNCEMENT ══ */}
       {announcement && (
-        <div
-          className="mx-3 mt-3 rounded-2xl px-4 py-3 flex items-center gap-2.5"
-          style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}
-        >
-          <span className="text-lg shrink-0">📢</span>
-          <p className="text-xs font-semibold leading-snug" style={{ color: '#78350F' }}>{announcement}</p>
+        <div style={{ margin: '12px 12px 0', borderRadius: 16, padding: '10px 14px', background: '#f3e8ff', border: `1px solid rgba(147,24,204,.18)`, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>📢</span>
+          <p style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.4, color: P }}>{announcement}</p>
         </div>
       )}
+
+      {/* ══ STORE CLOSED BANNER ══ */}
       {!storeOpen && (
-        <div
-          className="mx-3 mt-3 rounded-2xl overflow-hidden"
-          style={{ boxShadow: '0 4px 20px rgba(217,119,6,0.25)' }}
-        >
-          {/* Top accent stripe */}
-          <div style={{ height: 4, background: 'linear-gradient(90deg, #F59E0B, #D97706, #F59E0B)' }} />
-          <div
-            className="px-4 py-4"
-            style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%)', border: '1.5px solid #FDE68A', borderTop: 'none' }}
-          >
-            {/* Icon + heading row */}
-            <div className="flex items-center gap-2.5 mb-2">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shrink-0"
-                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 2px 8px rgba(217,119,6,0.4)' }}
-              >
-                🌙
-              </div>
+        <div style={{ margin: '12px 12px 0', borderRadius: 18, overflow: 'hidden', boxShadow: `0 4px 20px rgba(147,24,204,.2)` }}>
+          <div style={{ height: 4, background: `linear-gradient(90deg,${P},#c44ef5,${P})` }} />
+          <div style={{
+            padding: '14px 16px',
+            background: 'linear-gradient(135deg,#f3e8ff 0%,#faf5ff 100%)',
+            border: `1.5px solid rgba(147,24,204,.15)`, borderTop: 'none',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 20, background: `linear-gradient(135deg,${P},#c44ef5)`,
+                boxShadow: `0 2px 8px rgba(147,24,204,.4)`,
+              }}>🌙</div>
               <div>
-                <p className="font-black text-sm leading-tight" style={{ color: '#78350F' }}>We&apos;re closed right now</p>
-                <p className="text-[11px] font-semibold" style={{ color: '#B45309' }}>But you can still order!</p>
+                <p style={{ fontWeight: 900, fontSize: 14, lineHeight: 1.2, color: INK }}>We&apos;re closed right now</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: P }}>But you can still order!</p>
               </div>
             </div>
-            {/* Message */}
-            <div
-              className="rounded-xl px-3.5 py-2.5 flex items-start gap-2"
-              style={{ background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.2)' }}
-            >
-              <span className="text-base shrink-0">🚚</span>
-              <p className="text-xs leading-relaxed font-medium" style={{ color: '#78350F' }}>
-                Place your order now and it will be <span style={{ color: '#92400E', fontWeight: 700 }}>freshly cut and delivered tomorrow morning between 7 AM – 8 AM</span>.
+            <div style={{ borderRadius: 12, padding: '10px 14px', background: 'rgba(147,24,204,.07)', border: `1px solid rgba(147,24,204,.12)`, display: 'flex', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>🚚</span>
+              <p style={{ fontSize: 11, lineHeight: 1.6, color: INK }}>
+                Place your order now and it will be{' '}
+                <strong style={{ color: P }}>freshly cut and delivered tomorrow morning between 7 AM – 8 AM</strong>.
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Hero Banner / Carousel ── */}
-      <BannerCarousel images={bannerImages} />
+      {/* ══ SCROLLABLE BODY ══ */}
+      <div style={{ background: '#faf7f0' }}>
 
-      {/* ── Section label ── */}
-      {!loading && !error && products.length > 0 && (
-        <div className="px-4 pt-5 pb-3 flex items-end justify-between">
-          <div>
-            <p
-              className="text-[9px] font-black uppercase leading-none"
-              style={{ color: '#D97706', letterSpacing: '0.18em' }}
-            >
-              Menu
-            </p>
-            <p className="text-[22px] font-black leading-tight mt-1 tracking-tight" style={{ color: '#1C0F00' }}>
-              Fresh Cuts
-            </p>
-          </div>
-          <div
-            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 mb-0.5"
-            style={{ background: '#052E16', border: '1px solid rgba(16,185,129,0.3)' }}
-          >
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="text-[10px] font-bold text-emerald-400 tracking-wide">Live & fresh</span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Product Grid ── */}
-      <div className="px-3 pb-3">
+        {/* Loading skeleton */}
         {loading && (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pt-1">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '12px 12px 0' }}>
             {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="rounded-3xl overflow-hidden border animate-pulse"
-                style={{ background: '#FFFDF7', borderColor: '#FDE68A' }}
-              >
-                <div className="w-full" style={{ paddingBottom: '88%', background: '#FEF3C7' }} />
-                <div className="px-3 pt-2.5 pb-3 space-y-2">
-                  <div className="h-4 rounded-full w-3/4" style={{ background: '#FEF3C7' }} />
-                  <div className="h-3 rounded-full w-1/2" style={{ background: '#FEF9EE' }} />
-                  <div className="h-9 rounded-2xl mt-1" style={{ background: '#FEF3C7' }} />
+              <div key={i} style={{ borderRadius: 18, overflow: 'hidden', border: '1.5px solid rgba(22,20,15,.06)', background: '#fff', animation: 'pulse 1.5s ease-in-out infinite' }}>
+                <div style={{ height: 112, background: '#f2ede0' }} />
+                <div style={{ padding: 10 }}>
+                  <div style={{ height: 14, borderRadius: 8, background: '#f2ede0', marginBottom: 6 }} />
+                  <div style={{ height: 10, borderRadius: 8, background: '#f7f4ee', width: '60%', marginBottom: 8 }} />
+                  <div style={{ height: 32, borderRadius: 10, background: '#f2ede0' }} />
                 </div>
               </div>
             ))}
           </div>
         )}
 
+        {/* Error */}
         {error && (
-          <div
-            className="flex items-center gap-2.5 rounded-2xl p-4 text-sm mx-1 mt-2"
-            style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}
-          >
-            <AlertCircle size={16} className="shrink-0" />
-            <span>{error}</span>
+          <div style={{ margin: '12px', borderRadius: 16, padding: '14px 16px', background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+            <span style={{ fontSize: 13 }}>{error}</span>
           </div>
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {products.map(p => {
-              const qty        = getCartQty(p.id)
-              const inCart     = qty > 0
-              const outOfStock = p.stock_quantity === 0
-              const imgSrc     = productImage(p)
-
+          <>
+            {/* ── EDITORIAL HERO (first product) ── */}
+            {heroProduct && (() => {
+              const heroImg = productImage(heroProduct)
+              const heroOld = Math.round(heroProduct.price_per_kg / 0.75)
+              const heroQty = getCartQty(heroProduct.id)
+              const heroOOS = heroProduct.stock_quantity === 0
               return (
-                <div
-                  key={p.id}
-                  className={`rounded-3xl overflow-hidden flex flex-col transition-all duration-200 ${outOfStock ? 'opacity-60' : ''}`}
-                  style={{
-                    background: inCart ? '#FFFBF0' : '#FFFFFF',
-                    border: inCart
-                      ? '2px solid rgba(217,119,6,0.5)'
-                      : '1px solid rgba(253,230,138,0.6)',
-                    boxShadow: inCart
-                      ? '0 8px 32px rgba(217,119,6,0.2), 0 2px 8px rgba(180,83,9,0.1)'
-                      : '0 2px 16px rgba(120,53,15,0.07)',
-                  }}
-                >
-                  {/* Image */}
-                  <div className="relative w-full" style={{ paddingBottom: '88%', background: '#FEF3C7' }}>
-                    {imgSrc ? (
-                      <Image
-                        src={imgSrc} alt={p.name} fill
-                        className="object-cover"
-                        sizes="(max-width: 430px) 48vw, 200px"
-                      />
-                    ) : (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center text-5xl"
-                        style={{ background: '#FEF9EE' }}
-                      >
-                        🍗
+                <div style={{ position: 'relative', height: 220, overflow: 'hidden', background: INK }}>
+                  {/* Background image */}
+                  {heroImg && (
+                    <div style={{ position: 'absolute', inset: 0, opacity: 0.45, transform: 'scale(1.05)' }}>
+                      <Image src={heroImg} alt={heroProduct.name} fill className="object-cover" sizes="430px" />
+                    </div>
+                  )}
+                  {/* Gradient overlay */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(135deg,rgba(22,20,15,.9) 0%,rgba(22,20,15,.5) 50%,transparent 100%)',
+                  }} />
+                  {/* Content */}
+                  <div style={{ position: 'absolute', inset: 0, padding: '18px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    {/* Top row */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        fontSize: 8, letterSpacing: '0.2em', color: G, textTransform: 'uppercase',
+                        borderBottom: `1px solid rgba(145,216,82,.3)`, paddingBottom: 3,
+                      }}>
+                        <span style={{ width: 5, height: 5, background: G, borderRadius: '50%', animation: 'heroBlink 1.2s ease infinite', display: 'inline-block' }} />
+                        Most Popular
                       </div>
-                    )}
-
-                    {/* Gradient overlay */}
-                    <div
-                      className="absolute inset-x-0 bottom-0 h-20 pointer-events-none"
-                      style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent)' }}
-                    />
-
-                    {/* Price on image */}
-                    <div className="absolute bottom-2 left-2.5">
-                      <span
-                        className="text-[13px] font-bold leading-none block"
-                        style={{
-                          color: '#fca5a5',
-                          textDecoration: 'line-through',
-                          textDecorationColor: '#f87171',
-                          textDecorationThickness: '1.5px',
-                          textShadow: '0 1px 3px rgba(0,0,0,0.6)',
-                        }}
-                      >
-                        ₹{Math.round(p.price_per_kg / 0.75)}
-                      </span>
-                      <div className="flex items-baseline gap-0.5 mt-0.5">
-                        <span className="font-black text-[19px] leading-none text-white drop-shadow-lg">
-                          ₹{p.price_per_kg}
-                        </span>
-                        <span className="text-white/70 text-[10px] font-medium">/pc</span>
-                      </div>
+                      <div style={{
+                        background: 'linear-gradient(135deg,#9318cc,#c44ef5)',
+                        color: '#fff', fontSize: 8, fontWeight: 700,
+                        padding: '4px 10px', borderRadius: 20, letterSpacing: '0.08em',
+                        boxShadow: '0 4px 16px rgba(147,24,204,.5)',
+                      }}>⭐ BEST SELLER</div>
                     </div>
 
-                    {/* FRESH badge */}
-                    {!outOfStock && !inCart && (
-                      <div
-                        className="absolute top-2.5 right-2.5 text-white text-[8px] font-black px-2 py-1 rounded-full tracking-wide shadow"
-                        style={{ background: 'linear-gradient(135deg, #059669, #047857)' }}
-                      >
-                        FRESH
-                      </div>
-                    )}
-
-                    {/* In-cart badge */}
-                    {inCart && (
-                      <div
-                        className="absolute top-2.5 left-2.5 text-white text-[9px] font-black px-2 py-1 rounded-full shadow flex items-center gap-1"
-                        style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)' }}
-                      >
-                        ✓ IN CART
-                      </div>
-                    )}
-
-                    {/* Low stock */}
-                    {!outOfStock && p.stock_quantity > 0 && p.stock_quantity <= 5 && (
-                      <div
-                        className="absolute top-2.5 right-2.5 text-white text-[8px] font-bold px-2 py-1 rounded-full shadow"
-                        style={{ background: '#F97316' }}
-                      >
-                        ONLY {p.stock_quantity} LEFT
-                      </div>
-                    )}
-
-                    {/* Out of stock overlay */}
-                    {outOfStock && (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center"
-                        style={{ background: 'rgba(255,255,255,0.75)' }}
-                      >
-                        <span
-                          className="text-xs font-bold px-3 py-1.5 rounded-full shadow-sm"
-                          style={{ background: '#fff', color: '#78716C', border: '1px solid #E7E5E4' }}
-                        >
-                          Out of stock
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info + controls */}
-                  <div className="px-3 pt-2.5 pb-3 flex flex-col gap-2 flex-1">
+                    {/* Bottom block */}
                     <div>
-                      <h3
-                        className="font-black text-[15px] leading-tight tracking-tight"
-                        style={{ color: '#1C0F00' }}
-                      >
-                        {p.name}
-                      </h3>
-                      <p className="text-[10px] font-medium mt-0.5" style={{ color: '#A8896A' }}>
-                        {UNIT_LABEL}
-                      </p>
-                    </div>
-
-                    {!outOfStock && (
-                      <div className="mt-auto">
-                        {!inCart ? (
-                          <button
-                            onClick={() => onAddToCart({
-                              productId: p.id, name: p.name,
-                              pricePerKg: p.price_per_kg, quantity: 1, imageUrl: p.image_url,
-                            })}
-                            disabled={false}
-                            className="w-full text-white rounded-2xl py-2.5 text-sm font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-40"
-                            style={{
-                              background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 55%, #B45309 100%)',
-                              boxShadow: '0 4px 16px rgba(217,119,6,0.38)',
-                            }}
-                          >
-                            <Plus size={14} strokeWidth={2.5} />
-                            Add to Cart
-                          </button>
-                        ) : (
-                          <div
-                            className="flex items-center rounded-2xl p-0.5 gap-0.5"
-                            style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 55%, #B45309 100%)' }}
-                          >
+                      <h2 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 6 }}>
+                        {heroProduct.name}
+                      </h2>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)', marginBottom: 10, letterSpacing: '0.06em' }}>
+                        {UNIT_LABEL} · Cut fresh after order
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', textDecoration: 'line-through' }}>₹{heroOld}</span>
+                          <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 28, color: G, letterSpacing: '-0.02em' }}>₹{heroProduct.price_per_kg}</span>
+                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,.4)' }}>/pc</span>
+                        </div>
+                        {!heroOOS && (
+                          heroQty === 0 ? (
                             <button
-                              onClick={() => onUpdateQty(p.id, qty - 1)}
-                              className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors active:scale-90"
-                              style={{ background: 'rgba(0,0,0,0.18)' }}
-                            >
-                              <Minus size={14} className="text-white" strokeWidth={2.5} />
-                            </button>
-                            <span className="flex-1 text-center text-sm font-black text-white">{qty}</span>
-                            <button
-                              onClick={() => onUpdateQty(p.id, qty + 1)}
-                              className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors active:scale-90"
-                              style={{ background: 'rgba(255,255,255,0.22)' }}
-                            >
-                              <Plus size={14} className="text-white" strokeWidth={2.5} />
-                            </button>
-                          </div>
+                              onClick={() => onAddToCart({ productId: heroProduct.id, name: heroProduct.name, pricePerKg: heroProduct.price_per_kg, quantity: 1, imageUrl: heroProduct.image_url })}
+                              style={{
+                                background: G, color: INK, border: 'none',
+                                borderRadius: 14, padding: '11px 20px',
+                                fontFamily: "'Unbounded', sans-serif", fontSize: 9, fontWeight: 700,
+                                letterSpacing: '0.06em', cursor: 'pointer',
+                                animation: 'heroGlowBtn 3s ease infinite',
+                              }}
+                            >ADD TO CART →</button>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <button onClick={() => onUpdateQty(heroProduct.id, heroQty - 1)} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0,0,0,.35)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer' }}>−</button>
+                              <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, color: '#fff', minWidth: 24, textAlign: 'center' }}>{heroQty}</span>
+                              <button onClick={() => onUpdateQty(heroProduct.id, heroQty + 1)} style={{ width: 32, height: 32, borderRadius: 10, background: G, border: 'none', color: INK, fontSize: 18, cursor: 'pointer' }}>+</button>
+                            </div>
+                          )
+                        )}
+                        {heroOOS && (
+                          <span style={{ fontSize: 10, color: 'rgba(255,255,255,.4)', fontWeight: 700 }}>Out of Stock</span>
                         )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               )
-            })}
-          </div>
+            })()}
+
+            {/* ── PROCESS STRIP ── */}
+            <div style={{ display: 'flex', background: INK }}>
+              {[
+                { icon: '📲', label: 'You Order' },
+                { icon: '🔪', label: 'We Cut' },
+                { icon: '📦', label: 'We Pack' },
+                { icon: '🏍️', label: 'Delivered' },
+              ].map(({ icon, label }, i) => (
+                <div key={label} style={{ display: 'contents' }}>
+                  <div style={{
+                    flex: 1, padding: '8px 6px', textAlign: 'center',
+                    borderRight: i < 3 ? '1px solid rgba(255,255,255,.05)' : 'none',
+                  }}>
+                    <span style={{ fontSize: 14, display: 'block', marginBottom: 2 }}>{icon}</span>
+                    <span style={{ fontSize: 7, letterSpacing: '0.1em', color: 'rgba(255,255,255,.25)', textTransform: 'uppercase' }}>{label}</span>
+                  </div>
+                  {i < 3 && (
+                    <span style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: `rgba(145,216,82,.3)`, padding: '0 2px', flexShrink: 0 }}>→</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* ── SECTION HEADER ── */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '14px 14px 8px' }}>
+              <div>
+                <div style={{ fontSize: 8.5, letterSpacing: '0.2em', color: P, textTransform: 'uppercase', marginBottom: 3 }}>Today&apos;s Menu</div>
+                <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 20, letterSpacing: '-0.03em', lineHeight: 0.92, color: INK }}>
+                  More{' '}
+                  <em style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', color: GD, fontSize: 24 }}>Fresh Cuts.</em>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: INK, borderRadius: 20, padding: '5px 11px' }}>
+                <div style={{ width: 5, height: 5, borderRadius: '50%', background: G, animation: 'heroBlink 1.2s ease infinite' }} />
+                <span style={{ fontSize: 8.5, fontWeight: 700, color: G, letterSpacing: '0.08em' }}>LIVE</span>
+              </div>
+            </div>
+
+            {/* ── 2-COLUMN PRODUCT GRID ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 12px', paddingBottom: hasCart ? 120 : 24 }}>
+              {gridProducts.map((p, idx) => {
+                const qty        = getCartQty(p.id)
+                const inCart     = qty > 0
+                const outOfStock = p.stock_quantity === 0
+                const imgSrc     = productImage(p)
+                const cardNum    = String(idx + 2).padStart(2, '0')
+                const oldPrice   = Math.round(p.price_per_kg / 0.75)
+
+                return (
+                  <div
+                    key={p.id}
+                    style={{
+                      background: '#fff', borderRadius: 18, overflow: 'hidden',
+                      border: inCart ? `1.5px solid rgba(147,24,204,.3)` : '1.5px solid rgba(22,20,15,.06)',
+                      boxShadow: '0 2px 16px rgba(22,20,15,.06)', position: 'relative',
+                    }}
+                  >
+                    {/* Image area */}
+                    <div style={{ width: '100%', height: 112, overflow: 'hidden', position: 'relative', background: '#f2ede0' }}>
+                      {outOfStock && (
+                        <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'rgba(0,0,0,.04)' }}>
+                          {imgSrc && <Image src={imgSrc} alt={p.name} fill className="object-cover" style={{ filter: 'grayscale(.5)', opacity: 0.6 }} sizes="180px" />}
+                        </div>
+                      )}
+                      {!outOfStock && imgSrc && (
+                        <Image src={imgSrc} alt={p.name} fill className="object-cover" sizes="180px" />
+                      )}
+                      {!outOfStock && !imgSrc && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>🍗</div>
+                      )}
+
+                      {/* Card number badge */}
+                      <div style={{
+                        position: 'absolute', top: 8, left: 8, zIndex: 2,
+                        fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11,
+                        color: 'rgba(255,255,255,.9)',
+                        background: 'rgba(22,20,15,.55)', backdropFilter: 'blur(4px)',
+                        width: 24, height: 24, borderRadius: 8,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        letterSpacing: '-0.02em',
+                      }}>{cardNum}</div>
+
+                      {/* FRESH badge */}
+                      {!outOfStock && (
+                        <div style={{
+                          position: 'absolute', bottom: 7, right: 7, zIndex: 2,
+                          background: GD, color: '#fff',
+                          fontSize: 7.5, fontWeight: 700, padding: '3px 7px',
+                          borderRadius: 20, letterSpacing: '0.1em',
+                        }}>FRESH</div>
+                      )}
+
+                      {/* In-cart indicator */}
+                      {inCart && (
+                        <div style={{
+                          position: 'absolute', top: 8, right: 8, zIndex: 3,
+                          background: `linear-gradient(135deg,${P},#c44ef5)`,
+                          color: '#fff', fontSize: 8, fontWeight: 700,
+                          padding: '3px 7px', borderRadius: 20,
+                        }}>✓ {qty}</div>
+                      )}
+
+                      {/* Low stock */}
+                      {!outOfStock && p.stock_quantity > 0 && p.stock_quantity <= 5 && !inCart && (
+                        <div style={{
+                          position: 'absolute', top: 8, right: 8, zIndex: 3,
+                          background: '#f97316', color: '#fff', fontSize: 7.5, fontWeight: 700,
+                          padding: '3px 7px', borderRadius: 20,
+                        }}>ONLY {p.stock_quantity} LEFT</div>
+                      )}
+                    </div>
+
+                    {/* Card body */}
+                    <div style={{ padding: 10 }}>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 11.5, color: INK, lineHeight: 1.3, marginBottom: 2 }}>
+                        {p.name}
+                      </div>
+                      <div style={{ fontSize: 8, color: 'rgba(22,20,15,.38)', marginBottom: 7, letterSpacing: '0.04em' }}>
+                        {UNIT_LABEL}
+                      </div>
+
+                      {/* Price row */}
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
+                        {!outOfStock && <span style={{ fontSize: 9, color: 'rgba(22,20,15,.28)', textDecoration: 'line-through' }}>₹{oldPrice}</span>}
+                        <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 15, color: outOfStock ? 'rgba(22,20,15,.25)' : P }}>
+                          ₹{p.price_per_kg}
+                        </span>
+                        <span style={{ fontSize: 8, color: 'rgba(22,20,15,.3)' }}>/pc</span>
+                      </div>
+
+                      {/* Button */}
+                      {outOfStock ? (
+                        <button disabled style={{
+                          width: '100%', background: 'rgba(22,20,15,.04)', color: 'rgba(22,20,15,.25)',
+                          border: '1.5px solid rgba(22,20,15,.07)', borderRadius: 10, padding: 7,
+                          fontFamily: "'DM Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
+                          cursor: 'default',
+                        }}>Out of Stock</button>
+                      ) : qty === 0 ? (
+                        <button
+                          onClick={() => onAddToCart({ productId: p.id, name: p.name, pricePerKg: p.price_per_kg, quantity: 1, imageUrl: p.image_url })}
+                          style={{
+                            width: '100%',
+                            background: 'rgba(147,24,204,.08)', color: P,
+                            border: `1.5px solid rgba(147,24,204,.18)`, borderRadius: 10, padding: 7,
+                            fontFamily: "'DM Mono', monospace", fontSize: 9.5, fontWeight: 700,
+                            letterSpacing: '0.07em', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                          }}
+                        >+ Add</button>
+                      ) : (
+                        <div style={{
+                          display: 'flex', alignItems: 'center', borderRadius: 10,
+                          background: `linear-gradient(135deg,${P},#7b14ab)`, overflow: 'hidden',
+                        }}>
+                          <button onClick={() => onUpdateQty(p.id, qty - 1)} style={{ width: 34, height: 32, background: 'rgba(0,0,0,.2)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                          <span style={{ flex: 1, textAlign: 'center', fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 13, color: '#fff' }}>{qty}</span>
+                          <button onClick={() => onUpdateQty(p.id, qty + 1)} style={{ width: 34, height: 32, background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
         )}
 
-        <div className="h-4" />
-      </div>
-
-      {/* ── Footer ── */}
-      <div
-        className="px-4 pb-6 pt-3 text-center mx-3 mb-2"
-        style={{ borderTop: '1px solid rgba(217,119,6,0.12)' }}
-      >
-        <div className="flex justify-center gap-4 mb-2">
-          <a href="/legal/terms"   className="text-[10px] transition-colors" style={{ color: '#A8896A' }}>Terms</a>
-          <a href="/legal/privacy" className="text-[10px] transition-colors" style={{ color: '#A8896A' }}>Privacy</a>
-          <a href="/legal/refund"  className="text-[10px] transition-colors" style={{ color: '#A8896A' }}>Refunds</a>
+        {/* Footer */}
+        <div style={{ padding: '12px 16px 24px', textAlign: 'center', borderTop: '1px solid rgba(22,20,15,.06)', margin: '0 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 6 }}>
+            <a href="/legal/terms"   style={{ fontSize: 10, color: '#a8896a', textDecoration: 'none' }}>Terms</a>
+            <a href="/legal/privacy" style={{ fontSize: 10, color: '#a8896a', textDecoration: 'none' }}>Privacy</a>
+            <a href="/legal/refund"  style={{ fontSize: 10, color: '#a8896a', textDecoration: 'none' }}>Refunds</a>
+          </div>
+          <p style={{ fontSize: 10, color: '#c4a882' }}>
+            © {new Date().getFullYear()} B&apos;LURU Fresh Chicken. All rights reserved.
+          </p>
         </div>
-        <p className="text-[10px]" style={{ color: '#C4A882' }}>
-          © {new Date().getFullYear()} B&apos;LURU Fresh Chicken. All rights reserved.
-        </p>
-      </div>
 
-      {/* ── Sticky cart bar — mobile only (desktop uses sidebar) ── */}
-      {hasCart && (
-        <div
-          className="sticky bottom-0 px-3 pb-3 pt-6 z-10 lg:hidden"
-          style={{ background: 'linear-gradient(to top, #FDF8F0 60%, rgba(253,248,240,0))' }}
-        >
-          <button
+        {/* Cart FAB (hidden — cart is in BottomNav) */}
+        {hasCart && (
+          <div
+            className="lg:hidden"
+            style={{ position: 'sticky', bottom: 0, padding: '8px 12px 16px', background: 'linear-gradient(to top,#faf7f0 55%,transparent)', zIndex: 10 }}
             onClick={onOpenCart}
-            className="w-full text-white rounded-2xl py-3.5 px-4 flex items-center justify-between active:scale-[0.98] transition-all"
-            style={{
-              background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 55%, #B45309 100%)',
-              boxShadow: '0 8px 32px rgba(217,119,6,0.5), 0 2px 8px rgba(180,83,9,0.25)',
-            }}
           >
-            <div className="flex items-center gap-3">
-              <div
-                className="rounded-xl w-8 h-8 flex items-center justify-center text-sm font-black shadow"
-                style={{ background: 'rgba(0,0,0,0.2)', color: '#fff' }}
-              >
-                {cartItemCount}
-              </div>
-              <span className="font-bold text-[15px]">View Cart</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="font-black text-[15px]">₹{cartTotal.toFixed(0)}</span>
-              <ChevronRight size={16} style={{ color: 'rgba(255,255,255,0.7)' }} />
-            </div>
-          </button>
-        </div>
-      )}
+            {/* intentionally empty — cart pill lives in BottomNav on mobile */}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

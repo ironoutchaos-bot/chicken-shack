@@ -1,97 +1,142 @@
 'use client'
 
-import { ShoppingBag, ClipboardList, ReceiptText } from 'lucide-react'
 import type { Tab } from '../OrderApp'
+
+const INK = '#16140f'
+const G   = '#91d852'
+const P   = '#9318cc'
 
 interface Props {
   activeTab: Tab
   onTabChange: (tab: Tab) => void
   activeOrderCount: number
+  cartTotal: number
+  cartItemCount: number
+  onOpenCart: () => void
 }
 
-const TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
-  { id: 'shop',    label: 'Shop',    Icon: ShoppingBag   },
-  { id: 'active',  label: 'Orders',  Icon: ClipboardList },
-  { id: 'history', label: 'History', Icon: ReceiptText   },
-]
 
-export default function BottomNav({ activeTab, onTabChange, activeOrderCount }: Props) {
-  const activeIndex = TABS.findIndex(t => t.id === activeTab)
+export default function BottomNav({ activeTab, onTabChange, activeOrderCount, cartTotal, cartItemCount, onOpenCart }: Props) {
+  const hasCart = cartItemCount > 0
 
   return (
     <div
-      className="shrink-0 px-4 pt-1.5"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.625rem)' }}
+      style={{
+        paddingLeft: 12, paddingRight: 12, paddingTop: 6,
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
+        flexShrink: 0,
+      }}
     >
       <nav
-        className="relative flex items-stretch h-[60px] rounded-[26px] p-1.5"
         style={{
-          background: 'rgba(9, 7, 4, 0.96)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          border: '1px solid rgba(255,255,255,0.06)',
-          boxShadow:
-            '0 8px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)',
+          display: 'flex', alignItems: 'stretch',
+          background: INK,
+          borderRadius: 22, padding: 5, gap: 3,
+          boxShadow: `0 -2px 0 rgba(145,216,82,.12),0 8px 32px rgba(0,0,0,.35)`,
         }}
       >
-        {/* Sliding amber pill */}
-        <div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            top: 6,
-            bottom: 6,
-            left: `calc(${activeIndex} * (100% / 3) + 6px)`,
-            width: 'calc(100% / 3 - 12px)',
-            borderRadius: 18,
-            background: 'linear-gradient(150deg, #FBBF24 0%, #D97706 100%)',
-            boxShadow: '0 2px 18px rgba(251,191,36,0.55), 0 0 36px rgba(251,191,36,0.18)',
-            transition: 'left 360ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-          }}
+        {/* Shop tab */}
+        <TabBtn
+          id="shop"
+          icon="🛒"
+          label="Shop"
+          active={activeTab === 'shop'}
+          badge={0}
+          onClick={() => onTabChange('shop')}
         />
 
-        {TABS.map(({ id, label, Icon }) => {
-          const active = activeTab === id
-          return (
-            <button
-              key={id}
-              onClick={() => onTabChange(id)}
-              className="relative z-10 flex-1 flex flex-col items-center justify-center gap-[4px] rounded-[18px] active:scale-[0.86] transition-transform duration-100"
-            >
-              {/* Icon with badge */}
-              <div className="relative">
-                <Icon
-                  size={20}
-                  strokeWidth={active ? 2.6 : 1.6}
-                  className={`transition-all duration-200 ${
-                    active ? 'text-stone-900' : 'text-stone-500'
-                  }`}
-                />
-                {id === 'active' && activeOrderCount > 0 && (
-                  <span
-                    className={`absolute -top-[5px] -right-[9px] min-w-[15px] h-[15px] px-[3px] rounded-full flex items-center justify-center text-[8px] font-black leading-none tabular-nums transition-colors duration-200 ${
-                      active
-                        ? 'bg-stone-900 text-amber-400'
-                        : 'bg-amber-500 text-stone-950'
-                    }`}
-                  >
-                    {activeOrderCount > 9 ? '9+' : activeOrderCount}
-                  </span>
-                )}
+        {/* Cart pill (between Shop and Orders when items in cart) */}
+        {hasCart && (
+          <button
+            onClick={onOpenCart}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 0,
+              background: `linear-gradient(135deg,${P},#7b14ab)`,
+              borderRadius: 16, padding: 0, overflow: 'hidden',
+              boxShadow: '0 4px 18px rgba(147,24,204,.5)',
+              margin: '0 4px', flexShrink: 0, cursor: 'pointer',
+              border: 'none',
+            }}
+          >
+            {/* Item count */}
+            <div style={{
+              background: 'rgba(255,255,255,.15)',
+              padding: '10px 11px',
+              fontFamily: "'Unbounded', sans-serif", fontSize: 13, fontWeight: 900, color: '#fff',
+              borderRight: '1px solid rgba(255,255,255,.15)',
+            }}>{Math.round(cartItemCount)}</div>
+            {/* Text */}
+            <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,.7)', letterSpacing: '0.06em', lineHeight: 1 }}>VIEW CART</div>
+              <div style={{ fontFamily: "'Unbounded', sans-serif", fontSize: 13, fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                ₹{cartTotal.toFixed(0)}
               </div>
+            </div>
+            {/* Arrow */}
+            <div style={{ padding: '10px 12px 10px 4px', fontSize: 16, color: 'rgba(255,255,255,.6)' }}>›</div>
+          </button>
+        )}
 
-              {/* Label */}
-              <span
-                className={`text-[9.5px] font-bold tracking-wide leading-none transition-colors duration-200 ${
-                  active ? 'text-stone-900' : 'text-stone-600'
-                }`}
-              >
-                {label}
-              </span>
-            </button>
-          )
-        })}
+        {/* Orders tab */}
+        <TabBtn
+          id="active"
+          icon="📋"
+          label="Orders"
+          active={activeTab === 'active'}
+          badge={activeOrderCount}
+          onClick={() => onTabChange('active')}
+        />
+
+        {/* History tab */}
+        <TabBtn
+          id="history"
+          icon="📜"
+          label="History"
+          active={activeTab === 'history'}
+          badge={0}
+          onClick={() => onTabChange('history')}
+        />
       </nav>
     </div>
+  )
+}
+
+function TabBtn({ icon, label, active, badge, onClick }: {
+  id: Tab
+  icon: string
+  label: string
+  active: boolean
+  badge: number
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 2, padding: '7px 4px', borderRadius: 16, cursor: 'pointer',
+        background: active ? `rgba(145,216,82,.12)` : 'transparent',
+        border: 'none', position: 'relative',
+      }}
+    >
+      {/* Badge */}
+      {badge > 0 && (
+        <span style={{
+          position: 'absolute', top: 4, right: '50%', transform: 'translateX(8px)',
+          minWidth: 15, height: 15, padding: '0 3px',
+          background: active ? INK : G,
+          color: active ? G : INK,
+          borderRadius: 999, fontSize: 8, fontWeight: 900,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>{badge > 9 ? '9+' : badge}</span>
+      )}
+      <span style={{ fontSize: 16 }}>{icon}</span>
+      <span style={{
+        fontSize: 7.5, fontWeight: 700, letterSpacing: '0.1em',
+        color: active ? G : 'rgba(255,255,255,.28)',
+        textTransform: 'uppercase', lineHeight: 1,
+        fontFamily: "'DM Mono', monospace",
+      }}>{label}</span>
+    </button>
   )
 }
