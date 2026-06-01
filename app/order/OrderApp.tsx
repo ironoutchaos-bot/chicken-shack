@@ -24,6 +24,7 @@ export default function OrderApp() {
   const [activeTab,  setActiveTab]  = useState<Tab>('shop')
   const [cart,       setCart]       = useState<CartItem[]>([])
   const [loginOpen,  setLoginOpen]  = useState(false)
+  const [pendingTab, setPendingTab] = useState<Tab | null>(null)
   const [cartOpen,   setCartOpen]   = useState(false)
   const [activeCount,          setActiveCount]          = useState(0)
   const [activeOrdersRefresh,  setActiveOrdersRefresh]  = useState(0)
@@ -220,6 +221,7 @@ export default function OrderApp() {
   const goToTab = useCallback((tab: Tab) => {
     // Don't show login while auth is still hydrating — wait for the result first
     if ((tab === 'active' || tab === 'history') && !user && !authLoading) {
+      setPendingTab(tab)   // remember where they wanted to go
       setLoginOpen(true)
       return
     }
@@ -506,10 +508,12 @@ export default function OrderApp() {
 
         <LoginDrawer
           open={loginOpen}
-          onClose={() => setLoginOpen(false)}
+          onClose={() => { setLoginOpen(false); setPendingTab(null) }}
           onSuccess={(u) => {
             setUser(u)
             setLoginOpen(false)
+            // Navigate to the tab the user originally tapped
+            if (pendingTab) { setActiveTab(pendingTab); setPendingTab(null) }
           }}
         />
 
