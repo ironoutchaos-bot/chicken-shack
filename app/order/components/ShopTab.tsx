@@ -238,13 +238,39 @@ export default function ShopTab({
       )}
       {!storeOpen && (
         <div
-          className="mx-3 mt-3 rounded-2xl px-4 py-3"
-          style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A' }}
+          className="mx-3 mt-3 rounded-2xl overflow-hidden"
+          style={{ boxShadow: '0 4px 20px rgba(217,119,6,0.25)' }}
         >
-          <p className="text-sm font-bold" style={{ color: '#92400E' }}>🌙 We&apos;re closed right now</p>
-          <p className="text-xs mt-1 leading-relaxed" style={{ color: '#78350F' }}>
-            You can still place your order! It will be freshly cut and delivered tomorrow morning between <strong>7 AM – 8 AM</strong>.
-          </p>
+          {/* Top accent stripe */}
+          <div style={{ height: 4, background: 'linear-gradient(90deg, #F59E0B, #D97706, #F59E0B)' }} />
+          <div
+            className="px-4 py-4"
+            style={{ background: 'linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%)', border: '1.5px solid #FDE68A', borderTop: 'none' }}
+          >
+            {/* Icon + heading row */}
+            <div className="flex items-center gap-2.5 mb-2">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shrink-0"
+                style={{ background: 'linear-gradient(135deg, #F59E0B, #D97706)', boxShadow: '0 2px 8px rgba(217,119,6,0.4)' }}
+              >
+                🌙
+              </div>
+              <div>
+                <p className="font-black text-sm leading-tight" style={{ color: '#78350F' }}>We&apos;re closed right now</p>
+                <p className="text-[11px] font-semibold" style={{ color: '#B45309' }}>But you can still order!</p>
+              </div>
+            </div>
+            {/* Message */}
+            <div
+              className="rounded-xl px-3.5 py-2.5 flex items-start gap-2"
+              style={{ background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.2)' }}
+            >
+              <span className="text-base shrink-0">🚚</span>
+              <p className="text-xs leading-relaxed font-medium" style={{ color: '#78350F' }}>
+                Place your order now and it will be <span style={{ color: '#92400E', fontWeight: 700 }}>freshly cut and delivered tomorrow morning between 7 AM – 8 AM</span>.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
