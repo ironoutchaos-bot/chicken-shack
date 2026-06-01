@@ -1,6 +1,7 @@
 ﻿export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdminRequest } from '@/app/api/admin/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -14,13 +15,10 @@ function srvHeaders(extras?: Record<string, string>) {
   }
 }
 
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
-}
 
 // GET /api/drivers — list all drivers (admin only)
 export async function GET(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const res = await fetch(
     `${SUPA_URL()}/rest/v1/drivers?select=id,name,user_id,phone,is_active,created_at&order=created_at.desc`,
@@ -32,7 +30,7 @@ export async function GET(req: NextRequest) {
 
 // POST /api/drivers — create a driver (admin only)
 export async function POST(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: { name?: string; user_id?: string; password?: string; phone?: string }
   try { body = await req.json() } catch {

@@ -1,6 +1,7 @@
 ﻿export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdminRequest } from '@/app/api/admin/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -13,9 +14,6 @@ function srvHeaders(contentType = false) {
   }
 }
 
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
-}
 
 // Flatten rows [{key,value}] → {key: value, ...}
 function flatten(rows: { key: string; value: unknown }[]): Record<string, unknown> {
@@ -43,7 +41,7 @@ export async function GET() {
 
 // PATCH /api/settings — admin only, body: { key: string, value: unknown }
 export async function PATCH(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   let body: { key?: string; value?: unknown }
   try { body = await req.json() } catch {

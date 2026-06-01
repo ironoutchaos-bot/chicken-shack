@@ -1,14 +1,12 @@
 ﻿export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdminRequest } from '@/app/api/admin/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_KEY = () => process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? SUPA_KEY()
 
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
-}
 
 // GET /api/pincodes — public: returns active pincodes for client-side check
 export async function GET() {
@@ -32,7 +30,7 @@ export async function GET() {
 
 // POST /api/pincodes — admin: add a pincode
 export async function POST(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   let body: { pincode?: string; area_name?: string }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
   if (!body.pincode?.trim()) return NextResponse.json({ error: 'pincode required' }, { status: 400 })
@@ -59,7 +57,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/pincodes — admin: toggle is_active
 export async function PATCH(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   let body: { id?: string; is_active?: boolean }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }) }
   if (!body.id) return NextResponse.json({ error: 'id required' }, { status: 400 })
@@ -82,7 +80,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/pincodes — admin: delete a pincode
 export async function DELETE(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const id = new URL(req.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 

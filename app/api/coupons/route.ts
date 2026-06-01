@@ -1,6 +1,7 @@
 ﻿export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdminRequest } from '@/app/api/admin/login/route'
 
 export type Coupon = {
   id:                 string   // uuid generated client-side
@@ -26,9 +27,6 @@ function srvHeaders(extra: Record<string, string> = {}) {
   }
 }
 
-function isAdmin(req: NextRequest) {
-  return req.cookies.get('admin_token')?.value === process.env.ADMIN_PASSWORD
-}
 
 async function loadCoupons(): Promise<Coupon[]> {
   try {
@@ -67,14 +65,14 @@ async function saveCoupons(coupons: Coupon[]) {
 
 // GET /api/coupons — returns all coupons (admin only)
 export async function GET(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const coupons = await loadCoupons()
   return NextResponse.json(coupons)
 }
 
 // POST /api/coupons — create a new coupon
 export async function POST(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   let body: Partial<Coupon>
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -106,7 +104,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/coupons — update a coupon by id
 export async function PATCH(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   let body: Partial<Coupon> & { id: string }
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -133,7 +131,7 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/coupons?id=xxx — delete a coupon
 export async function DELETE(req: NextRequest) {
-  if (!isAdmin(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdminRequest(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const id = new URL(req.url).searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
