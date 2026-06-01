@@ -3,330 +3,300 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Order Page — Website Theme Mockup</title>
+<title>B'LURU FRESH — Order Page Concept</title>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Unbounded:wght@400;700;900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
 <style>
-/* ── EXACT COLOURS FROM www.blurufresh.com ── */
 :root{
-  --g:#91d852;   /* bright green  */
-  --gd:#6ab82e;  /* dark green    */
-  --p:#9318cc;   /* purple        */
-  --pl:#c44ef5;  /* light purple  */
-  --ink:#16140f; /* near-black    */
-  --ink2:#3d3a30;
-  --cream:#faf7f0;
-  --cream2:#f2ede0;
-  --cream3:#e8e2d0;
-  --white:#ffffff;
+  --g:#91d852;--gd:#6ab82e;--p:#9318cc;--pl:#c44ef5;
+  --ink:#16140f;--ink2:#3d3a30;
+  --cream:#faf7f0;--cream2:#f2ede0;--cream3:#e8e2d0;
+  --white:#fff;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{background:#0e0c09;font-family:'DM Mono',monospace;color:var(--ink);}
-body{display:flex;flex-direction:column;align-items:center;padding:28px 16px 40px;min-height:100vh;}
+html,body{background:#0a0806;font-family:'DM Mono',monospace;}
+body{display:flex;flex-direction:column;align-items:center;padding:28px 16px 48px;}
 
-.label{
-  font-family:'DM Mono',monospace;font-size:10px;
-  color:rgba(255,255,255,.3);letter-spacing:.18em;
-  text-transform:uppercase;text-align:center;margin-bottom:12px;
+.page-label{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.22em;
+  color:rgba(255,255,255,.2);text-transform:uppercase;margin-bottom:14px;text-align:center;
 }
-.note{
-  font-family:'DM Mono',monospace;font-size:10px;
-  color:rgba(255,255,255,.2);text-align:center;
-  margin-top:16px;max-width:390px;line-height:1.8;
+.approve-note{
+  margin-top:18px;font-family:'DM Mono',monospace;font-size:10px;
+  color:rgba(255,255,255,.18);text-align:center;line-height:1.8;max-width:390px;
 }
-.note strong{color:var(--g);}
+.approve-note strong{color:var(--g);font-size:11px;}
 
-/* ── PHONE FRAME ── */
+/* ════ PHONE FRAME ════ */
 .frame{
   width:390px;height:844px;
   background:var(--cream);
-  border-radius:50px;
-  box-shadow:
-    0 0 0 2px #2a2015,
-    0 0 0 14px #111,
-    0 0 0 16px #222,
-    0 48px 120px rgba(0,0,0,.8);
+  border-radius:52px;
+  overflow:hidden;display:flex;flex-direction:column;
+  position:relative;
+  box-shadow:0 0 0 2px #1e1a14,0 0 0 14px #0e0c09,0 0 0 16px #1a1410,0 60px 140px rgba(0,0,0,.9);
+}
+
+/* ════ STATUS BAR ════ */
+.sb{background:var(--ink);padding:15px 26px 7px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sb .t{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.02em;}
+.sb .i{font-size:13px;color:rgba(255,255,255,.55);}
+
+/* ════ HEADER ════ */
+.hdr{background:var(--ink);padding:4px 16px 0;flex-shrink:0;}
+
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;}
+.brand{display:flex;align-items:center;gap:10px;}
+.bicon{
+  width:38px;height:38px;border-radius:12px;
+  background:linear-gradient(135deg,var(--g),var(--gd));
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  box-shadow:0 0 20px rgba(145,216,82,.5);
+}
+.bname{font-family:'Unbounded',sans-serif;font-weight:900;font-size:11.5px;color:var(--g);letter-spacing:.04em;}
+.bsub{font-size:8.5px;color:rgba(255,255,255,.28);margin-top:1.5px;letter-spacing:.06em;}
+.hbts{display:flex;gap:6px;}
+.hbt{width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;font-size:15px;}
+
+/* Delivery status bar — editorial strip */
+.del-strip{
+  display:flex;align-items:center;gap:0;
+  border-top:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(255,255,255,.06);
   overflow:hidden;
-  display:flex;flex-direction:column;
+}
+.ds-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:9px 4px;border-right:1px solid rgba(255,255,255,.06);
   position:relative;
 }
+.ds-item:last-child{border-right:none;}
+.ds-item.active::after{
+  content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:20px;height:2px;background:var(--g);border-radius:2px;
+}
+.ds-num{font-family:'Unbounded',sans-serif;font-size:15px;font-weight:900;color:rgba(255,255,255,.07);line-height:1;}
+.ds-label{font-size:7.5px;letter-spacing:.12em;color:rgba(255,255,255,.28);text-transform:uppercase;margin-top:1px;}
+.ds-item.active .ds-num{color:var(--g);}
+.ds-item.active .ds-label{color:rgba(145,216,82,.7);}
 
-/* ── STATUS BAR ── */
-.sb{
-  background:var(--ink);
-  padding:14px 26px 8px;
-  display:flex;justify-content:space-between;align-items:center;
-  flex-shrink:0;
-}
-.sb .t{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.02em;}
-.sb .i{font-size:13px;color:rgba(255,255,255,.6);}
-
-/* ── HEADER ── */
-.hdr{
-  background:var(--ink);
-  padding:6px 16px 14px;
-  flex-shrink:0;
-}
-.hdr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-
-/* Brand */
-.brand{display:flex;align-items:center;gap:9px;}
-.bmark{
-  width:36px;height:36px;border-radius:11px;
-  background:linear-gradient(135deg,var(--g),var(--gd));
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;
-  box-shadow:0 0 16px rgba(145,216,82,.45);
-}
-.bname{
-  font-family:'Unbounded',sans-serif;font-weight:900;
-  font-size:11px;color:var(--g);letter-spacing:.06em;
-}
-.bsub{font-size:9px;color:rgba(255,255,255,.3);margin-top:1px;letter-spacing:.04em;}
-.hbtns{display:flex;gap:6px;}
-.hbtn{
-  width:34px;height:34px;border-radius:10px;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.1);
-  display:flex;align-items:center;justify-content:center;font-size:14px;
-}
-
-/* Location pill */
-.locpill{
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(145,216,82,.2);
-  border-radius:13px;padding:8px 12px;
+/* Location row */
+.loc-row{
   display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0 14px;
 }
-.locl{display:flex;align-items:center;gap:8px;}
-.locdot{
-  width:28px;height:28px;border-radius:8px;
-  background:rgba(145,216,82,.15);
-  border:1px solid rgba(145,216,82,.3);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;
+.loc-l{display:flex;align-items:center;gap:7px;}
+.loc-glow{
+  width:8px;height:8px;border-radius:50%;background:var(--g);
+  box-shadow:0 0 0 3px rgba(145,216,82,.2),0 0 0 6px rgba(145,216,82,.08);
+  animation:locpulse 2s ease-in-out infinite;flex-shrink:0;
 }
-.loclabel{font-size:8.5px;color:rgba(255,255,255,.35);letter-spacing:.1em;}
-.locarea{font-size:13px;font-weight:700;color:#fff;margin-top:1px;}
-.locchange{
-  font-size:8.5px;font-weight:700;color:var(--g);
-  background:rgba(145,216,82,.12);
-  border:1px solid rgba(145,216,82,.2);
-  padding:4px 9px;border-radius:20px;letter-spacing:.06em;
+@keyframes locpulse{0%,100%{box-shadow:0 0 0 3px rgba(145,216,82,.2),0 0 0 6px rgba(145,216,82,.06)}50%{box-shadow:0 0 0 5px rgba(145,216,82,.3),0 0 0 10px rgba(145,216,82,.1)}}
+.loc-txt .top{font-size:8px;letter-spacing:.12em;color:rgba(255,255,255,.3);text-transform:uppercase;}
+.loc-txt .bot{font-size:14px;font-weight:700;color:#fff;margin-top:1px;}
+.loc-change{
+  font-size:8px;font-weight:700;color:rgba(145,216,82,.8);
+  border:1px solid rgba(145,216,82,.25);
+  padding:5px 10px;border-radius:20px;letter-spacing:.08em;
 }
 
-/* ── TICKER ── */
-.ticker{
-  background:var(--g);
-  padding:5px 0;overflow:hidden;display:flex;flex-shrink:0;
-}
-.track{display:flex;gap:16px;animation:tick 10s linear infinite;white-space:nowrap;}
-@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.ti{
-  font-family:'DM Mono',monospace;font-size:9px;font-weight:700;
-  letter-spacing:.12em;color:var(--ink);flex-shrink:0;
-  display:flex;align-items:center;gap:10px;
-}
-.sep{color:rgba(22,20,15,.35);}
+/* ════ TICKER ════ */
+.ticker{background:var(--g);padding:6px 0;overflow:hidden;display:flex;flex-shrink:0;}
+.track{display:flex;gap:18px;animation:scroll 9s linear infinite;white-space:nowrap;}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{font-size:8.5px;font-weight:700;letter-spacing:.15em;color:var(--ink);flex-shrink:0;display:flex;align-items:center;gap:12px;}
+.sep{opacity:.3;}
 
-/* ── SCROLL BODY ── */
+/* ════ SCROLL BODY ════ */
 .body{flex:1;overflow-y:auto;scrollbar-width:none;background:var(--cream);}
 .body::-webkit-scrollbar{display:none;}
 
-/* ── BANNER ── */
-.banner-wrap{padding:12px 12px 6px;}
-.banner{
-  border-radius:20px;overflow:hidden;
+/* ════ HERO PRODUCT — EDITORIAL FULL BLEED ════ */
+.hero{
+  position:relative;height:220px;overflow:hidden;
   background:var(--ink);
-  padding:18px 16px;
-  position:relative;
-  border:1px solid rgba(145,216,82,.15);
 }
-/* ghost text bg */
-.banner::before{
-  content:'FRESH';
-  position:absolute;right:-10px;top:50%;transform:translateY(-50%);
-  font-family:'Unbounded',sans-serif;font-weight:900;
-  font-size:68px;color:rgba(145,216,82,.06);
-  letter-spacing:-.03em;line-height:1;pointer-events:none;
+.hero-img{
+  position:absolute;inset:0;
+  background:url('https://assets.tendercuts.in/product/P/R/c770bfb6-bb8a-48b9-abe3-df519a0c7954.webp') center/cover;
+  opacity:.45;
+  transform:scale(1.05);
 }
-.b-row{display:flex;justify-content:space-between;align-items:flex-end;}
-.b-left{}
-.b-kicker{
-  display:inline-flex;align-items:center;gap:4px;
-  font-size:8px;letter-spacing:.2em;color:var(--g);
-  text-transform:uppercase;margin-bottom:8px;
+.hero-gradient{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(22,20,15,.9) 0%,rgba(22,20,15,.5) 50%,transparent 100%);
 }
-.b-kicker::before{content:'';width:5px;height:5px;background:var(--g);border-radius:50%;animation:blink 1.2s ease infinite;}
+.hero-content{position:absolute;inset:0;padding:18px 16px;display:flex;flex-direction:column;justify-content:space-between;}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;}
+.hero-kicker{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:8px;letter-spacing:.2em;color:var(--g);text-transform:uppercase;
+  border-bottom:1px solid rgba(145,216,82,.3);padding-bottom:3px;
+}
+.hero-kicker::before{content:'';width:5px;height:5px;background:var(--g);border-radius:50%;animation:blink 1.2s ease infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.b-h{
+.hero-badge{
+  background:linear-gradient(135deg,var(--p),var(--pl));
+  color:#fff;font-size:8px;font-weight:700;
+  padding:4px 10px;border-radius:20px;letter-spacing:.08em;
+  box-shadow:0 4px 16px rgba(147,24,204,.5);
+}
+.hero-bottom{}
+.hero-name{
   font-family:'Archivo Black',sans-serif;
   font-size:22px;color:#fff;letter-spacing:-.02em;line-height:1.1;
+  margin-bottom:6px;
 }
-.b-h .g{color:var(--g);}
-.b-h .p{color:var(--pl);}
-.b-sub{font-size:9px;color:rgba(255,255,255,.3);margin-top:6px;letter-spacing:.08em;}
-.b-cta{
+.hero-name span{color:var(--g);}
+.hero-row{display:flex;align-items:center;justify-content:space-between;}
+.hero-price-block{display:flex;align-items:baseline;gap:6px;}
+.hero-old{font-size:11px;color:rgba(255,255,255,.3);text-decoration:line-through;}
+.hero-price{font-family:'Unbounded',sans-serif;font-weight:900;font-size:28px;color:var(--g);letter-spacing:-.02em;}
+.hero-unit{font-size:9px;color:rgba(255,255,255,.4);}
+.hero-add{
   background:var(--g);color:var(--ink);border:none;
-  border-radius:10px;padding:10px 16px;
-  font-family:'Unbounded',sans-serif;font-size:8px;font-weight:700;
-  letter-spacing:.05em;cursor:pointer;
-  box-shadow:0 0 20px rgba(145,216,82,.4);
-  white-space:nowrap;
-  animation:glow 3s ease infinite;
+  border-radius:14px;padding:11px 20px;
+  font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;
+  letter-spacing:.06em;cursor:pointer;
+  box-shadow:0 4px 20px rgba(145,216,82,.5);
+  animation:glowbtn 3s ease infinite;
 }
-@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(145,216,82,.3)}50%{box-shadow:0 0 0 8px rgba(145,216,82,0)}}
+@keyframes glowbtn{0%,100%{box-shadow:0 4px 20px rgba(145,216,82,.4)}50%{box-shadow:0 4px 30px rgba(145,216,82,.7)}}
+.hero-weight{font-size:9px;color:rgba(255,255,255,.35);margin-bottom:10px;letter-spacing:.06em;}
 
-/* ── SECTION HDR ── */
-.sec{
-  display:flex;align-items:flex-end;justify-content:space-between;
-  padding:14px 12px 10px;
+/* Divider: process strip */
+.process-strip{
+  display:flex;background:var(--ink);
+  overflow:hidden;flex-shrink:0;
 }
-.sec-l .k{font-size:8.5px;letter-spacing:.2em;color:var(--p);text-transform:uppercase;margin-bottom:3px;}
-.sec-l .h{
+.ps-item{
+  flex:1;padding:8px 6px;text-align:center;
+  border-right:1px solid rgba(255,255,255,.05);
+}
+.ps-item:last-child{border-right:none;}
+.ps-icon{font-size:14px;display:block;margin-bottom:2px;}
+.ps-label{font-size:7px;letter-spacing:.1em;color:rgba(255,255,255,.25);text-transform:uppercase;}
+.ps-arrow{font-size:10px;color:rgba(145,216,82,.3);margin:0 4px;}
+
+/* Section header */
+.sec{display:flex;align-items:flex-end;justify-content:space-between;padding:14px 14px 8px;}
+.sec-l .kk{font-size:8.5px;letter-spacing:.2em;color:var(--p);text-transform:uppercase;margin-bottom:3px;}
+.sec-l .hh{
   font-family:'Unbounded',sans-serif;font-weight:900;
-  font-size:22px;letter-spacing:-.03em;line-height:.9;color:var(--ink);
+  font-size:20px;letter-spacing:-.03em;line-height:.92;color:var(--ink);
 }
-.sec-l .h em{
-  font-family:'Instrument Serif',serif;font-style:italic;
-  color:var(--gd);font-size:26px;
-}
-.live{
+.sec-l .hh em{font-family:'Instrument Serif',serif;font-style:italic;color:var(--gd);font-size:24px;}
+.live-pill{
   display:flex;align-items:center;gap:5px;
-  background:var(--ink);color:var(--g);
-  border-radius:20px;padding:5px 10px;
+  background:var(--ink);
+  border-radius:20px;padding:5px 11px;
 }
-.ldot{width:5px;height:5px;border-radius:50%;background:var(--g);animation:blink 1.2s ease infinite;}
-.ltxt{font-size:8.5px;font-weight:700;letter-spacing:.08em;}
+.lpd{width:5px;height:5px;border-radius:50%;background:var(--g);animation:blink 1.2s ease infinite;}
+.lpt{font-size:8.5px;font-weight:700;color:var(--g);letter-spacing:.08em;}
 
-/* ── PRODUCT GRID ── */
+/* ── GRID ── */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 12px 110px;}
 
-/* Featured — full width */
-.pfeat{
-  grid-column:span 2;
+/* Card style — with editorial numbering */
+.pcard{
   background:var(--white);border-radius:18px;overflow:hidden;
-  border:1.5px solid rgba(22,20,15,.07);
-  box-shadow:0 4px 24px rgba(22,20,15,.08);
-  display:grid;grid-template-columns:155px 1fr;
+  border:1.5px solid rgba(22,20,15,.06);
+  box-shadow:0 2px 16px rgba(22,20,15,.06);
   position:relative;
 }
-.pfeat-img{width:155px;height:160px;overflow:hidden;position:relative;}
-.pfeat-img img{width:100%;height:100%;object-fit:cover;}
-.pop-badge{
-  position:absolute;top:8px;left:8px;
-  background:var(--p);color:#fff;
-  font-size:7.5px;font-weight:700;padding:3px 8px;
-  border-radius:20px;letter-spacing:.1em;
-  box-shadow:0 2px 10px rgba(147,24,204,.4);
+.card-num{
+  position:absolute;top:8px;left:8px;z-index:2;
+  font-family:'Unbounded',sans-serif;font-weight:900;
+  font-size:11px;color:rgba(255,255,255,.9);
+  background:rgba(22,20,15,.55);backdrop-filter:blur(4px);
+  width:24px;height:24px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  letter-spacing:-.02em;
 }
-.pfeat-body{padding:14px;display:flex;flex-direction:column;justify-content:space-between;}
-.pfeat-tag{font-size:8px;letter-spacing:.12em;color:var(--p);text-transform:uppercase;margin-bottom:4px;}
-.pfeat-name{font-family:'Archivo Black',sans-serif;font-size:13.5px;color:var(--ink);letter-spacing:-.01em;line-height:1.3;margin-bottom:3px;}
-.pfeat-wt{font-size:8.5px;color:rgba(22,20,15,.4);margin-bottom:8px;}
-.pfeat-pr{display:flex;align-items:baseline;gap:5px;margin-bottom:10px;}
-.pfeat-old{font-size:9.5px;color:rgba(22,20,15,.3);text-decoration:line-through;}
-.pfeat-price{font-family:'Unbounded',sans-serif;font-weight:900;font-size:20px;color:var(--p);}
-.pfeat-unit{font-size:8.5px;color:rgba(22,20,15,.35);}
-.padd-feat{
-  background:var(--p);color:#fff;border:none;
-  border-radius:11px;padding:9px;
-  font-family:'DM Mono',monospace;font-size:10px;font-weight:700;
-  letter-spacing:.08em;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:5px;
-  box-shadow:0 4px 14px rgba(147,24,204,.35);
-}
-
-/* Regular card */
-.pcard{
-  background:var(--white);border-radius:16px;overflow:hidden;
-  border:1.5px solid rgba(22,20,15,.06);
-  box-shadow:0 2px 14px rgba(22,20,15,.06);
-}
-.pc-img{width:100%;height:116px;overflow:hidden;position:relative;}
+.pc-img{width:100%;height:112px;overflow:hidden;position:relative;}
 .pc-img img{width:100%;height:100%;object-fit:cover;}
-.fresh-tag{
-  position:absolute;top:7px;right:7px;
+.fresh-badge{
+  position:absolute;bottom:7px;right:7px;
   background:var(--gd);color:#fff;
   font-size:7.5px;font-weight:700;padding:3px 7px;
   border-radius:20px;letter-spacing:.1em;
 }
 .pc-body{padding:10px;}
-.pc-name{font-family:'Archivo Black',sans-serif;font-size:12px;color:var(--ink);line-height:1.3;margin-bottom:2px;}
-.pc-wt{font-size:8.5px;color:rgba(22,20,15,.35);margin-bottom:6px;}
+.pc-name{font-family:'Archivo Black',sans-serif;font-size:11.5px;color:var(--ink);line-height:1.3;margin-bottom:2px;}
+.pc-wt{font-size:8px;color:rgba(22,20,15,.38);margin-bottom:7px;letter-spacing:.04em;}
 .pc-pr{display:flex;align-items:baseline;gap:4px;margin-bottom:8px;}
-.pc-old{font-size:9px;color:rgba(22,20,15,.3);text-decoration:line-through;}
+.pc-old{font-size:9px;color:rgba(22,20,15,.28);text-decoration:line-through;}
 .pc-price{font-family:'Unbounded',sans-serif;font-weight:900;font-size:15px;color:var(--p);}
-.pc-unit{font-size:8px;color:rgba(22,20,15,.35);}
+.pc-unit{font-size:8px;color:rgba(22,20,15,.3);}
 .padd{
   width:100%;
   background:rgba(147,24,204,.08);color:var(--p);
-  border:1.5px solid rgba(147,24,204,.2);
+  border:1.5px solid rgba(147,24,204,.18);
   border-radius:10px;padding:7px;
   font-family:'DM Mono',monospace;font-size:9.5px;font-weight:700;
   letter-spacing:.07em;cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:4px;
+  transition:all .2s;
 }
 
-/* Out of stock */
-.pcard.oos .pc-img img{filter:grayscale(.6);}
-.poos{
+/* OOS */
+.pcard.oos .pc-img img{filter:grayscale(.5);opacity:.6;}
+.poos-btn{
   width:100%;
-  background:rgba(22,20,15,.04);color:rgba(22,20,15,.3);
-  border:1.5px solid rgba(22,20,15,.08);
+  background:rgba(22,20,15,.04);color:rgba(22,20,15,.25);
+  border:1.5px solid rgba(22,20,15,.07);
   border-radius:10px;padding:7px;
-  font-family:'DM Mono',monospace;font-size:9px;font-weight:700;
-  letter-spacing:.07em;
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.06em;
 }
 
-/* ── CART FAB ── */
-.fab{
-  position:absolute;bottom:78px;right:14px;z-index:10;
-  background:var(--p);color:#fff;border:none;
-  border-radius:16px;padding:10px 16px;
-  font-family:'Unbounded',sans-serif;font-size:9px;font-weight:700;
-  letter-spacing:.06em;
-  display:flex;align-items:center;gap:8px;
-  box-shadow:0 6px 24px rgba(147,24,204,.55);
-  cursor:pointer;
-  animation:bob 2.5s ease-in-out infinite;
+/* ════ STICKY BOTTOM ════ */
+.sticky-bottom{
+  position:absolute;bottom:0;left:0;right:0;z-index:20;
+  background:linear-gradient(to top,var(--cream) 55%,transparent);
+  padding:8px 12px 18px;
 }
-@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.fab-count{
-  background:var(--g);color:var(--ink);
-  width:18px;height:18px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:900;
-}
-
-/* ── BOTTOM NAV ── */
-.bnav{
-  position:absolute;bottom:0;left:0;right:0;
-  background:linear-gradient(to top,var(--cream) 60%,transparent);
-  padding:8px 12px 16px;
-}
-.bnav-inner{
+.cart-bar{
   background:var(--ink);
-  border-radius:20px;
-  display:flex;padding:5px;gap:3px;
-  box-shadow:0 -2px 0 rgba(145,216,82,.15),0 4px 20px rgba(0,0,0,.3);
+  border-radius:22px;
+  display:flex;align-items:center;
+  padding:5px;gap:3px;
+  box-shadow:0 -2px 0 rgba(145,216,82,.12),0 8px 32px rgba(0,0,0,.35);
 }
 .ni{
   flex:1;display:flex;flex-direction:column;align-items:center;
-  gap:2px;padding:8px 4px;border-radius:15px;cursor:pointer;
+  gap:2px;padding:7px 4px;border-radius:16px;cursor:pointer;
 }
-.ni.active{background:rgba(145,216,82,.12);}
-.ni-icon{font-size:17px;}
-.ni-label{font-size:8px;font-weight:700;letter-spacing:.09em;color:rgba(255,255,255,.3);text-transform:uppercase;}
-.ni.active .ni-label{color:var(--g);}
+.ni.act{background:rgba(145,216,82,.12);}
+.ni-ico{font-size:16px;}
+.ni-lbl{font-size:7.5px;font-weight:700;letter-spacing:.1em;color:rgba(255,255,255,.28);text-transform:uppercase;}
+.ni.act .ni-lbl{color:var(--g);}
+
+/* Cart summary pill */
+.cart-pill{
+  display:flex;align-items:center;gap:0;
+  background:linear-gradient(135deg,var(--p),#7b14ab);
+  border-radius:16px;padding:0;overflow:hidden;
+  box-shadow:0 4px 18px rgba(147,24,204,.5);
+  margin:0 4px;flex-shrink:0;cursor:pointer;
+}
+.cp-count{
+  background:rgba(255,255,255,.15);
+  padding:10px 11px;
+  font-family:'Unbounded',sans-serif;font-size:13px;font-weight:900;color:#fff;
+  border-right:1px solid rgba(255,255,255,.15);
+}
+.cp-text{padding:10px 14px;display:flex;flex-direction:column;gap:1px;}
+.cp-top{font-size:9px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.06em;line-height:1;}
+.cp-total{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:900;color:#fff;line-height:1;}
+.cp-arr{padding:10px 12px 10px 4px;font-size:16px;color:rgba(255,255,255,.6);}
 </style>
 </head>
 <body>
 
-<div class="label">✦ Order Page — Using Exact Website Theme ✦</div>
+<div class="page-label">✦ B'LURU FRESH — Order Page Concept — Maximum Creativity ✦</div>
 
 <div class="frame">
 
-  <!-- Status -->
+  <!-- Status bar -->
   <div class="sb">
     <span class="t">9:41</span>
     <span class="i">📶 🔋</span>
@@ -334,28 +304,46 @@ body{display:flex;flex-direction:column;align-items:center;padding:28px 16px 40p
 
   <!-- Header -->
   <div class="hdr">
-    <div class="hdr-row">
+    <div class="hdr-top">
       <div class="brand">
-        <div class="bmark">🐔</div>
+        <div class="bicon">🐔</div>
         <div>
           <div class="bname">B'LURU FRESH</div>
           <div class="bsub">Farm-fresh chicken, Yelahanka</div>
         </div>
       </div>
-      <div class="hbtns">
-        <div class="hbtn">📞</div>
-        <div class="hbtn">👤</div>
+      <div class="hbts">
+        <div class="hbt">📞</div>
+        <div class="hbt">👤</div>
       </div>
     </div>
-    <div class="locpill">
-      <div class="locl">
-        <div class="locdot">📍</div>
-        <div>
-          <div class="loclabel">DELIVERING TO</div>
-          <div class="locarea">Agrahara · 560064</div>
+
+    <!-- Delivery stats strip -->
+    <div class="del-strip">
+      <div class="ds-item active">
+        <div class="ds-num">1hr</div>
+        <div class="ds-label">Delivery</div>
+      </div>
+      <div class="ds-item">
+        <div class="ds-num">0%</div>
+        <div class="ds-label">Preservatives</div>
+      </div>
+      <div class="ds-item">
+        <div class="ds-num">100%</div>
+        <div class="ds-label">Cut to order</div>
+      </div>
+    </div>
+
+    <!-- Location -->
+    <div class="loc-row">
+      <div class="loc-l">
+        <div class="loc-glow"></div>
+        <div class="loc-txt">
+          <div class="top">DELIVERING TO</div>
+          <div class="bot">Agrahara · 560064</div>
         </div>
       </div>
-      <div class="locchange">CHANGE ›</div>
+      <div class="loc-change">CHANGE ›</div>
     </div>
   </div>
 
@@ -375,70 +363,80 @@ body{display:flex;flex-direction:column;align-items:center;padding:28px 16px 40p
     </div>
   </div>
 
-  <!-- Body -->
+  <!-- Scrollable body -->
   <div class="body">
 
-    <!-- Banner -->
-    <div class="banner-wrap">
-      <div class="banner">
-        <div class="b-row">
-          <div class="b-left">
-            <div class="b-kicker">Launching Offer</div>
-            <div class="b-h"><span class="g">25% OFF</span><br/>Every<span class="p">thing</span></div>
-            <div class="b-sub">FREE DELIVERY · LIMITED TIME</div>
+    <!-- Editorial hero product -->
+    <div class="hero">
+      <div class="hero-img"></div>
+      <div class="hero-gradient"></div>
+      <div class="hero-content">
+        <div class="hero-top">
+          <div class="hero-kicker">Most Popular</div>
+          <div class="hero-badge">⭐ BEST SELLER</div>
+        </div>
+        <div class="hero-bottom">
+          <div class="hero-name">Chicken <span>Premium</span><br/>Curry Cut</div>
+          <div class="hero-weight">400–450g · Without skin · Cut fresh after order</div>
+          <div class="hero-row">
+            <div class="hero-price-block">
+              <span class="hero-old">₹239</span>
+              <span class="hero-price">₹179</span>
+              <span class="hero-unit">/pc</span>
+            </div>
+            <button class="hero-add">ADD TO CART →</button>
           </div>
-          <button class="b-cta">ORDER NOW ⚡</button>
         </div>
       </div>
     </div>
 
-    <!-- Section header -->
+    <!-- Process strip -->
+    <div class="process-strip">
+      <div class="ps-item">
+        <span class="ps-icon">📲</span>
+        <span class="ps-label">You Order</span>
+      </div>
+      <span class="ps-arrow" style="display:flex;align-items:center;font-size:10px;color:rgba(145,216,82,.3);padding:0 2px;flex-shrink:0;">→</span>
+      <div class="ps-item">
+        <span class="ps-icon">🔪</span>
+        <span class="ps-label">We Cut</span>
+      </div>
+      <span class="ps-arrow" style="display:flex;align-items:center;font-size:10px;color:rgba(145,216,82,.3);padding:0 2px;flex-shrink:0;">→</span>
+      <div class="ps-item">
+        <span class="ps-icon">📦</span>
+        <span class="ps-label">We Pack</span>
+      </div>
+      <span class="ps-arrow" style="display:flex;align-items:center;font-size:10px;color:rgba(145,216,82,.3);padding:0 2px;flex-shrink:0;">→</span>
+      <div class="ps-item">
+        <span class="ps-icon">🏍️</span>
+        <span class="ps-label">Delivered</span>
+      </div>
+    </div>
+
+    <!-- Section -->
     <div class="sec">
       <div class="sec-l">
-        <div class="k">Menu</div>
-        <div class="h">Fresh <em>Cuts.</em></div>
+        <div class="kk">Today's Menu</div>
+        <div class="hh">More <em>Fresh Cuts.</em></div>
       </div>
-      <div class="live">
-        <div class="ldot"></div>
-        <div class="ltxt">LIVE & FRESH</div>
+      <div class="live-pill">
+        <div class="lpd"></div>
+        <div class="lpt">LIVE</div>
       </div>
     </div>
 
     <!-- Grid -->
     <div class="grid">
 
-      <!-- Featured -->
-      <div class="pfeat">
-        <div class="pfeat-img">
-          <img src="https://assets.tendercuts.in/product/P/R/c770bfb6-bb8a-48b9-abe3-df519a0c7954.webp" alt=""/>
-          <div class="pop-badge">⭐ POPULAR</div>
-        </div>
-        <div class="pfeat-body">
-          <div>
-            <div class="pfeat-tag">Classic Cut</div>
-            <div class="pfeat-name">Chicken Premium Curry Cut</div>
-            <div class="pfeat-wt">400–450g · Without skin</div>
-          </div>
-          <div>
-            <div class="pfeat-pr">
-              <span class="pfeat-old">₹239</span>
-              <span class="pfeat-price">₹179</span>
-              <span class="pfeat-unit">/pc</span>
-            </div>
-            <button class="padd-feat">+ Add to Cart</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 2 -->
       <div class="pcard">
+        <div class="card-num">02</div>
         <div class="pc-img">
           <img src="https://assets.tendercuts.in/product/C/H/a6b6b1db-2b6b-4129-a557-fbd9811c8888.webp" alt=""/>
-          <div class="fresh-tag">FRESH</div>
+          <div class="fresh-badge">FRESH</div>
         </div>
         <div class="pc-body">
           <div class="pc-name">Biriyani Cut</div>
-          <div class="pc-wt">400–450g</div>
+          <div class="pc-wt">400–450g · No skin</div>
           <div class="pc-pr">
             <span class="pc-old">₹233</span>
             <span class="pc-price">₹175</span>
@@ -448,71 +446,92 @@ body{display:flex;flex-direction:column;align-items:center;padding:28px 16px 40p
         </div>
       </div>
 
-      <!-- OOS -->
       <div class="pcard oos">
+        <div class="card-num">03</div>
         <div class="pc-img">
           <img src="https://static.freshtohome.com/cdn-cgi/image/width=600/https://static.freshtohome.com/media/catalog/product/c/h/chicken_breast_fillet_1.jpg" alt=""/>
         </div>
         <div class="pc-body">
           <div class="pc-name">Chicken Breast</div>
-          <div class="pc-wt">400–450g</div>
+          <div class="pc-wt">400–450g · Boneless</div>
           <div class="pc-pr">
-            <span class="pc-price" style="color:rgba(22,20,15,.3)">₹289</span>
+            <span class="pc-price" style="color:rgba(22,20,15,.25)">₹289</span>
             <span class="pc-unit">/pc</span>
           </div>
-          <button class="poos">Out of Stock</button>
+          <button class="poos-btn">Out of Stock</button>
         </div>
       </div>
 
-      <!-- OOS -->
       <div class="pcard oos">
+        <div class="card-num">04</div>
         <div class="pc-img">
           <img src="https://assets.tendercuts.in/product/C/H/a62a73e9-a7d5-4f79-86c1-9f6127e7026e.jpg" alt=""/>
         </div>
         <div class="pc-body">
           <div class="pc-name">Drumsticks</div>
-          <div class="pc-wt">400–450g</div>
+          <div class="pc-wt">400–450g · Premium</div>
           <div class="pc-pr">
-            <span class="pc-price" style="color:rgba(22,20,15,.3)">₹219</span>
+            <span class="pc-price" style="color:rgba(22,20,15,.25)">₹219</span>
             <span class="pc-unit">/pc</span>
           </div>
-          <button class="poos">Out of Stock</button>
+          <button class="poos-btn">Out of Stock</button>
+        </div>
+      </div>
+
+      <div class="pcard" style="border:1.5px solid rgba(147,24,204,.15);">
+        <div class="card-num" style="background:rgba(147,24,204,.5);">05</div>
+        <div class="pc-img" style="background:linear-gradient(135deg,#f3e8ff,#e9d5ff);display:flex;align-items:center;justify-content:center;">
+          <div style="text-align:center;padding:16px;">
+            <div style="font-size:36px;margin-bottom:6px;">🔜</div>
+            <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--p);letter-spacing:.1em;font-weight:700;">COMING SOON</div>
+          </div>
+        </div>
+        <div class="pc-body">
+          <div class="pc-name">Whole Chicken</div>
+          <div class="pc-wt">900g–1kg · Full bird</div>
+          <div class="pc-pr">
+            <span class="pc-price" style="color:var(--p);font-size:12px;">Notify Me</span>
+          </div>
+          <button class="padd" style="border-color:rgba(147,24,204,.25);color:var(--p);">🔔 Notify</button>
         </div>
       </div>
 
     </div>
   </div>
 
-  <!-- Cart FAB -->
-  <button class="fab">
-    🛒 View Cart
-    <div class="fab-count">2</div>
-  </button>
-
-  <!-- Bottom Nav -->
-  <div class="bnav">
-    <div class="bnav-inner">
-      <div class="ni active">
-        <div class="ni-icon">🛒</div>
-        <div class="ni-label">Shop</div>
+  <!-- Sticky Bottom Nav + Cart -->
+  <div class="sticky-bottom">
+    <div class="cart-bar">
+      <div class="ni act">
+        <div class="ni-ico">🛒</div>
+        <div class="ni-lbl">Shop</div>
       </div>
       <div class="ni">
-        <div class="ni-icon">📋</div>
-        <div class="ni-label">Orders</div>
+        <div class="ni-ico">📋</div>
+        <div class="ni-lbl">Orders</div>
+      </div>
+      <!-- Cart pill -->
+      <div class="cart-pill">
+        <div class="cp-count">2</div>
+        <div class="cp-text">
+          <div class="cp-top">VIEW CART</div>
+          <div class="cp-total">₹354</div>
+        </div>
+        <div class="cp-arr">›</div>
       </div>
       <div class="ni">
-        <div class="ni-icon">📜</div>
-        <div class="ni-label">History</div>
+        <div class="ni-ico">📜</div>
+        <div class="ni-lbl">History</div>
       </div>
     </div>
   </div>
 
 </div>
 
-<div class="note">
-  ✦ Preview only — live app unchanged ✦<br/>
-  Open on phone: <strong>blurufresh.com/mockup-order.html</strong><br/><br/>
-  <span style="color:var(--g);font-size:11px;">Say "approve" and I'll implement this in the live app.</span>
+<div class="approve-note">
+  ✦ Preview only — nothing in the live app has changed ✦<br/>
+  Open on phone: blurufresh.com/mockup-order.html<br/><br/>
+  <strong>Say "approve" and I'll build this in the live app.</strong>
 </div>
 
 </body>
