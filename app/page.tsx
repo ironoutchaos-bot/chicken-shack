@@ -455,7 +455,7 @@ export default function Home() {
         <div className="hero-statement rv d1">
           <div className="hs-pill">🐔 Bengaluru&apos;s first ultra-fresh system</div>
           <div className="hs-main">
-            <span className="accent">Felt foul smell or sliminess</span>&nbsp;<span style={{color:'var(--ink)'}}>while un-packing the chicken</span><span className="hs-cursor" style={{color:'var(--gd)'}}>?</span>
+            <span className="accent">Ever felt a foul smell or sliminess</span>&nbsp;<span style={{color:'var(--ink)',whiteSpace:'nowrap'}}>while unpacking the chicken</span><span className="hs-cursor" style={{color:'var(--gd)'}}>?</span>
           </div>
           <div className="hs-divider" />
         </div>
@@ -534,17 +534,17 @@ export default function Home() {
           </div>
           <div className="why-top-right rv d2">
             <div className="wtr-quote">&quot;The freshest chicken Bengaluru has ever tasted.&quot;</div>
-            <div className="wtr-sub">We didn&apos;t just build a delivery app. We built a completely new supply chain that deletes cold storage from the equation.</div>
+            <div className="wtr-sub">We didn&apos;t just build a delivery app. We built an entirely new supply chain that removes cold storage from the equation completely. What you get is what nature intended — pure, same-day protein.</div>
           </div>
         </div>
         <div className="why-drag-hint rv">Drag to explore</div>
         <div className="why-h-scroll rv d1" id="whyScroll">
           {[
-            {num:'01',icon:'🚫',spicy:'ZERO SH*T.',title:'No Foul Smell. No Sliminess. Ever.',desc:"That disgusting smell while unpacking? Stored meat decomposing. We cut after your order. That smell has never existed in our system."},
-            {num:'02',icon:'⚡',spicy:'IN HOURS.\nNOT DAYS.',title:'From Processing To Your Kitchen',desc:"Not 'we'll try.' Not 'approximately.' Hours. Your masala will still be sizzling when the doorbell rings."},
-            {num:'03',icon:'🔬',spicy:'NOT VIBES.\nVERIFIED.',title:'Antibiotic-Controlled. FSSAI Licensed.',desc:'FSSAI Lic. 11226331000344. Zero additives. Zero chemicals. We have the receipts.'},
-            {num:'04',icon:'🎯',spicy:'YOUR ORDER\n= THE KNIFE.',title:'Cut-To-Order. Every. Single. Time.',desc:"No pre-cuts sitting around. The moment you tap 'Order' — that's when cutting begins. Full stop."},
-            {num:'05',icon:'🏆',spicy:'THE OLD WAY\nIS DEAD.',title:"Bengaluru's First Ultra-Fresh System",desc:"We didn't upgrade the old system. We deleted it entirely and built something this city has never seen."},
+            {num:'01',icon:'🚫',spicy:'ZERO SH*T.',title:'No Foul Smell. No Sliminess. Ever.',desc:"That disgusting smell while unpacking? That's stored meat decomposing. We cut only after your order. That smell has never existed in our system — and never will."},
+            {num:'02',icon:'⚡',spicy:'IN HOURS.\nNOT DAYS.',title:'From Our Kitchen To Your Door',desc:"Not 'we'll try.' Not 'approximately.' Under 1 hour. Your masala will still be sizzling when the doorbell rings."},
+            {num:'03',icon:'🔬',spicy:'NOT VIBES.\nVERIFIED.',title:'Zero Additives. FSSAI Licensed.',desc:'FSSAI Lic. 11226331000344. No additives. No chemicals. No preservatives. We have the receipts — you never have to take our word for it.'},
+            {num:'04',icon:'🎯',spicy:'YOUR ORDER\n= THE KNIFE.',title:'Cut-To-Order. Every Single Time.',desc:"No pre-cut pieces sitting around. The moment you place your order — that's when the cutting begins. Not before. Not after."},
+            {num:'05',icon:'🏆',spicy:'THE OLD WAY\nIS DEAD.',title:"Bengaluru's First Ultra-Fresh System",desc:"We didn't upgrade the old system. We removed it entirely and built something this city has never seen before. This is what fresh actually means."},
           ].map(c => (
             <div key={c.num} className="why-hcard">
               <div className="whc-num">{c.num}</div>
@@ -579,10 +579,10 @@ export default function Home() {
         </div>
         <div className="proc-steps">
           {[
-            {icon:'📲',title:'You Place The Order',desc:'Tap. Done. Hits our system instantly. The clock starts the moment you confirm.',tag:'Trigger Point'},
-            {icon:'🔪',title:'We Start Cutting — RIGHT NOW',desc:'Only NOW does cutting begin. Not this morning. Not last night. Your order is the permission slip.',tag:'Zero Pre-Cuts'},
-            {icon:'📦',title:'Vacuum-Sealed, Hygienic Packing',desc:'Sterile conditions. Vacuum-sealed to lock in the freshness. Never stored post-packing.',tag:'Sterile Sealed'},
-            {icon:'🏍️',title:'At Your Door In Under 1 Hour',desc:"Not 'hopefully.' Not 'usually.' Under 60 minutes. No smell. No slime. Just disgustingly clean protein.",tag:'Sub 60 Mins'},
+            {icon:'📲',title:'You Place The Order',desc:'Tap. Done. Your order hits our system instantly. The clock starts the moment you confirm — not a second before.',tag:'Trigger Point'},
+            {icon:'🔪',title:'We Start Cutting — Right Now',desc:'Only after your order does the cutting begin. Not this morning. Not the night before. Your order is what triggers the knife.',tag:'Zero Pre-Cuts'},
+            {icon:'📦',title:'Hygienically Packed & Sealed',desc:'Cut fresh, packed under sterile conditions, and vacuum-sealed to lock in freshness. Never stored after packing. Straight to you.',tag:'Sterile Sealed'},
+            {icon:'🏍️',title:'At Your Door In Under 1 Hour',desc:'Not hopefully. Not usually. Under 60 minutes, guaranteed. No smell. No slime. Just clean, fresh chicken at its best.',tag:'Under 60 Mins'},
           ].map((s,i) => (
             <div key={i} className="pstep rv" style={{transitionDelay:`${(i%2)*.1}s`}}>
               <div className="ps-num">0{i+1}</div>
