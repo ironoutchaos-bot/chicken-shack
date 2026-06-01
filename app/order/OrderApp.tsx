@@ -65,6 +65,22 @@ export default function OrderApp() {
       .finally(() => setAuthLoading(false))
   }, [])
 
+  // ── Pre-request location permission on page load ──────────────
+  // Warms up the GPS so it's ready when the address sheet opens.
+  // Silently ignored if denied or unavailable.
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    // Small delay so the page renders first before the permission prompt
+    const t = setTimeout(() => {
+      navigator.geolocation.getCurrentPosition(
+        () => {}, // success — permission granted, GPS warm
+        () => {}, // error — denied or unavailable, ignore silently
+        { timeout: 10_000, enableHighAccuracy: true }
+      )
+    }, 1500)
+    return () => clearTimeout(t)
+  }, [])
+
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
     setUser(null)

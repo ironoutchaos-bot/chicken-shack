@@ -85,6 +85,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       }
     } catch {}
     setPincodeError('')
+    setLocError('')       // always clear previous error on open
+    setLocDenied(false)   // always clear denied state on open
 
     if (cachedLatRef.current !== null && cachedLngRef.current !== null) {
       setLat(cachedLatRef.current)
