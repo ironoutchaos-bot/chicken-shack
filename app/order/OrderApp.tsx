@@ -12,7 +12,7 @@ import LoginDrawer from './components/LoginDrawer'
 import CartSheet from './components/CartSheet'
 import PincodeGate from './components/PincodeGate'
 import EntryPage from './components/EntryPage'
-import InstallPrompt from './components/InstallPrompt'
+// InstallPrompt removed — no install popup on any device
 import VisitTracker from './components/VisitTracker'
 import { usePushNotifications } from './hooks/usePushNotifications'
 
@@ -504,7 +504,6 @@ export default function OrderApp() {
         )}
 
         <VisitTracker />
-        <InstallPrompt />
 
         <LoginDrawer
           open={loginOpen}

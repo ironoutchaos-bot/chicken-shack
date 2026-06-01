@@ -238,11 +238,13 @@ export default function ShopTab({
       )}
       {!storeOpen && (
         <div
-          className="mx-3 mt-3 rounded-2xl px-4 py-3 text-center"
-          style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}
+          className="mx-3 mt-3 rounded-2xl px-4 py-3"
+          style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A' }}
         >
-          <p className="text-sm font-bold" style={{ color: '#B91C1C' }}>🚫 Store is currently closed</p>
-          <p className="text-xs mt-0.5" style={{ color: '#EF4444' }}>We&apos;re not accepting orders right now.</p>
+          <p className="text-sm font-bold" style={{ color: '#92400E' }}>🌙 We&apos;re closed right now</p>
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: '#78350F' }}>
+            You can still place your order! It will be freshly cut and delivered tomorrow morning between <strong>7 AM – 8 AM</strong>.
+          </p>
         </div>
       )}
 
@@ -435,11 +437,11 @@ export default function ShopTab({
                       <div className="mt-auto">
                         {!inCart ? (
                           <button
-                            onClick={() => storeOpen && onAddToCart({
+                            onClick={() => onAddToCart({
                               productId: p.id, name: p.name,
                               pricePerKg: p.price_per_kg, quantity: 1, imageUrl: p.image_url,
                             })}
-                            disabled={!storeOpen}
+                            disabled={false}
                             className="w-full text-white rounded-2xl py-2.5 text-sm font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all disabled:opacity-40"
                             style={{
                               background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 55%, #B45309 100%)',
