@@ -202,11 +202,11 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.05);padding:
   .nav-r a{display:none;}
   .logo{font-size:.85rem;}
   .nav-btn{padding:.45rem 1rem;font-size:.58rem;}
-  #hero{padding:5rem 1.2rem 3rem;}
+  #hero{padding:5rem 1.2rem 2.5rem;justify-content:flex-start;padding-top:5.5rem;}
   .hero-bg-word{font-size:clamp(4rem,22vw,8rem);}
-  .hero-statement{margin-top:0;margin-bottom:1.5rem;}
+  .hero-statement{margin-top:1.5rem;margin-bottom:1.5rem;}
   .hs-main{font-size:clamp(.95rem,4.5vw,1.4rem);white-space:normal;}
-  .hero-main{grid-template-columns:1fr;gap:1rem;}
+  .hero-main{grid-template-columns:1fr;gap:1rem;margin-top:0;}
   .hero-h1{font-size:clamp(2.8rem,15vw,5.5rem);line-height:.93;}
   .hero-right{max-width:100%;align-items:flex-start;}
   .hero-ctas{justify-content:flex-start;flex-wrap:wrap;gap:.6rem;}
@@ -455,7 +455,7 @@ export default function Home() {
         <div className="hero-statement rv d1">
           <div className="hs-pill">🐔 Bengaluru&apos;s first ultra-fresh system</div>
           <div className="hs-main">
-            <span className="accent">Feel foul smell or sliminess</span>&nbsp;<span style={{color:'var(--ink)'}}>while un-packing the chicken</span><span className="hs-cursor" style={{color:'var(--gd)'}}>?</span>
+            <span className="accent">Felt foul smell or sliminess</span>&nbsp;<span style={{color:'var(--ink)'}}>while un-packing the chicken</span><span className="hs-cursor" style={{color:'var(--gd)'}}>?</span>
           </div>
           <div className="hs-divider" />
         </div>
