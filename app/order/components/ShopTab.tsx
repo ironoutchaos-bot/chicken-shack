@@ -105,10 +105,10 @@ export default function ShopTab({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               width: 38, height: 38, borderRadius: 12,
-              background: `linear-gradient(135deg,${G},${GD})`,
+              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20,
-              boxShadow: `0 0 20px rgba(145,216,82,.5)`,
+              boxShadow: '0 0 16px rgba(251,191,36,.45)',
             }}>🐔</div>
             <div>
               <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11.5, color: G, letterSpacing: '0.04em' }}>
@@ -430,29 +430,6 @@ export default function ShopTab({
                 </div>
               )
             })()}
-
-            {/* ── PROCESS STRIP ── */}
-            <div style={{ display: 'flex', background: INK }}>
-              {[
-                { icon: '📲', label: 'You Order' },
-                { icon: '🔪', label: 'We Cut' },
-                { icon: '📦', label: 'We Pack' },
-                { icon: '🏍️', label: 'Delivered' },
-              ].map(({ icon, label }, i) => (
-                <div key={label} style={{ display: 'contents' }}>
-                  <div style={{
-                    flex: 1, padding: '8px 6px', textAlign: 'center',
-                    borderRight: i < 3 ? '1px solid rgba(255,255,255,.05)' : 'none',
-                  }}>
-                    <span style={{ fontSize: 14, display: 'block', marginBottom: 2 }}>{icon}</span>
-                    <span style={{ fontSize: 7, letterSpacing: '0.1em', color: 'rgba(255,255,255,.25)', textTransform: 'uppercase' }}>{label}</span>
-                  </div>
-                  {i < 3 && (
-                    <span style={{ display: 'flex', alignItems: 'center', fontSize: 10, color: `rgba(145,216,82,.3)`, padding: '0 2px', flexShrink: 0 }}>→</span>
-                  )}
-                </div>
-              ))}
-            </div>
 
             {/* ── SECTION HEADER ── */}
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '14px 14px 8px' }}>

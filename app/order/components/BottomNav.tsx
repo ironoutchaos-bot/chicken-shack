@@ -31,7 +31,7 @@ export default function BottomNav({ activeTab, onTabChange, activeOrderCount, ca
         style={{
           display: 'flex', alignItems: 'stretch',
           background: INK,
-          borderRadius: 22, padding: 5, gap: 3,
+          borderRadius: 26, padding: 6, gap: 4,
           boxShadow: `0 -2px 0 rgba(145,216,82,.12),0 8px 32px rgba(0,0,0,.35)`,
         }}
       >
@@ -114,7 +114,7 @@ function TabBtn({ icon, label, active, badge, onClick }: {
       onClick={onClick}
       style={{
         flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 2, padding: '7px 4px', borderRadius: 16, cursor: 'pointer',
+        gap: 4, padding: '10px 4px', borderRadius: 18, cursor: 'pointer',
         background: active ? `rgba(145,216,82,.12)` : 'transparent',
         border: 'none', position: 'relative',
       }}
@@ -130,10 +130,10 @@ function TabBtn({ icon, label, active, badge, onClick }: {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>{badge > 9 ? '9+' : badge}</span>
       )}
-      <span style={{ fontSize: 16 }}>{icon}</span>
+      <span style={{ fontSize: 22 }}>{icon}</span>
       <span style={{
-        fontSize: 7.5, fontWeight: 700, letterSpacing: '0.1em',
-        color: active ? G : 'rgba(255,255,255,.28)',
+        fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
+        color: active ? G : 'rgba(255,255,255,.4)',
         textTransform: 'uppercase', lineHeight: 1,
         fontFamily: "'DM Mono', monospace",
       }}>{label}</span>
