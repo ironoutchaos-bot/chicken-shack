@@ -114,7 +114,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${outfit.variable} ${playfair.variable} ${fraunces.variable} ${montserrat.variable}`}>
+    <html lang="en" className={`${outfit.variable} ${playfair.variable} ${fraunces.variable} ${montserrat.variable}`} style={{ background: '#ffffff' }}>
       <head>
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="color-scheme" content="only light" />
@@ -129,7 +129,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Unbounded:wght@400;700;900&family=DM+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
       </head>
-      <body>
+      <body style={{ background: '#ffffff' }}>
         <AuthProvider>
           {children}
         </AuthProvider>

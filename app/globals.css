@@ -65,6 +65,10 @@
   --t-slow: 700ms;
 }
 
+html, body {
+  background: #ffffff !important; /* prevent black flash on page load in browsers/PWA */
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
