@@ -315,16 +315,21 @@ export default function Home() {
       resize()
       window.addEventListener('resize', resize)
       const particles: { x: number; y: number; vx: number; vy: number; r: number; c: string; a: number }[] = []
-      for (let i = 0; i < 120; i++) particles.push({ x: Math.random() * 2000, y: Math.random() * 1200, vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4, r: Math.random() * 2 + .5, c: Math.random() > .5 ? 'rgba(145,216,82,' : 'rgba(147,24,204,', a: Math.random() * .4 + .1 })
+      for (let i = 0; i < 120; i++) particles.push({ x: Math.random() * 2000, y: Math.random() * 1200, vx: (Math.random() - .5) * .4, vy: (Math.random() - .5) * .4, r: Math.random() * 2 + .5, c: Math.random() > .5 ? 'rgba(145,216,82,' : 'rgba(147,24,204,', a: Math.random() * .55 + .2 })
       const frames = ['sf1', 'sf2', 'sf3', 'sf4', 'sf5']
       const sdots = document.querySelectorAll('.sdot')
       let currentFrame = 0
-      // Softer edge colours so mobile corners aren't pitch-black (like desktop)
-      const frameColors = [['rgba(145,216,82,.14)', 'rgba(22,20,15,.82)'], ['rgba(145,216,82,.2)', 'rgba(9,26,2,.82)'], ['rgba(196,78,245,.2)', 'rgba(13,0,18,.82)'], ['rgba(145,216,82,.16)', 'rgba(0,13,26,.82)'], ['rgba(145,216,82,.25)', 'rgba(10,10,8,.82)']]
+      // Brighter centre + lighter edges for better visibility on mobile
+      const frameColors = [
+        ['rgba(145,216,82,.55)', 'rgba(18,36,10,.75)'],   // frame 1 — green
+        ['rgba(145,216,82,.65)', 'rgba(12,32,4,.75)'],    // frame 2 — vivid green
+        ['rgba(196,78,245,.55)', 'rgba(20,4,30,.75)'],    // frame 3 — purple
+        ['rgba(145,216,82,.45)', 'rgba(4,20,36,.75)'],    // frame 4 — teal-green
+        ['rgba(145,216,82,.60)', 'rgba(14,14,10,.75)'],   // frame 5 — green
+      ]
       const drawCanvas = () => {
         ctx.clearRect(0, 0, W, H)
-        // Wider gradient radius so edges are less dark on narrow mobile screens
-        const radius = Math.max(W, H) * 0.9
+        const radius = Math.max(W, H) * 0.85
         const grd = ctx.createRadialGradient(W * .5, H * .5, 0, W * .5, H * .5, radius)
         grd.addColorStop(0, frameColors[currentFrame][0]); grd.addColorStop(1, frameColors[currentFrame][1])
         ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H)
