@@ -501,7 +501,7 @@ export default function ShopTab({
 
                     {/* Card body */}
                     <div style={{ padding: 12 }}>
-                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, color: INK, lineHeight: 1.3, marginBottom: 3 }}>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14.5, color: INK, lineHeight: 1.25, marginBottom: 4 }}>
                         {p.name}
                       </div>
                       <div style={{ fontSize: 9.5, color: 'rgba(22,20,15,.38)', marginBottom: 9, letterSpacing: '0.04em' }}>

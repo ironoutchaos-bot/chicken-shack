@@ -339,221 +339,176 @@ export default function CartSheet({
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
 
         <div
-          className="relative w-full max-w-[430px] bg-white rounded-t-4xl shadow-sheet animate-slide-up flex flex-col max-h-[85vh]"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 1.5rem)' }}
+          className="relative w-full max-w-[430px] animate-slide-up flex flex-col max-h-[90vh]"
+          style={{ background: '#16140f', borderRadius: '28px 28px 0 0', paddingBottom: 'env(safe-area-inset-bottom, 1.5rem)', boxShadow: '0 -4px 40px rgba(0,0,0,.6)' }}
         >
-          {/* Handle + Header */}
-          <div className="flex justify-center pt-3">
-            <div className="w-10 h-1 bg-stone-200 rounded-full" />
+          {/* Handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,255,255,.15)' }} />
           </div>
-          <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
-            <div className="flex items-center gap-2">
-              <ShoppingBag size={20} className="text-stone-700" />
-              <h2 className="text-lg font-bold text-stone-900">Your Cart</h2>
-              <span className="text-xs bg-stone-100 text-stone-500 px-2 py-0.5 rounded-full font-medium">
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+            <div className="flex items-center gap-2.5">
+              <ShoppingBag size={20} color="#91d852" strokeWidth={2.2} />
+              <h2 className="text-lg font-black text-white" style={{ fontFamily: "'Unbounded', sans-serif", letterSpacing: '-0.02em' }}>Your Cart</h2>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: '#91d852', color: '#16140f' }}>
                 {cart.reduce((s,c)=>s+c.quantity,0)} pc{cart.reduce((s,c)=>s+c.quantity,0)!==1?'s':''}
               </span>
             </div>
             <div className="flex items-center gap-2">
               {cart.length > 0 && (
-                <button onClick={onClear} className="text-xs text-red-400 font-medium flex items-center gap-1">
+                <button onClick={onClear} className="flex items-center gap-1 text-xs font-bold active:scale-95 transition-all" style={{ color: '#f87171' }}>
                   <Trash2 size={12} /> Clear
                 </button>
               )}
-              <button onClick={onClose} className="p-2 rounded-full hover:bg-stone-100 transition-colors">
-                <X size={18} className="text-stone-500" />
+              <button onClick={onClose} className="p-2 rounded-full transition-colors active:scale-90" style={{ background: 'rgba(255,255,255,.08)' }}>
+                <X size={16} color="rgba(255,255,255,.6)" />
               </button>
             </div>
           </div>
 
-          {/* Items + Notes */}
-          <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
+          {/* Items */}
+          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5" style={{ scrollbarWidth: 'none' }}>
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <span className="text-5xl">🛒</span>
-                <p className="text-stone-400 text-sm font-medium">Your cart is empty</p>
+                <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,.3)' }}>Your cart is empty</p>
               </div>
             ) : (
               <>
                 {cart.map(item => (
-                  <div
-                    key={item.productId}
-                    className="flex items-center gap-3 rounded-2xl p-3"
-                    style={{ background: '#FEF9EE', border: '1px solid rgba(253,230,138,0.6)' }}
-                  >
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
-                      style={{ background: '#FEF3C7' }}
-                    >
+                  <div key={item.productId} className="flex items-center gap-3 rounded-2xl p-3" style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(145,216,82,.12)' }}>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0" style={{ background: 'rgba(145,216,82,.12)', border: '1px solid rgba(145,216,82,.2)' }}>
                       🍗
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-stone-900 text-sm truncate">{item.name}</p>
-                      <p className="text-xs text-stone-400">₹{item.pricePerKg} / pc · {UNIT_LABEL}</p>
+                      <p className="font-bold text-sm text-white truncate">{item.name}</p>
+                      <p className="text-xs" style={{ color: 'rgba(255,255,255,.35)' }}>₹{item.pricePerKg} / pc · {UNIT_LABEL}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <button
-                        onClick={() => onUpdateQty(item.productId, item.quantity - 1)}
-                        className="w-7 h-7 bg-white rounded-lg border border-stone-200 flex items-center justify-center active:scale-90 transition-all shadow-sm"
-                      >
-                        <Minus size={12} className="text-stone-600" />
+                      <button onClick={() => onUpdateQty(item.productId, item.quantity - 1)} className="w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-all" style={{ background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.1)' }}>
+                        <Minus size={12} color="rgba(255,255,255,.7)" />
                       </button>
-                      <span className="text-sm font-bold text-stone-800 w-14 text-center">
-                        {item.quantity} pc{item.quantity !== 1 ? 's' : ''}
-                      </span>
-                      <button
-                        onClick={() => onUpdateQty(item.productId, item.quantity + 1)}
-                        className="w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center active:scale-90 transition-all shadow-sm"
-                      >
-                        <Plus size={12} className="text-white" />
+                      <span className="text-sm font-bold text-white w-14 text-center">{item.quantity} pc{item.quantity !== 1 ? 's' : ''}</span>
+                      <button onClick={() => onUpdateQty(item.productId, item.quantity + 1)} className="w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-all" style={{ background: '#91d852' }}>
+                        <Plus size={12} color="#16140f" />
                       </button>
                     </div>
                     <div className="text-right shrink-0 w-14">
-                      <p className="text-sm font-bold text-stone-900">₹{item.pricePerKg * item.quantity}</p>
+                      <p className="text-sm font-bold" style={{ color: '#91d852' }}>₹{item.pricePerKg * item.quantity}</p>
                     </div>
                   </div>
                 ))}
 
-                {/* Out-of-stock warning */}
                 {outOfStock.length > 0 && (
-                  <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-2xl px-3.5 py-3">
-                    <AlertTriangle size={15} className="text-red-500 shrink-0 mt-0.5" strokeWidth={2.2} />
+                  <div className="flex items-start gap-2.5 rounded-2xl px-3.5 py-3" style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.25)' }}>
+                    <AlertTriangle size={15} color="#f87171" className="shrink-0 mt-0.5" strokeWidth={2.2} />
                     <div>
-                      <p className="text-xs font-bold text-red-700">Some items are now out of stock</p>
-                      <p className="text-[11px] text-red-600 mt-0.5">
-                        {outOfStock.join(', ')} — remove them to proceed.
-                      </p>
+                      <p className="text-xs font-bold" style={{ color: '#fca5a5' }}>Some items are now out of stock</p>
+                      <p className="text-[11px] mt-0.5" style={{ color: '#f87171' }}>{outOfStock.join(', ')} — remove them to proceed.</p>
                     </div>
                   </div>
                 )}
 
-                {/* Coupon code */}
+                {/* Coupon */}
                 <div>
-                  <label className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 uppercase tracking-widest mb-1.5">
-                    <Tag size={11} />
-                    Coupon Code
-                    <span className="text-stone-300 font-normal normal-case tracking-normal">· optional</span>
+                  <label className="flex items-center gap-1.5 mb-1.5" style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.35)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                    <Tag size={11} /> Coupon Code
+                    <span style={{ color: 'rgba(255,255,255,.2)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span>
                   </label>
                   {couponApplied ? (
-                    <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
-                      <CheckCircle2 size={16} className="text-green-600 shrink-0" />
+                    <div className="flex items-center gap-2 rounded-2xl px-4 py-3" style={{ background: 'rgba(145,216,82,.1)', border: '1px solid rgba(145,216,82,.25)' }}>
+                      <CheckCircle2 size={16} color="#91d852" className="shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-green-800">{couponInput.toUpperCase()}</p>
-                        <p className="text-xs text-green-600">{couponLabel} applied — saving ₹{couponDiscount}</p>
+                        <p className="text-sm font-bold" style={{ color: '#91d852' }}>{couponInput.toUpperCase()}</p>
+                        <p className="text-xs" style={{ color: 'rgba(145,216,82,.7)' }}>{couponLabel} applied — saving ₹{couponDiscount}</p>
                       </div>
-                      <button
-                        onClick={removeCoupon}
-                        className="text-xs text-red-400 font-semibold hover:text-red-600 transition-colors shrink-0"
-                      >
-                        Remove
-                      </button>
+                      <button onClick={removeCoupon} className="text-xs font-bold shrink-0" style={{ color: '#f87171' }}>Remove</button>
                     </div>
                   ) : (
                     <div className="flex gap-2">
                       <input
                         ref={couponInputRef}
-                        type="text"
-                        placeholder="Enter coupon code"
+                        type="text" placeholder="Enter coupon code"
                         value={couponInput}
                         onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
                         onKeyDown={e => e.key === 'Enter' && applyCoupon()}
                         maxLength={20}
-                        className="flex-1 bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 text-sm font-mono font-bold uppercase tracking-widest text-stone-900 outline-none focus:border-amber-400 transition-colors placeholder:text-stone-300 placeholder:font-normal placeholder:tracking-normal placeholder:normal-case"
+                        className="flex-1 rounded-2xl px-4 py-3 text-sm font-mono font-bold uppercase tracking-widest outline-none transition-colors placeholder:font-normal placeholder:tracking-normal placeholder:normal-case"
+                        style={{ background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)', color: '#fff' }}
                       />
-                      <button
-                        onClick={applyCoupon}
-                        disabled={couponChecking}
-                        className="px-4 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60"
-                        style={{ background: '#1C1917', color: '#fff', whiteSpace: 'nowrap' }}
-                      >
+                      <button onClick={applyCoupon} disabled={couponChecking} className="px-4 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60" style={{ background: '#91d852', color: '#16140f', whiteSpace: 'nowrap' }}>
                         {couponChecking ? <Loader2 size={15} className="animate-spin" /> : 'Apply'}
                       </button>
                     </div>
                   )}
-                  {couponError && (
-                    <p className="text-xs text-red-500 mt-1.5 ml-1">{couponError}</p>
-                  )}
+                  {couponError && <p className="text-xs mt-1.5 ml-1" style={{ color: '#f87171' }}>{couponError}</p>}
                 </div>
-
               </>
             )}
           </div>
 
           {/* Footer */}
           {cart.length > 0 && (
-            <div className="px-5 pt-3 pb-2 border-t border-stone-100 space-y-3">
+            <div className="px-5 pt-3 pb-2 space-y-3" style={{ borderTop: '1px solid rgba(255,255,255,.07)' }}>
               {(deliveryFee > 0 || couponApplied) && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-stone-400">Subtotal</span>
-                    <span className="text-stone-600 font-medium">₹{subtotal.toFixed(0)}</span>
+                    <span style={{ color: 'rgba(255,255,255,.4)' }}>Subtotal</span>
+                    <span style={{ color: 'rgba(255,255,255,.6)', fontWeight: 500 }}>₹{subtotal.toFixed(0)}</span>
                   </div>
                   {deliveryFee > 0 && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-stone-400">Delivery fee</span>
-                      <span className="text-stone-600 font-medium">₹{deliveryFee}</span>
+                      <span style={{ color: 'rgba(255,255,255,.4)' }}>Delivery fee</span>
+                      <span style={{ color: 'rgba(255,255,255,.6)', fontWeight: 500 }}>₹{deliveryFee}</span>
                     </div>
                   )}
                   {couponApplied && (
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-green-600 font-medium flex items-center gap-1">
-                        <Tag size={12} /> {couponInput.toUpperCase()}
-                      </span>
-                      <span className="text-green-600 font-bold">−₹{couponDiscount}</span>
+                      <span className="flex items-center gap-1 font-medium" style={{ color: '#91d852' }}><Tag size={12} /> {couponInput.toUpperCase()}</span>
+                      <span className="font-bold" style={{ color: '#91d852' }}>−₹{couponDiscount}</span>
                     </div>
                   )}
-                  <div className="h-px bg-stone-100" />
+                  <div className="h-px" style={{ background: 'rgba(255,255,255,.07)' }} />
                 </div>
               )}
+
               <div className="flex items-center justify-between">
-                <span className="text-stone-500 text-sm font-medium">Total</span>
+                <span className="text-sm font-medium" style={{ color: 'rgba(255,255,255,.5)' }}>Total</span>
                 <div className="text-right">
-                  {couponApplied && (
-                    <p className="text-xs text-stone-400 line-through">₹{(subtotal + deliveryFee).toFixed(0)}</p>
-                  )}
-                  <span className="text-2xl font-bold text-stone-900">₹{total.toFixed(0)}</span>
+                  {couponApplied && <p className="text-xs line-through" style={{ color: 'rgba(255,255,255,.3)' }}>₹{(subtotal + deliveryFee).toFixed(0)}</p>}
+                  <span className="text-2xl font-black" style={{ color: '#91d852', fontFamily: "'Unbounded', sans-serif" }}>₹{total.toFixed(0)}</span>
                 </div>
               </div>
 
               {belowMin && (
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <p className="text-xs rounded-xl p-3" style={{ background: 'rgba(245,158,11,.1)', border: '1px solid rgba(245,158,11,.2)', color: '#fbbf24' }}>
                   Minimum order is ₹{minOrderAmount}. Add ₹{(minOrderAmount - subtotal).toFixed(0)} more to proceed.
                 </p>
               )}
 
-              {/* Error with retry */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 space-y-2">
-                  <p className="text-xs text-red-600 font-medium">{error}</p>
-                  <button
-                    onClick={handleRetry}
-                    className="flex items-center gap-1.5 text-xs font-bold text-red-600 active:scale-95 transition-all"
-                  >
+                <div className="rounded-xl px-3 py-2.5 space-y-2" style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.2)' }}>
+                  <p className="text-xs font-medium" style={{ color: '#fca5a5' }}>{error}</p>
+                  <button onClick={handleRetry} className="flex items-center gap-1.5 text-xs font-bold active:scale-95 transition-all" style={{ color: '#f87171' }}>
                     <RotateCcw size={12} /> Try again
                   </button>
                 </div>
               )}
 
-              {outOfStock.length > 0 && (
-                <p className="text-xs text-center text-red-500 font-medium">
-                  Remove out-of-stock items before checking out
-                </p>
-              )}
+              {outOfStock.length > 0 && <p className="text-xs text-center font-medium" style={{ color: '#f87171' }}>Remove out-of-stock items before checking out</p>}
 
               {showCF && (
                 <button
                   onClick={() => handleCheckout('cashfree')}
                   disabled={loading || belowMin || outOfStock.length > 0}
                   className="w-full text-white rounded-2xl py-4 font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
-                  style={{
-                    background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 55%, #B45309 100%)',
-                    boxShadow: '0 6px 24px rgba(217,119,6,0.4)',
-                  }}
+                  style={{ background: 'linear-gradient(135deg, #9318cc 0%, #7b14ab 55%, #5b0e80 100%)', boxShadow: '0 6px 24px rgba(147,24,204,0.45)', fontFamily: "'Unbounded', sans-serif", fontSize: 12, letterSpacing: '0.04em' }}
                 >
                   {loading && checkoutMode === 'cashfree'
                     ? <><Loader2 size={18} className="animate-spin" /> {payStep || 'Processing…'}</>
-                    : <><ShieldCheck size={18} /> Pay ₹{total.toFixed(0)} Online</>
-                  }
+                    : <><ShieldCheck size={18} /> Pay ₹{total.toFixed(0)} Online</>}
                 </button>
               )}
 
@@ -562,21 +517,16 @@ export default function CartSheet({
                   onClick={() => handleCheckout('cod')}
                   disabled={loading || belowMin || outOfStock.length > 0}
                   className="w-full rounded-2xl py-3.5 font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
-                  style={{ background: '#FFFBEB', border: '2px solid #FDE68A', color: '#78350F' }}
+                  style={{ background: 'rgba(145,216,82,.1)', border: '1.5px solid rgba(145,216,82,.3)', color: '#91d852', fontFamily: "'DM Mono', monospace", letterSpacing: '0.06em' }}
                 >
                   {loading && checkoutMode === 'cod'
                     ? <><Loader2 size={16} className="animate-spin" /> {slowConn ? 'Waking server up…' : 'Placing order…'}</>
-                    : <><Banknote size={16} /> Cash on Delivery</>
-                  }
+                    : <><Banknote size={16} /> Cash on Delivery</>}
                 </button>
               )}
-              {loading && slowConn && (
-                <p className="text-center text-xs text-stone-400">
-                  Server is waking up from sleep — this usually takes under 30s
-                </p>
-              )}
 
-              <p className="text-center text-xs text-stone-400">🔒 Secure · Cut fresh after order</p>
+              {loading && slowConn && <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,.3)' }}>Server is waking up — usually under 30s</p>}
+              <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,.2)' }}>🔒 Secure · Cut fresh after order</p>
             </div>
           )}
         </div>
