@@ -6,6 +6,7 @@ import { type ProductRow, type CartItem } from '@/lib/supabase-browser'
 import type { AuthUser } from '@/lib/auth-types'
 import { UNIT_LABEL } from '@/lib/units'
 import Image from 'next/image'
+import BannerCarousel from './BannerCarousel'
 
 // ── colour tokens (from mockup) ─────────────────────────────────
 const G   = '#91d852'
@@ -47,7 +48,7 @@ interface Props {
 
 export default function ShopTab({
   user, cart, onAddToCart, onUpdateQty, onOpenCart, onLoginRequired, onLogout, onChangeArea,
-  cartTotal, cartItemCount, areaName, pincode, storeOpen = true, announcement,
+  cartTotal, cartItemCount, areaName, pincode, storeOpen = true, announcement, bannerImages = [],
 }: Props) {
   const [products,     setProducts]     = useState<ProductRow[]>([])
   const [loading,      setLoading]      = useState(true)
@@ -265,6 +266,13 @@ export default function ShopTab({
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ══ BANNER CAROUSEL ══ */}
+      {bannerImages.length > 0 && (
+        <div style={{ padding: '10px 12px 0' }}>
+          <BannerCarousel images={bannerImages} />
         </div>
       )}
 
