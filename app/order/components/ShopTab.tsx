@@ -96,26 +96,26 @@ export default function ShopTab({
   return (
     <div style={{ minHeight: '100%', background: '#faf7f0', fontFamily: "'DM Mono', monospace" }}>
 
-      {/* ══ DARK HEADER ══ */}
-      <div className="sticky top-0 z-20" style={{ background: INK, flexShrink: 0 }}>
+      {/* ══ HEADER ══ */}
+      <div className="sticky top-0 z-20" style={{ flexShrink: 0 }}>
 
-        {/* Row 1: brand + buttons */}
-        <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Row 1: brand + buttons — WHITE background */}
+        <div style={{ padding: '10px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#ffffff', borderBottom: '1px solid rgba(22,20,15,.07)' }}>
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Brand "B" letter mark */}
+            {/* Purple "B" letter mark */}
             <div style={{
               width: 42, height: 42, borderRadius: 11,
-              background: 'rgba(145,216,82,.1)',
-              border: '1.5px solid rgba(145,216,82,.3)',
+              background: 'rgba(147,24,204,.08)',
+              border: '1.5px solid rgba(147,24,204,.25)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 18px rgba(145,216,82,.15)',
+              boxShadow: '0 0 14px rgba(147,24,204,.12)',
               flexShrink: 0,
             }}>
-              <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 22, color: '#91d852', lineHeight: 1 }}>B</span>
+              <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 22, color: '#9318cc', lineHeight: 1 }}>B</span>
             </div>
             <div>
-              <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11.5, color: '#fff', letterSpacing: '0.04em' }}>
+              <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11.5, color: INK, letterSpacing: '0.04em' }}>
                 B&apos;LURU FRESH
               </div>
             </div>
@@ -127,7 +127,7 @@ export default function ShopTab({
               href="tel:7259516664"
               style={{
                 width: 36, height: 36, borderRadius: 11,
-                background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.09)',
+                background: 'rgba(22,20,15,.06)', border: '1px solid rgba(22,20,15,.08)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
                 textDecoration: 'none',
               }}
@@ -140,11 +140,11 @@ export default function ShopTab({
                     onClick={() => setUserMenuOpen(v => !v)}
                     style={{
                       width: 36, height: 36, borderRadius: 11,
-                      background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.09)',
+                      background: 'rgba(22,20,15,.06)', border: '1px solid rgba(22,20,15,.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                     }}
                   >
-                    <User size={16} color="white" strokeWidth={2.5} />
+                    <User size={16} color={INK} strokeWidth={2.5} />
                   </button>
                   {userMenuOpen && (
                     <div style={{
@@ -181,6 +181,7 @@ export default function ShopTab({
                     background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.09)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 15, cursor: 'pointer',
+                  background: 'rgba(22,20,15,.06)', border: '1px solid rgba(22,20,15,.08)',
                   }}
                 >👤</button>
               )}

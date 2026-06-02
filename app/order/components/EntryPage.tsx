@@ -37,13 +37,13 @@ export default function EntryPage({ onContinue }: Props) {
         {/* "B" letter mark */}
         <div style={{
           width: 34, height: 34, borderRadius: 10,
-          background: 'rgba(145,216,82,.12)',
-          border: '1.5px solid rgba(145,216,82,.3)',
+          background: 'rgba(147,24,204,.12)',
+          border: '1.5px solid rgba(147,24,204,.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 16px rgba(145,216,82,.15)',
+          boxShadow: '0 0 16px rgba(147,24,204,.2)',
           flexShrink: 0,
         }}>
-          <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 16, color: '#91d852', lineHeight: 1 }}>B</span>
+          <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 16, color: '#9318cc', lineHeight: 1 }}>B</span>
         </div>
         <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11, color: '#91d852', letterSpacing: '0.1em' }}>
           B&apos;LURU FRESH

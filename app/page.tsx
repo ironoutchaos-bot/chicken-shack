@@ -319,10 +319,13 @@ export default function Home() {
       const frames = ['sf1', 'sf2', 'sf3', 'sf4', 'sf5']
       const sdots = document.querySelectorAll('.sdot')
       let currentFrame = 0
-      const frameColors = [['rgba(145,216,82,.12)', 'rgba(22,20,15,1)'], ['rgba(145,216,82,.2)', 'rgba(9,26,2,1)'], ['rgba(196,78,245,.2)', 'rgba(13,0,18,1)'], ['rgba(145,216,82,.15)', 'rgba(0,13,26,1)'], ['rgba(145,216,82,.25)', 'rgba(10,10,8,1)']]
+      // Softer edge colours so mobile corners aren't pitch-black (like desktop)
+      const frameColors = [['rgba(145,216,82,.14)', 'rgba(22,20,15,.82)'], ['rgba(145,216,82,.2)', 'rgba(9,26,2,.82)'], ['rgba(196,78,245,.2)', 'rgba(13,0,18,.82)'], ['rgba(145,216,82,.16)', 'rgba(0,13,26,.82)'], ['rgba(145,216,82,.25)', 'rgba(10,10,8,.82)']]
       const drawCanvas = () => {
         ctx.clearRect(0, 0, W, H)
-        const grd = ctx.createRadialGradient(W * .5, H * .5, 0, W * .5, H * .5, W * .8)
+        // Wider gradient radius so edges are less dark on narrow mobile screens
+        const radius = Math.max(W, H) * 0.9
+        const grd = ctx.createRadialGradient(W * .5, H * .5, 0, W * .5, H * .5, radius)
         grd.addColorStop(0, frameColors[currentFrame][0]); grd.addColorStop(1, frameColors[currentFrame][1])
         ctx.fillStyle = grd; ctx.fillRect(0, 0, W, H)
         ctx.strokeStyle = 'rgba(255,255,255,.03)'; ctx.lineWidth = 1
