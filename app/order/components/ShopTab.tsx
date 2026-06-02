@@ -103,14 +103,24 @@ export default function ShopTab({
         <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Custom brand mark — editorial SVG */}
             <div style={{
               width: 42, height: 42, borderRadius: 11,
-              background: 'rgba(145,216,82,.12)',
+              background: 'linear-gradient(135deg, rgba(145,216,82,.15) 0%, rgba(147,24,204,.15) 100%)',
               border: '1.5px solid rgba(145,216,82,.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20,
-              boxShadow: '0 0 18px rgba(145,216,82,.18)',
-            }}>🔪</div>
+              boxShadow: '0 0 18px rgba(145,216,82,.15)',
+              flexShrink: 0,
+              overflow: 'hidden',
+              position: 'relative',
+            }}>
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Abstract fresh-cut mark: two diagonal slashes = "cut", dot = fresh */}
+                <line x1="6" y1="22" x2="14" y2="6" stroke="#91d852" strokeWidth="3" strokeLinecap="round"/>
+                <line x1="12" y1="22" x2="20" y2="6" stroke="#c44ef5" strokeWidth="3" strokeLinecap="round"/>
+                <circle cx="22" cy="21" r="2.5" fill="#91d852"/>
+              </svg>
+            </div>
             <div>
               <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11.5, color: '#fff', letterSpacing: '0.04em' }}>
                 B&apos;LURU FRESH
