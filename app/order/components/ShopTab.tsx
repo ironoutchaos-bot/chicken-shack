@@ -178,10 +178,9 @@ export default function ShopTab({
                   onClick={onLoginRequired}
                   style={{
                     width: 36, height: 36, borderRadius: 11,
-                    background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.09)',
+                    background: 'rgba(22,20,15,.06)', border: '1px solid rgba(22,20,15,.08)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 15, cursor: 'pointer',
-                  background: 'rgba(22,20,15,.06)', border: '1px solid rgba(22,20,15,.08)',
                   }}
                 >👤</button>
               )}
