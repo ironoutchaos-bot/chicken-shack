@@ -103,23 +103,16 @@ export default function ShopTab({
         <div style={{ padding: '10px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* Custom brand mark — editorial SVG */}
+            {/* Brand "B" letter mark */}
             <div style={{
               width: 42, height: 42, borderRadius: 11,
-              background: 'linear-gradient(135deg, rgba(145,216,82,.15) 0%, rgba(147,24,204,.15) 100%)',
+              background: 'rgba(145,216,82,.1)',
               border: '1.5px solid rgba(145,216,82,.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 0 18px rgba(145,216,82,.15)',
               flexShrink: 0,
-              overflow: 'hidden',
-              position: 'relative',
             }}>
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Abstract fresh-cut mark: two diagonal slashes = "cut", dot = fresh */}
-                <line x1="6" y1="22" x2="14" y2="6" stroke="#91d852" strokeWidth="3" strokeLinecap="round"/>
-                <line x1="12" y1="22" x2="20" y2="6" stroke="#c44ef5" strokeWidth="3" strokeLinecap="round"/>
-                <circle cx="22" cy="21" r="2.5" fill="#91d852"/>
-              </svg>
+              <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 22, color: '#91d852', lineHeight: 1 }}>B</span>
             </div>
             <div>
               <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11.5, color: '#fff', letterSpacing: '0.04em' }}>
