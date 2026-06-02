@@ -188,55 +188,32 @@ export default function ShopTab({
           </div>
         </div>
 
-        {/* Subtle separator line */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,.07)', marginTop: 10 }} />
-
-        {/* Location row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            {/* Pulsing green dot via keyframes injected inline */}
-            <style>{`
-              @keyframes locpulse {
-                0%,100%{box-shadow:0 0 0 3px rgba(145,216,82,.2),0 0 0 6px rgba(145,216,82,.06)}
-                50%{box-shadow:0 0 0 5px rgba(145,216,82,.3),0 0 0 10px rgba(145,216,82,.1)}
-              }
-              @keyframes tickerscroll {
-                from{transform:translateX(0)}
-                to{transform:translateX(-50%)}
-              }
-              @keyframes tickerGradient {
-                0%{background-position:0% 50%}
-                100%{background-position:200% 50%}
-              }
-              @keyframes heroBlink {
-                0%,100%{opacity:1}50%{opacity:.2}
-              }
-              @keyframes heroGlowBtn {
-                0%,100%{box-shadow:0 4px 20px rgba(145,216,82,.4)}
-                50%{box-shadow:0 4px 30px rgba(145,216,82,.7)}
-              }
-            `}</style>
-            <div style={{
-              width: 8, height: 8, borderRadius: '50%', background: G, flexShrink: 0,
-              animation: 'locpulse 2s ease-in-out infinite',
-            }} />
+        {/* Location row — white background, black text */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px 10px', background: '#ffffff', borderBottom: '1px solid rgba(22,20,15,.07)' }}>
+          <style>{`
+            @keyframes locpulse {
+              0%,100%{box-shadow:0 0 0 3px rgba(145,216,82,.25),0 0 0 6px rgba(145,216,82,.08)}
+              50%{box-shadow:0 0 0 5px rgba(145,216,82,.35),0 0 0 10px rgba(145,216,82,.12)}
+            }
+            @keyframes tickerscroll {from{transform:translateX(0)}to{transform:translateX(-50%)}}
+            @keyframes tickerGradient {0%{background-position:0% 50%}100%{background-position:200% 50%}}
+            @keyframes heroBlink {0%,100%{opacity:1}50%{opacity:.2}}
+            @keyframes heroGlowBtn {0%,100%{box-shadow:0 4px 20px rgba(145,216,82,.4)}50%{box-shadow:0 4px 30px rgba(145,216,82,.7)}}
+          `}</style>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: G, flexShrink: 0, animation: 'locpulse 2s ease-in-out infinite' }} />
             <div>
-              <div style={{ fontSize: 8, letterSpacing: '0.12em', color: 'rgba(255,255,255,.3)', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: 8, letterSpacing: '0.12em', color: 'rgba(22,20,15,.4)', textTransform: 'uppercase' }}>
                 Delivering to
               </div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginTop: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginTop: 1 }}>
                 {locationText}
               </div>
             </div>
           </div>
-          <button
-            onClick={onChangeArea}
-            style={{
-              fontSize: 8, fontWeight: 700, color: `rgba(145,216,82,.8)`,
-              padding: '5px 10px', borderRadius: 20, letterSpacing: '0.08em',
-              background: 'none', border: 'none', cursor: 'pointer',
-            }}
-          >CHANGE ›</button>
+          <button onClick={onChangeArea} style={{ fontSize: 8.5, fontWeight: 700, color: P, padding: '5px 10px', borderRadius: 20, letterSpacing: '0.08em', background: 'rgba(147,24,204,.07)', border: '1px solid rgba(147,24,204,.18)', cursor: 'pointer' }}>
+            CHANGE ›
+          </button>
         </div>
       </div>
 
