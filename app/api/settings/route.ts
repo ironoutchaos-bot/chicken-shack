@@ -20,6 +20,16 @@ function flatten(rows: { key: string; value: unknown }[]): Record<string, unknow
   return Object.fromEntries(rows.map(r => [r.key, r.value]))
 }
 
+/** Returns true if current IST time is within open hours (7:30 AM – 6:30 PM) */
+function isStoreOpenBySchedule(): boolean {
+  const now = new Date()
+  // IST = UTC + 5h 30m
+  const istMinutes = (now.getUTCHours() * 60 + now.getUTCMinutes() + 330) % (24 * 60)
+  const openMinutes  = 7 * 60 + 30   // 7:30 AM IST
+  const closeMinutes = 18 * 60 + 30  // 6:30 PM IST
+  return istMinutes >= openMinutes && istMinutes < closeMinutes
+}
+
 // GET /api/settings — public, returns all settings as flat object
 export async function GET() {
   try {
@@ -27,13 +37,18 @@ export async function GET() {
       `${SUPA_URL()}/rest/v1/settings?select=key,value`,
       { headers: srvHeaders() }
     )
-    if (!res.ok) {
-      // Table may not exist yet — return safe defaults
-      return NextResponse.json(DEFAULTS)
-    }
+    if (!res.ok) return NextResponse.json(DEFAULTS)
     const rows: { key: string; value: unknown }[] = await res.json()
     if (!Array.isArray(rows) || rows.length === 0) return NextResponse.json(DEFAULTS)
-    return NextResponse.json({ ...DEFAULTS, ...flatten(rows) })
+
+    const settings = { ...DEFAULTS, ...flatten(rows) }
+
+    // If auto-schedule is enabled, override store_open with time-based value
+    if (settings.auto_schedule) {
+      settings.store_open = isStoreOpenBySchedule()
+    }
+
+    return NextResponse.json(settings)
   } catch {
     return NextResponse.json(DEFAULTS)
   }
@@ -83,10 +98,11 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-const DEFAULTS = {
+const DEFAULTS: Record<string, unknown> = {
   cod_enabled:                 true,
   cashfree_enabled:            true,
   store_open:                  true,
+  auto_schedule:               false, // auto open 7:30 AM – close 6:30 PM IST
   min_order_amount:            0,
   delivery_fee:                0,
   delivery_hours:              '8am – 8pm',

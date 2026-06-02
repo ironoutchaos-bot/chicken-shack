@@ -8,6 +8,7 @@ type Settings = {
   cod_enabled:      boolean
   cashfree_enabled: boolean
   store_open:       boolean
+  auto_schedule:    boolean
   min_order_amount: number
   delivery_fee:     number
   delivery_hours:   string
@@ -19,6 +20,7 @@ const DEFAULTS: Settings = {
   cod_enabled:      true,
   cashfree_enabled: true,
   store_open:       true,
+  auto_schedule:    false,
   min_order_amount: 0,
   delivery_fee:     0,
   delivery_hours:   '8am – 8pm',
@@ -134,11 +136,19 @@ export default function AdminSettingsPage() {
         <Section title="🏪 Store" subtitle="Control store availability and delivery settings">
           <ToggleRow
             label="Store Open"
-            description="When off, customers see a 'store closed' banner and cannot add to cart"
+            description="When off, customers see a 'store closed' banner. Overridden by Auto Schedule when enabled."
             value={settings.store_open}
             saving={saving === 'store_open'}
             saved={saved === 'store_open'}
             onChange={v => saveSetting('store_open', v)}
+          />
+          <ToggleRow
+            label="⏰ Auto Shop Open / Close"
+            description="Auto opens at 7:30 AM IST and closes at 6:30 PM IST every day. Overrides the Store Open toggle above."
+            value={settings.auto_schedule}
+            saving={saving === 'auto_schedule'}
+            saved={saved === 'auto_schedule'}
+            onChange={v => saveSetting('auto_schedule', v)}
           />
           <NumberRow
             label="Minimum Order Amount (₹)"
