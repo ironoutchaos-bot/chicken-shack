@@ -104,18 +104,16 @@ export default function ShopTab({
           {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
-              width: 38, height: 38, borderRadius: 12,
-              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              width: 42, height: 42, borderRadius: 11,
+              background: 'rgba(145,216,82,.12)',
+              border: '1.5px solid rgba(145,216,82,.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 20,
-              boxShadow: '0 0 16px rgba(251,191,36,.45)',
-            }}>🐔</div>
+              boxShadow: '0 0 18px rgba(145,216,82,.18)',
+            }}>🔪</div>
             <div>
-              <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11.5, color: G, letterSpacing: '0.04em' }}>
+              <div style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 11.5, color: '#fff', letterSpacing: '0.04em' }}>
                 B&apos;LURU FRESH
-              </div>
-              <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,.28)', marginTop: 1.5, letterSpacing: '0.06em' }}>
-                Farm-fresh chicken, Yelahanka
               </div>
             </div>
           </div>
@@ -187,40 +185,8 @@ export default function ShopTab({
           </div>
         </div>
 
-        {/* Delivery stats strip */}
-        <div style={{
-          display: 'flex', alignItems: 'stretch',
-          borderTop: '1px solid rgba(255,255,255,.06)',
-          borderBottom: '1px solid rgba(255,255,255,.06)',
-          marginTop: 10,
-        }}>
-          {[
-            { num: '1hr',  label: 'Delivery',    active: true },
-            { num: '0%',   label: 'Preservatives', active: false },
-            { num: '100%', label: 'Cut-to-order',  active: false },
-          ].map(({ num, label, active }, i) => (
-            <div key={label} style={{
-              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-              padding: '9px 4px', position: 'relative',
-              borderRight: i < 2 ? '1px solid rgba(255,255,255,.06)' : 'none',
-            }}>
-              {active && (
-                <div style={{
-                  position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-                  width: 20, height: 2, background: G, borderRadius: 2,
-                }} />
-              )}
-              <div style={{
-                fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 15,
-                color: active ? G : 'rgba(255,255,255,.07)', lineHeight: 1,
-              }}>{num}</div>
-              <div style={{
-                fontSize: 7.5, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1,
-                color: active ? `rgba(145,216,82,.7)` : 'rgba(255,255,255,.28)',
-              }}>{label}</div>
-            </div>
-          ))}
-        </div>
+        {/* Subtle separator line */}
+        <div style={{ height: 1, background: 'rgba(255,255,255,.07)', marginTop: 10 }} />
 
         {/* Location row */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px 14px' }}>
@@ -234,6 +200,10 @@ export default function ShopTab({
               @keyframes tickerscroll {
                 from{transform:translateX(0)}
                 to{transform:translateX(-50%)}
+              }
+              @keyframes tickerGradient {
+                0%{background-position:0% 50%}
+                100%{background-position:200% 50%}
               }
               @keyframes heroBlink {
                 0%,100%{opacity:1}50%{opacity:.2}
@@ -260,21 +230,20 @@ export default function ShopTab({
             onClick={onChangeArea}
             style={{
               fontSize: 8, fontWeight: 700, color: `rgba(145,216,82,.8)`,
-              border: `1px solid rgba(145,216,82,.25)`,
               padding: '5px 10px', borderRadius: 20, letterSpacing: '0.08em',
-              background: 'none', cursor: 'pointer',
+              background: 'none', border: 'none', cursor: 'pointer',
             }}
           >CHANGE ›</button>
         </div>
       </div>
 
-      {/* ══ GREEN TICKER STRIP ══ */}
-      <div style={{ background: G, padding: '6px 0', overflow: 'hidden', display: 'flex', flexShrink: 0 }}>
+      {/* ══ GREEN → VIOLET TICKER STRIP ══ */}
+      <div style={{ background: 'linear-gradient(90deg, #91d852 0%, #b44ef5 50%, #91d852 100%)', backgroundSize: '200% 100%', animation: 'tickerGradient 4s linear infinite', padding: '6px 0', overflow: 'hidden', display: 'flex', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 18, animation: 'tickerscroll 9s linear infinite', whiteSpace: 'nowrap' }}>
           {['NO FOUL SMELL', 'CUT AFTER ORDER', '1 HOUR DELIVERY', 'ZERO PRESERVATIVES', 'FSSAI LICENSED',
             'NO FOUL SMELL', 'CUT AFTER ORDER', '1 HOUR DELIVERY', 'ZERO PRESERVATIVES', 'FSSAI LICENSED'].map((t, i) => (
-            <span key={i} style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.15em', color: INK, flexShrink: 0 }}>
-              {t} <span style={{ opacity: 0.3 }}>✦</span>
+            <span key={i} style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.15em', color: '#16140f', flexShrink: 0 }}>
+              {t} <span style={{ opacity: 0.35 }}>✦</span>
             </span>
           ))}
         </div>
@@ -355,10 +324,10 @@ export default function ShopTab({
               const heroQty = getCartQty(heroProduct.id)
               const heroOOS = heroProduct.stock_quantity === 0
               return (
-                <div style={{ position: 'relative', height: 220, overflow: 'hidden', background: INK }}>
+                <div style={{ position: 'relative', height: 240, overflow: 'hidden', background: INK }}>
                   {/* Background image */}
                   {heroImg && (
-                    <div style={{ position: 'absolute', inset: 0, opacity: 0.45, transform: 'scale(1.05)' }}>
+                    <div style={{ position: 'absolute', inset: 0, opacity: 0.55, transform: 'scale(1.05)' }}>
                       <Image src={heroImg} alt={heroProduct.name} fill className="object-cover" sizes="430px" />
                     </div>
                   )}
@@ -389,7 +358,7 @@ export default function ShopTab({
 
                     {/* Bottom block */}
                     <div>
-                      <h2 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 22, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 6 }}>
+                      <h2 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 24, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1.1, marginBottom: 6 }}>
                         {heroProduct.name}
                       </h2>
                       <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)', marginBottom: 10, letterSpacing: '0.06em' }}>
