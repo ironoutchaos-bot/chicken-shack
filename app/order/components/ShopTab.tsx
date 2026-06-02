@@ -306,7 +306,7 @@ export default function ShopTab({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '12px 12px 0' }}>
             {[...Array(4)].map((_, i) => (
               <div key={i} style={{ borderRadius: 18, overflow: 'hidden', border: '1.5px solid rgba(22,20,15,.06)', background: '#fff', animation: 'pulse 1.5s ease-in-out infinite' }}>
-                <div style={{ height: 112, background: '#f2ede0' }} />
+                <div style={{ height: 145, background: '#f2ede0' }} />
                 <div style={{ padding: 10 }}>
                   <div style={{ height: 14, borderRadius: 8, background: '#f2ede0', marginBottom: 6 }} />
                   <div style={{ height: 10, borderRadius: 8, background: '#f7f4ee', width: '60%', marginBottom: 8 }} />
@@ -445,7 +445,7 @@ export default function ShopTab({
                     }}
                   >
                     {/* Image area */}
-                    <div style={{ width: '100%', height: 112, overflow: 'hidden', position: 'relative', background: '#f2ede0' }}>
+                    <div style={{ width: '100%', height: 145, overflow: 'hidden', position: 'relative', background: '#f2ede0' }}>
                       {outOfStock && (
                         <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'rgba(0,0,0,.04)' }}>
                           {imgSrc && <Image src={imgSrc} alt={p.name} fill className="object-cover" style={{ filter: 'grayscale(.5)', opacity: 0.6 }} sizes="180px" />}
@@ -500,29 +500,29 @@ export default function ShopTab({
                     </div>
 
                     {/* Card body */}
-                    <div style={{ padding: 10 }}>
-                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 11.5, color: INK, lineHeight: 1.3, marginBottom: 2 }}>
+                    <div style={{ padding: 12 }}>
+                      <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 13, color: INK, lineHeight: 1.3, marginBottom: 3 }}>
                         {p.name}
                       </div>
-                      <div style={{ fontSize: 8, color: 'rgba(22,20,15,.38)', marginBottom: 7, letterSpacing: '0.04em' }}>
+                      <div style={{ fontSize: 9.5, color: 'rgba(22,20,15,.38)', marginBottom: 9, letterSpacing: '0.04em' }}>
                         {UNIT_LABEL}
                       </div>
 
                       {/* Price row */}
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
-                        {!outOfStock && <span style={{ fontSize: 9, color: 'rgba(22,20,15,.28)', textDecoration: 'line-through' }}>₹{oldPrice}</span>}
-                        <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 15, color: outOfStock ? 'rgba(22,20,15,.25)' : P }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 10 }}>
+                        {!outOfStock && <span style={{ fontSize: 10, color: 'rgba(22,20,15,.28)', textDecoration: 'line-through' }}>₹{oldPrice}</span>}
+                        <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 17, color: outOfStock ? 'rgba(22,20,15,.25)' : P }}>
                           ₹{p.price_per_kg}
                         </span>
-                        <span style={{ fontSize: 8, color: 'rgba(22,20,15,.3)' }}>/pc</span>
+                        <span style={{ fontSize: 9, color: 'rgba(22,20,15,.3)' }}>/pc</span>
                       </div>
 
                       {/* Button */}
                       {outOfStock ? (
                         <button disabled style={{
                           width: '100%', background: 'rgba(22,20,15,.04)', color: 'rgba(22,20,15,.25)',
-                          border: '1.5px solid rgba(22,20,15,.07)', borderRadius: 10, padding: 7,
-                          fontFamily: "'DM Mono', monospace", fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
+                          border: '1.5px solid rgba(22,20,15,.07)', borderRadius: 12, padding: '9px 0',
+                          fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
                           cursor: 'default',
                         }}>Out of Stock</button>
                       ) : qty === 0 ? (
@@ -531,20 +531,20 @@ export default function ShopTab({
                           style={{
                             width: '100%',
                             background: 'rgba(147,24,204,.08)', color: P,
-                            border: `1.5px solid rgba(147,24,204,.18)`, borderRadius: 10, padding: 7,
-                            fontFamily: "'DM Mono', monospace", fontSize: 9.5, fontWeight: 700,
+                            border: `1.5px solid rgba(147,24,204,.22)`, borderRadius: 12, padding: '9px 0',
+                            fontFamily: "'DM Mono', monospace", fontSize: 11, fontWeight: 700,
                             letterSpacing: '0.07em', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
                           }}
-                        >+ Add</button>
+                        >+ Add to Cart</button>
                       ) : (
                         <div style={{
-                          display: 'flex', alignItems: 'center', borderRadius: 10,
+                          display: 'flex', alignItems: 'center', borderRadius: 12,
                           background: `linear-gradient(135deg,${P},#7b14ab)`, overflow: 'hidden',
                         }}>
-                          <button onClick={() => onUpdateQty(p.id, qty - 1)} style={{ width: 34, height: 32, background: 'rgba(0,0,0,.2)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                          <span style={{ flex: 1, textAlign: 'center', fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 13, color: '#fff' }}>{qty}</span>
-                          <button onClick={() => onUpdateQty(p.id, qty + 1)} style={{ width: 34, height: 32, background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                          <button onClick={() => onUpdateQty(p.id, qty - 1)} style={{ width: 38, height: 36, background: 'rgba(0,0,0,.2)', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                          <span style={{ flex: 1, textAlign: 'center', fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 14, color: '#fff' }}>{qty}</span>
+                          <button onClick={() => onUpdateQty(p.id, qty + 1)} style={{ width: 38, height: 36, background: 'rgba(255,255,255,.15)', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                         </div>
                       )}
                     </div>
