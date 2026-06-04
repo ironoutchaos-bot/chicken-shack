@@ -20,12 +20,14 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://sdk.cashfree.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' https://fonts.gstatic.com",
+      // Cashfree uses multiple subdomains for payment SDK, 3DS, and checkout flows
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.cashfree.com https://sdk.cashfree.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.cashfree.com",
+      "font-src 'self' https://fonts.gstatic.com https://*.cashfree.com",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://*.supabase.co https://api.cashfree.com https://api.msg91.com https://sdk.cashfree.com",
-      "frame-src 'self' https://sdk.cashfree.com",
+      "connect-src 'self' https://*.supabase.co https://*.cashfree.com https://api.msg91.com",
+      // Cashfree opens iframes for 3DS authentication and payment forms
+      "frame-src 'self' https://*.cashfree.com",
       "worker-src 'self' blob:",
       "manifest-src 'self'",
     ].join('; '),
