@@ -50,6 +50,9 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   manifest: '/manifest.json',
+  verification: {
+    google: 'ueYtArKHbSCI-blL8xPqF80paQGHAUKZYVN0JYuVzgQ',
+  },
 
   // ── Primary SEO title — keyword-rich, under 60 chars for SERP display
   title: "Fresh Chicken Bengaluru | B'LURU Fresh — Cut After Your Order",
