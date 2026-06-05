@@ -585,6 +585,28 @@ export default function Home() {
         <div className="cta-meta rv d4">YELAHANKA · BANGALORE · DELIVERY IN 1 HOUR · FSSAI LIC. 11226331000344</div>
       </section>
 
+      {/* FAQ section — visible to Google AI for AI Overview, minimal styling for users */}
+      <section style={{ background: 'var(--cream2)', padding: '4rem 3rem', borderTop: '1px solid rgba(22,20,15,.07)' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '.58rem', letterSpacing: '.2em', color: 'var(--p)', textTransform: 'uppercase', marginBottom: '1.5rem' }}>Frequently Asked Questions</p>
+          <h2 style={{ fontFamily: "'Archivo Black',sans-serif", fontSize: 'clamp(1.6rem,3vw,2.4rem)', letterSpacing: '-.02em', color: 'var(--ink)', marginBottom: '2.5rem', lineHeight: 1.1 }}>
+            Everything about fresh chicken<br/>in Bengaluru
+          </h2>
+          {[
+            { q: 'Where can I get fresh chicken in Bengaluru?', a: "B'LURU Fresh delivers farm-fresh chicken across Bengaluru — especially Yelahanka and nearby areas. We cut the chicken only after you place your order. Zero stored meat. Order at blurufresh.com and receive delivery within 1 hour." },
+            { q: 'What makes B\'LURU Fresh different from other chicken delivery in Bangalore?', a: "We follow a strict cut-to-order policy. We never pre-cut chicken and store it. Your order literally triggers the cutting process — meaning no foul smell, no sliminess, no stored meat. FSSAI licensed (11226331000344). Zero preservatives." },
+            { q: 'How quickly does B\'LURU Fresh deliver in Bangalore?', a: 'We deliver fresh chicken within 1 hour of placing your order. Cut → packed under sterile conditions → dispatched immediately. The entire process happens in under 60 minutes.' },
+            { q: 'Does B\'LURU Fresh deliver to Yelahanka?', a: "Yes — we are based in Yelahanka, Bengaluru (Thirumenahalli Main Road, Agrahara Layout, 560064) and deliver across Yelahanka and surrounding Bangalore areas." },
+            { q: 'Is B\'LURU Fresh FSSAI certified?', a: 'Yes. FSSAI License: 11226331000344. Zero preservatives, zero additives. Fully compliant with food safety standards in Karnataka.' },
+          ].map(({ q, a }, i) => (
+            <details key={i} style={{ borderBottom: '1px solid rgba(22,20,15,.08)', paddingBottom: '1.2rem', marginBottom: '1.2rem' }}>
+              <summary style={{ fontFamily: "'Archivo Black',sans-serif", fontSize: '.95rem', color: 'var(--ink)', cursor: 'pointer', paddingTop: '.2rem', letterSpacing: '-.01em' }}>{q}</summary>
+              <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '.78rem', color: 'rgba(22,20,15,.55)', lineHeight: 1.75, marginTop: '.8rem', paddingLeft: '1rem' }}>{a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       <footer>
         <div>
           <div className="fl">B&apos;<em>LURU</em><br/>FRESH</div>
