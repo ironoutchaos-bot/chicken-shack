@@ -21,8 +21,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content
 .nav-r{display:flex;align-items:center;gap:2rem;}
 .nav-r a{font-size:.6rem;letter-spacing:.15em;color:rgba(22,20,15,.4);text-decoration:none;text-transform:uppercase;transition:color .2s;}
 .nav-r a:hover{color:var(--p);}
-.nav-btn{background:var(--ink);color:var(--cream);border:none;padding:.55rem 1.5rem;font-family:'DM Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;cursor:none;transition:all .2s;}
-.nav-btn:hover{background:var(--p);}
+.nav-btn{background:var(--p);color:#fff;border:none;padding:.75rem 2rem;font-family:'Unbounded',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:none;transition:all .2s;border-radius:4px;box-shadow:0 4px 16px rgba(147,24,204,.4);}
+.nav-btn:hover{background:var(--gd);color:var(--ink);box-shadow:0 4px 20px rgba(106,184,46,.5);}
 #prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--g),var(--p));z-index:600;transition:width .05s linear;width:0%;}
 #hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:6rem 3rem 4rem;background:var(--cream);position:relative;overflow:hidden;}
 .hero-bg-word{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(8rem,20vw,26rem);color:rgba(22,20,15,.04);white-space:nowrap;letter-spacing:-.04em;line-height:1;pointer-events:none;user-select:none;animation:bgFloat 8s ease-in-out infinite;}
