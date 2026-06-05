@@ -127,31 +127,6 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content
 .ps-title{font-family:'Archivo Black',sans-serif;font-size:1.2rem;color:var(--ink);margin-bottom:.6rem;letter-spacing:-.01em;}
 .ps-desc{font-size:.75rem;color:rgba(22,20,15,.4);line-height:1.7;}
 .ps-tag{display:inline-block;margin-top:1.2rem;background:rgba(145,216,82,.12);color:var(--gd);padding:.3rem .8rem;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;}
-#menu{padding:6rem 3rem;background:var(--cream3);position:relative;}
-.menu-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:3rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(22,20,15,.08);}
-.menu-h{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(2rem,4vw,4.5rem);letter-spacing:-.03em;line-height:.9;color:var(--ink);}
-.menu-h span{color:var(--gd);}
-.menu-sub{font-size:.62rem;letter-spacing:.1em;color:rgba(22,20,15,.35);}
-.menu-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;grid-template-rows:auto auto;gap:1.2rem;}
-.mcard{background:var(--white);border:1px solid rgba(22,20,15,.06);padding:2rem 1.8rem;position:relative;overflow:hidden;cursor:none;transition:all .3s;}
-.mcard:hover{box-shadow:0 12px 40px rgba(22,20,15,.08);}
-.mcard:hover .mc-icon{transform:scale(1.3) rotate(-5deg);}
-.mcard.featured{grid-row:span 2;background:var(--ink);border-color:var(--ink);}
-.mcard.featured .mc-tag{color:var(--g);}
-.mcard.featured .mc-name{color:#fff;}
-.mcard.featured .mc-desc{color:rgba(255,255,255,.35);}
-.mcard.featured .mc-price{color:var(--g);}
-.mcard.featured .mc-price span{color:rgba(255,255,255,.3);}
-.mcard.featured .mc-arrow{color:rgba(255,255,255,.2);}
-.mc-icon{font-size:2rem;margin-bottom:1.2rem;display:block;transition:transform .3s;}
-.mc-tag{font-size:.55rem;letter-spacing:.15em;color:var(--p);text-transform:uppercase;margin-bottom:.6rem;}
-.mc-name{font-family:'Archivo Black',sans-serif;font-size:1.15rem;color:var(--ink);margin-bottom:.4rem;letter-spacing:-.01em;}
-.mc-desc{font-size:.72rem;color:rgba(22,20,15,.35);line-height:1.6;margin-bottom:1.2rem;}
-.mc-price{font-family:'Unbounded',sans-serif;font-weight:700;font-size:1.6rem;color:var(--p);letter-spacing:-.02em;}
-.mc-price span{font-family:'DM Mono',monospace;font-size:.65rem;color:rgba(22,20,15,.3);font-weight:400;}
-.mc-arrow{position:absolute;top:1.5rem;right:1.5rem;font-size:1rem;color:rgba(22,20,15,.15);transition:all .3s;}
-.mcard:hover .mc-arrow{transform:translateX(4px);color:var(--p);opacity:1;}
-.menu-cta-row{margin-top:2rem;text-align:center;}
 #cta{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--ink);position:relative;overflow:hidden;text-align:center;padding:4rem 3rem;}
 .cta-bg-circle{position:absolute;width:70vw;height:70vw;max-width:800px;max-height:800px;border-radius:50%;border:1px solid rgba(255,255,255,.04);top:50%;left:50%;transform:translate(-50%,-50%);}
 .cta-bg-circle:nth-child(2){width:50vw;height:50vw;border-color:rgba(145,216,82,.08);}
@@ -230,11 +205,6 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.05);padding:
   .proc-steps{grid-template-columns:1fr;}
   .pstep:nth-child(even){margin-top:0;}
   .pstep{padding:1.5rem 1.2rem;}
-  #menu{padding:3rem 1.2rem;}
-  .menu-grid{grid-template-columns:1fr;grid-template-rows:auto;}
-  .mcard.featured{grid-row:span 1;}
-  .menu-h{font-size:clamp(2rem,9vw,3.5rem);}
-  .mcard{padding:1.5rem 1.2rem;}
   #cta{padding:4rem 1.2rem;}
   .cta-h{font-size:clamp(3rem,13vw,5.5rem);}
   .cta-btns{flex-direction:column;align-items:center;gap:.8rem;}
@@ -276,7 +246,7 @@ export default function Home() {
       raf = requestAnimationFrame(animRing)
     }
     animRing()
-    document.querySelectorAll<HTMLElement>('button,a,.why-hcard,.pstep,.mcard,.float-order').forEach(el => {
+    document.querySelectorAll<HTMLElement>('button,a,.why-hcard,.pstep,.float-order').forEach(el => {
       el.addEventListener('mouseenter', () => { cur.style.transform = 'scale(2.5)'; cur.style.background = 'var(--g)'; ring.style.transform = 'scale(1.5)'; ring.style.borderColor = 'var(--p)' })
       el.addEventListener('mouseleave', () => { cur.style.transform = 'scale(1)'; cur.style.background = 'var(--p)'; ring.style.transform = 'scale(1)'; ring.style.borderColor = 'var(--g)' })
     })
@@ -388,7 +358,7 @@ export default function Home() {
     if (whyEl) new IntersectionObserver(en => { en.forEach(e => { if (e.isIntersecting && !(e.target as HTMLElement).dataset.done) { (e.target as HTMLElement).dataset.done = '1'; e.target.querySelectorAll('.count-num').forEach(n => animC(n, parseInt((n as HTMLElement).dataset.count || '0'))) } }) }, { threshold: .5 }).observe(whyEl)
 
     // 3D tilt
-    document.querySelectorAll<HTMLElement>('.why-hcard,.pstep,.mcard').forEach(c => {
+    document.querySelectorAll<HTMLElement>('.why-hcard,.pstep').forEach(c => {
       c.addEventListener('mousemove', (e: Event) => { const me = e as MouseEvent; const r = c.getBoundingClientRect(); const x = (me.clientX - r.left) / r.width - .5, y = (me.clientY - r.top) / r.height - .5; c.style.transform = `perspective(800px) rotateX(${y * -6}deg) rotateY(${x * 6}deg) translateZ(8px)` })
       c.addEventListener('mouseleave', () => { c.style.transform = '' })
     })
@@ -600,41 +570,6 @@ export default function Home() {
               <div className="ps-tag">{s.tag}</div>
             </div>
           ))}
-        </div>
-      </section>
-
-      <section id="menu">
-        <div className="menu-header">
-          <h2 className="menu-h rv">WHAT WE<br/><span>ACTUALLY SELL</span></h2>
-          <div className="menu-sub rv">Cut fresh. Every order.<br/>No stored fillets. Ever.</div>
-        </div>
-        <div className="menu-grid">
-          <div className="mcard featured rv">
-            <span className="mc-icon">🍗</span>
-            <div className="mc-tag">Most Popular</div>
-            <div className="mc-name">Boneless Breast</div>
-            <div className="mc-desc">Zero fat. Maximum protein. Cut fresh after your order — no stored fillets, ever.</div>
-            <div className="mc-price">₹280 <span>/ 500g</span></div>
-            <div className="mc-arrow">→</div>
-          </div>
-          {[
-            {icon:'🍖',tag:'Classic Cut',name:'Curry Cut',desc:'The OG bone-in cut for authentic Bengaluru curry.',price:'₹220',unit:'500g'},
-            {icon:'🍗',tag:'BBQ Special',name:'Drumsticks',desc:'Thick, meaty, grill-ready. Freshness is mandatory here.',price:'₹240',unit:'500g'},
-            {icon:'🐔',tag:'Full Bird',name:'Whole Chicken',desc:'Same-day processed. For when one cut just isn\'t enough.',price:'₹380',unit:'kg'},
-            {icon:'🥩',tag:'Lean Cut',name:'Thigh Boneless',desc:'Juicier than breast, leaner than full thigh. Perfect for stir-fry.',price:'₹260',unit:'500g'},
-          ].map((c,i) => (
-            <div key={i} className="mcard rv" style={{transitionDelay:`${(i%2+1)*.1}s`}}>
-              <span className="mc-icon">{c.icon}</span>
-              <div className="mc-tag">{c.tag}</div>
-              <div className="mc-name">{c.name}</div>
-              <div className="mc-desc">{c.desc}</div>
-              <div className="mc-price">{c.price} <span>/ {c.unit}</span></div>
-              <div className="mc-arrow">→</div>
-            </div>
-          ))}
-        </div>
-        <div className="menu-cta-row rv d2">
-          <button className="btn-fill" style={{marginTop:'2.5rem'}} onClick={goOrder}><span>See Full Menu &amp; Order →</span></button>
         </div>
       </section>
 
