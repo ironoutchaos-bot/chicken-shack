@@ -230,10 +230,62 @@ export default function RootLayout({
                 "@type": "OfferCatalog",
                 "name": "Fresh Chicken Cuts",
                 "itemListElement": [
-                  { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Curry Cut Chicken", "description": "Fresh curry cut chicken, cut after order" }},
-                  { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Boneless Chicken", "description": "Fresh boneless chicken breast" }},
-                  { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Biriyani Cut Chicken", "description": "Fresh biriyani cut chicken" }},
-                  { "@type": "Offer", "itemOffered": { "@type": "Product", "name": "Drumsticks", "description": "Fresh chicken drumsticks" }}
+                  {
+                    "@type": "Offer",
+                    "url": "https://www.blurufresh.com/order",
+                    "priceCurrency": "INR",
+                    "price": "179",
+                    "availability": "https://schema.org/InStock",
+                    "itemOffered": {
+                      "@type": "Product",
+                      "name": "Curry Cut Chicken",
+                      "description": "Fresh curry cut chicken — cut only after your order. No stored meat.",
+                      "image": "https://assets.tendercuts.in/product/P/R/c770bfb6-bb8a-48b9-abe3-df519a0c7954.webp",
+                      "brand": { "@type": "Brand", "name": "B'LURU Fresh" }
+                    }
+                  },
+                  {
+                    "@type": "Offer",
+                    "url": "https://www.blurufresh.com/order",
+                    "priceCurrency": "INR",
+                    "price": "289",
+                    "availability": "https://schema.org/InStock",
+                    "itemOffered": {
+                      "@type": "Product",
+                      "name": "Boneless Chicken",
+                      "description": "Fresh boneless chicken breast — zero fat, maximum protein, cut after order.",
+                      "image": "https://www.blurufresh.com/assets/raw_chicken_breast.jpg",
+                      "brand": { "@type": "Brand", "name": "B'LURU Fresh" }
+                    }
+                  },
+                  {
+                    "@type": "Offer",
+                    "url": "https://www.blurufresh.com/order",
+                    "priceCurrency": "INR",
+                    "price": "175",
+                    "availability": "https://schema.org/InStock",
+                    "itemOffered": {
+                      "@type": "Product",
+                      "name": "Biriyani Cut Chicken",
+                      "description": "Fresh biriyani cut chicken — perfect for biryani, cut fresh after order.",
+                      "image": "https://assets.tendercuts.in/product/C/H/a6b6b1db-2b6b-4129-a557-fbd9811c8888.webp",
+                      "brand": { "@type": "Brand", "name": "B'LURU Fresh" }
+                    }
+                  },
+                  {
+                    "@type": "Offer",
+                    "url": "https://www.blurufresh.com/order",
+                    "priceCurrency": "INR",
+                    "price": "219",
+                    "availability": "https://schema.org/InStock",
+                    "itemOffered": {
+                      "@type": "Product",
+                      "name": "Drumsticks",
+                      "description": "Fresh chicken drumsticks — thick, meaty, grill-ready. Cut after order.",
+                      "image": "https://assets.tendercuts.in/product/C/H/a62a73e9-a7d5-4f79-86c1-9f6127e7026e.jpg",
+                      "brand": { "@type": "Brand", "name": "B'LURU Fresh" }
+                    }
+                  }
                 ]
               },
               "additionalProperty": [
