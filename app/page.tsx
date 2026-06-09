@@ -32,10 +32,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 .hs-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(145,216,82,.12);border:1px solid rgba(145,216,82,.3);padding:.35rem 1rem;width:fit-content;font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.18em;color:var(--gd);text-transform:uppercase;margin-bottom:1.2rem;}
 .hs-pill::before{content:'';width:5px;height:5px;background:var(--gd);border-radius:50%;animation:blink 1.5s ease infinite;}
-.hs-main{font-family:'Archivo Black',sans-serif;font-size:clamp(1.4rem,3vw,3.2rem);line-height:1.1;letter-spacing:-.025em;color:var(--ink);text-align:left;white-space:nowrap;}
+.hs-main{font-family:'Archivo Black',sans-serif;font-size:clamp(1.4rem,3vw,3.2rem);line-height:1.1;letter-spacing:-.025em;color:var(--ink);text-align:left;white-space:normal;}
 .hs-main .accent{color:var(--p);}
 .hs-divider{width:48px;height:3px;margin-top:1.2rem;background:linear-gradient(to right,var(--gd),var(--p));}
-.hero-statement{position:relative;z-index:1;margin-bottom:2.8rem;margin-top:1.5rem;display:flex;flex-direction:column;gap:0;width:100%;}
+.hero-statement{position:relative;z-index:10;margin-bottom:2.8rem;margin-top:1.5rem;display:flex;flex-direction:column;gap:0;width:100%;}
 .hs-cursor{display:inline-block;color:var(--p);font-weight:900;animation:cursorBlink .9s step-end infinite;}
 @keyframes cursorBlink{0%,100%{opacity:1;}50%{opacity:0;}}
 .hero-main{display:grid;grid-template-columns:1fr auto;align-items:flex-end;gap:2rem;position:relative;z-index:1;}
@@ -55,7 +55,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content
 .hero-scroll-line{width:1px;height:50px;background:linear-gradient(to bottom,var(--p),transparent);animation:sLine 2s ease infinite;}
 @keyframes sLine{0%{transform:scaleY(0);transform-origin:top;}50%{transform:scaleY(1);transform-origin:top;}51%{transform:scaleY(1);transform-origin:bottom;}100%{transform:scaleY(0);transform-origin:bottom;}}
 .f-badge{position:absolute;border:1px solid rgba(22,20,15,.08);background:var(--white);padding:.7rem 1rem;font-size:.58rem;letter-spacing:.1em;color:rgba(22,20,15,.5);text-transform:uppercase;box-shadow:0 4px 20px rgba(22,20,15,.06);}
-.fb1{top:22%;left:3rem;animation:fbFloat 6s ease-in-out infinite;}
+.fb1{bottom:22%;left:3rem;animation:fbFloat 6s ease-in-out infinite;}
 .fb2{top:30%;right:22%;animation:fbFloat 7s 1s ease-in-out infinite;}
 .fb3{top:55%;left:38%;animation:fbFloat 5s 2s ease-in-out infinite;}
 @keyframes fbFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
@@ -433,7 +433,7 @@ export default function Home() {
         <div className="hero-statement rv d1">
           <div className="hs-pill">🐔 Bengaluru&apos;s first ultra-fresh system</div>
           <div className="hs-main">
-            <span className="accent">Ever felt a foul smell or sliminess</span>&nbsp;<span style={{color:'var(--ink)',whiteSpace:'nowrap'}}>while unpacking the chicken</span><span className="hs-cursor" style={{color:'var(--gd)'}}>?</span>
+            <span className="accent">Ever felt a foul smell or sliminess</span>&nbsp;<span style={{color:'var(--ink)'}}>while unpacking the chicken</span><span className="hs-cursor" style={{color:'var(--gd)'}}>?</span>
           </div>
           <div className="hs-divider" />
         </div>

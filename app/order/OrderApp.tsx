@@ -32,7 +32,14 @@ export default function OrderApp() {
   // Entry / pincode gate — skip if returning from Cashfree payment
   const [entryDone, setEntryDone] = useState(() => {
     if (typeof window === 'undefined') return false
-    return new URLSearchParams(window.location.search).has('cashfree_order_id')
+    const p = new URLSearchParams(window.location.search)
+    return p.has('cashfree_order_id') || p.has('feedback')
+  })
+
+  // Feedback deep-link: /order?feedback=ORDER_ID
+  const [feedbackTargetId, setFeedbackTargetId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return new URLSearchParams(window.location.search).get('feedback')
   })
   const [pincode,  setPincode]  = useState<string | null>(null)
   const [areaName, setAreaName] = useState('')
@@ -65,6 +72,21 @@ export default function OrderApp() {
       .catch(() => {})
       .finally(() => setAuthLoading(false))
   }, [])
+
+  // ── Feedback deep-link handler ────────────────────────────────
+  // When user arrives via /order?feedback=ORDER_ID (from push notification),
+  // switch to history tab once auth resolves and clean the URL.
+  useEffect(() => {
+    if (!feedbackTargetId) return
+    // Clean URL immediately
+    window.history.replaceState({}, '', window.location.pathname)
+    // Switch to history tab — if auth not yet loaded, wait for it
+    if (!authLoading) {
+      if (user) setActiveTab('history')
+      else { setPendingTab('history'); setLoginOpen(true) }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading])  // runs once auth hydration completes
 
   // ── Pre-request location permission on page load ──────────────
   // Warms up the GPS so it's ready when the address sheet opens.
@@ -340,6 +362,7 @@ export default function OrderApp() {
                 {activeTab === 'history' && user && (
                   <HistoryTab
                     user={user}
+                    feedbackTargetId={feedbackTargetId}
                     onReorder={(items) => {
                       items.forEach(addToCart)
                       setActiveTab('shop')

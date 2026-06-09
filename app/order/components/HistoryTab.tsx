@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { RefreshCw, Loader2, RotateCcw, ChevronDown, Archive, Scissors, CheckCircle2, XCircle, Download } from 'lucide-react'
 import { type OrderRow, type CartItem } from '@/lib/supabase-browser'
 import type { AuthUser } from '@/lib/auth-types'
@@ -303,6 +303,138 @@ async function downloadInvoice(order: OrderRow) {
   win.document.close()
 }
 
+// ─── Star rating ─────────────────────────────────────────────────────────────
+
+function Stars({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
+  const [hovered, setHovered] = useState(0)
+  const active = hovered || value
+  return (
+    <div style={{ display: 'flex', gap: 4 }}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange?.(n)}
+          onMouseEnter={() => onChange && setHovered(n)}
+          onMouseLeave={() => onChange && setHovered(0)}
+          style={{
+            background: 'none', border: 'none', padding: '2px 1px',
+            cursor: onChange ? 'pointer' : 'default',
+            fontSize: '1.625rem', lineHeight: 1,
+            filter: n <= active ? 'none' : 'grayscale(1) opacity(0.3)',
+            transform: n <= active ? 'scale(1.08)' : 'scale(1)',
+            transition: 'transform 0.12s, filter 0.12s',
+          }}
+          aria-label={`${n} star`}
+        >
+          ⭐
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ─── Feedback section (inside expanded card) ─────────────────────────────────
+
+function FeedbackSection({ order, onSaved }: { order: OrderRow; onSaved: (rating: number, comment: string) => void }) {
+  const alreadyDone = !!order.feedback_rating
+
+  const [rating,    setRating]    = useState(order.feedback_rating ?? 0)
+  const [comment,   setComment]   = useState(order.feedback_comment ?? '')
+  const [saving,    setSaving]    = useState(false)
+  const [saved,     setSaved]     = useState(alreadyDone)
+  const [error,     setError]     = useState('')
+
+  async function handleSubmit() {
+    if (!rating) { setError('Please select a rating'); return }
+    setSaving(true); setError('')
+    try {
+      const res = await fetch(`/api/orders/${order.id}/feedback`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ rating, comment }),
+      })
+      if (!res.ok) throw new Error('Failed')
+      setSaved(true)
+      onSaved(rating, comment)
+    } catch {
+      setError('Could not save. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const LABELS = ['', 'Poor 😞', 'Fair 😐', 'Good 🙂', 'Great 😊', 'Excellent 🤩']
+
+  if (saved) {
+    return (
+      <div
+        className="rounded-2xl px-4 py-3.5 text-center"
+        style={{ background: 'linear-gradient(135deg, #ECFDF5, #D1FAE5)', border: '1px solid #A7F3D0' }}
+      >
+        <p style={{ margin: 0, fontWeight: 700, fontSize: '0.875rem', color: '#065F46' }}>
+          Thanks for your feedback! {LABELS[rating] || ''}
+        </p>
+        <Stars value={rating} />
+        {comment && (
+          <p style={{ margin: '6px 0 0', fontSize: '0.75rem', color: '#047857', fontStyle: 'italic' }}>
+            "{comment}"
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="rounded-2xl px-4 py-4 space-y-3"
+      style={{ background: '#FFFBEB', border: '1.5px solid rgba(217,119,6,0.2)' }}
+    >
+      <p className="text-[11px] font-black tracking-[0.14em]" style={{ color: '#92400E', margin: 0 }}>
+        RATE YOUR ORDER
+      </p>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Stars value={rating} onChange={setRating} />
+        {rating > 0 && (
+          <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#B45309' }}>
+            {LABELS[rating]}
+          </span>
+        )}
+      </div>
+
+      <textarea
+        rows={2}
+        placeholder="Any comments? (optional)"
+        value={comment}
+        onChange={e => setComment(e.target.value)}
+        maxLength={500}
+        style={{
+          width: '100%', resize: 'none', border: '1.5px solid rgba(217,119,6,0.25)',
+          borderRadius: 12, padding: '10px 12px', fontSize: '0.8125rem',
+          fontFamily: 'system-ui', color: '#374151', background: '#fff',
+          outline: 'none', boxSizing: 'border-box',
+        }}
+      />
+
+      {error && <p style={{ margin: 0, fontSize: '0.75rem', color: '#DC2626' }}>{error}</p>}
+
+      <button
+        onClick={handleSubmit}
+        disabled={saving || !rating}
+        className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-black active:scale-[0.98] transition-all disabled:opacity-50"
+        style={{
+          background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 55%, #B45309 100%)',
+          boxShadow: '0 4px 14px rgba(217,119,6,0.32)',
+          color: '#fff',
+        }}
+      >
+        {saving ? <><Loader2 size={13} className="animate-spin" /> Saving…</> : 'Submit Feedback'}
+      </button>
+    </div>
+  )
+}
+
 // ─── Receipt card ─────────────────────────────────────────────────────────────
 
 function ReceiptCard({
@@ -310,13 +442,32 @@ function ReceiptCard({
   expanded,
   onToggle,
   onReorder,
+  highlight,
 }: {
   order: OrderRow
   expanded: boolean
   onToggle: () => void
   onReorder: (order: OrderRow) => void
+  highlight?: boolean
 }) {
   const [invoiceLoading, setInvoiceLoading] = useState(false)
+  // Local feedback state — updated after a successful submission so UI reflects change immediately
+  const [localFeedbackRating,  setLocalFeedbackRating]  = useState(order.feedback_rating ?? null)
+  const [localFeedbackComment, setLocalFeedbackComment] = useState(order.feedback_comment ?? null)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  // Scroll into view when this card is highlighted (from deep link)
+  useEffect(() => {
+    if (highlight && cardRef.current) {
+      setTimeout(() => cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300)
+    }
+  }, [highlight])
+
+  const feedbackOrder = {
+    ...order,
+    feedback_rating:  localFeedbackRating,
+    feedback_comment: localFeedbackComment,
+  } as OrderRow
 
   async function handleInvoice() {
     setInvoiceLoading(true)
@@ -332,11 +483,14 @@ function ReceiptCard({
 
   return (
     <div
+      ref={cardRef}
       className="rounded-3xl overflow-hidden"
       style={{
         background: '#FFFFFF',
-        border: '1.5px solid rgba(217,119,6,0.12)',
-        boxShadow: '0 2px 16px rgba(124,45,18,0.07), 0 1px 4px rgba(0,0,0,0.03)',
+        border: highlight ? '2px solid #D97706' : '1.5px solid rgba(217,119,6,0.12)',
+        boxShadow: highlight
+          ? '0 0 0 3px rgba(217,119,6,0.15), 0 2px 16px rgba(124,45,18,0.1)'
+          : '0 2px 16px rgba(124,45,18,0.07), 0 1px 4px rgba(0,0,0,0.03)',
       }}
     >
       {/* Left accent bar via top border */}
@@ -461,6 +615,17 @@ function ReceiptCard({
               </span>
             </div>
 
+            {/* Feedback — only for delivered orders */}
+            {delivered && (
+              <FeedbackSection
+                order={feedbackOrder}
+                onSaved={(rating, comment) => {
+                  setLocalFeedbackRating(rating)
+                  setLocalFeedbackComment(comment)
+                }}
+              />
+            )}
+
             {/* Actions */}
             <div className={`flex gap-2 ${delivered ? '' : 'justify-end'}`}>
               {delivered && (
@@ -504,14 +669,23 @@ function ReceiptCard({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function HistoryTab({ user, onReorder }: { user: AuthUser; onReorder: (items: CartItem[]) => void }) {
+export default function HistoryTab({
+  user,
+  onReorder,
+  feedbackTargetId,
+}: {
+  user: AuthUser
+  onReorder: (items: CartItem[]) => void
+  feedbackTargetId?: string | null
+}) {
   const [orders,      setOrders]      = useState<OrderRow[]>([])
   const [loading,     setLoading]     = useState(true)
   const [spinning,    setSpinning]    = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore,     setHasMore]     = useState(false)
   const [offset,      setOffset]      = useState(0)
-  const [expanded,    setExpanded]    = useState<string | null>(null)
+  // Auto-expand the feedback target order when it loads
+  const [expanded,    setExpanded]    = useState<string | null>(feedbackTargetId ?? null)
 
   const loadHistory = useCallback(async (reset = true) => {
     const start = reset ? 0 : offset
@@ -636,6 +810,7 @@ export default function HistoryTab({ user, onReorder }: { user: AuthUser; onReor
                       key={order.id}
                       order={order}
                       expanded={expanded === order.id}
+                      highlight={feedbackTargetId === order.id}
                       onToggle={() => setExpanded(expanded === order.id ? null : order.id)}
                       onReorder={handleReorder}
                     />

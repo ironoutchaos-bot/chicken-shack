@@ -1,6 +1,6 @@
-// B'LURU FRESH Service Worker — v7
+// B'LURU FRESH Service Worker — v8
 // Bump the version any time sw.js changes so the browser installs the update.
-const CACHE = 'blurufresh-v7'
+const CACHE = 'blurufresh-v8'
 
 // ── NO pre-caching on install ─────────────────────────────────────────────────
 // Previously we pre-cached HTML pages in the install event using cache.addAll().

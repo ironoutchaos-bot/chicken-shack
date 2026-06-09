@@ -11,6 +11,7 @@ const NAV = [
   { href: '/admin/users',     label: '👥 Users'                  },
   { href: '/admin/analytics', label: '📊 Analytics'              },
   { href: '/admin/coupons',   label: '🎟️ Coupons'                },
+  { href: '/admin/feedback',  label: '⭐ Feedback'               },
   { href: '/admin/settings',  label: '⚙️ Settings'               },
 ]
 

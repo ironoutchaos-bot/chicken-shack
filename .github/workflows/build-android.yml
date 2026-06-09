@@ -1,0 +1,105 @@
+name: Build Android TWA (Play Store)
+
+# Run manually from GitHub Actions tab, or on every push to main
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'public/manifest.json'
+      - '.github/workflows/build-android.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── 2. Java 17 (required by Bubblewrap / Android Gradle) ─────────
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # ── 3. Node 20 ───────────────────────────────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── 4. Android SDK command-line tools ────────────────────────────
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      # ── 5. Install Bubblewrap CLI ─────────────────────────────────────
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      # ── 6. Initialise TWA project from live manifest ──────────────────
+      - name: Init TWA project
+        run: |
+          mkdir -p twa-build && cd twa-build
+          bubblewrap init \
+            --manifest https://www.blurufresh.com/manifest.json \
+            --directory .
+        env:
+          BUBBLEWRAP_DISABLE_TELEMETRY: '1'
+
+      # ── 7. Inject signing keystore from GitHub Secrets ───────────────
+      # First run: the workflow generates a new keystore automatically.
+      # After the first run, copy the printed SHA-256 fingerprint into
+      # public/.well-known/assetlinks.json and add the keystore to Secrets.
+      - name: Restore keystore (if stored in Secrets)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        run: |
+          cd twa-build
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android.keystore
+          # Overwrite twa-manifest.json signing fields from secrets
+          node -e "
+            const fs   = require('fs');
+            const cfg  = JSON.parse(fs.readFileSync('twa-manifest.json','utf8'));
+            cfg.signingKey = {
+              path:      'android.keystore',
+              alias:     '${{ secrets.ANDROID_KEY_ALIAS }}',
+            };
+            cfg.storePassword  = '${{ secrets.ANDROID_STORE_PASSWORD }}';
+            cfg.keyPassword    = '${{ secrets.ANDROID_KEY_PASSWORD }}';
+            fs.writeFileSync('twa-manifest.json', JSON.stringify(cfg, null, 2));
+          "
+
+      # ── 8. Build signed AAB ───────────────────────────────────────────
+      - name: Build AAB
+        run: |
+          cd twa-build
+          bubblewrap build --skipPwaValidation
+        env:
+          BUBBLEWRAP_DISABLE_TELEMETRY: '1'
+
+      # ── 9. Print SHA-256 fingerprint (needed for assetlinks.json) ─────
+      - name: Print signing fingerprint
+        run: |
+          cd twa-build
+          keytool -list -v \
+            -keystore android.keystore \
+            -storepass android \
+            -alias android 2>/dev/null | grep "SHA256:" || true
+          echo "──────────────────────────────────────────────────────"
+          echo "Copy the SHA256 fingerprint above into:"
+          echo "  public/.well-known/assetlinks.json"
+          echo "──────────────────────────────────────────────────────"
+
+      # ── 10. Upload AAB as downloadable artifact ───────────────────────
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blurufresh-playstore-aab
+          path: twa-build/app/build/outputs/bundle/release/*.aab
+          retention-days: 30
+
+      # ── 11. Also upload keystore (save it — you'll need it for updates) ─
+      - name: Upload keystore artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-keystore-SAVE-THIS
+          path: twa-build/android.keystore
+          retention-days: 30

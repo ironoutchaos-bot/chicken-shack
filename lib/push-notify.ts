@@ -57,6 +57,45 @@ export async function notifyDriverAssignment(driverId: string, orderId: string) 
   )
 }
 
+export async function notifyUserFeedbackRequest(userId: string, orderId: string) {
+  const res = await fetch(
+    `${SUPA_URL()}/rest/v1/push_subscriptions?user_id=eq.${encodeURIComponent(userId)}&select=endpoint,p256dh,auth`,
+    {
+      headers: {
+        'apikey':        SUPA_SRV(),
+        'Authorization': `Bearer ${SUPA_SRV()}`,
+      },
+    }
+  )
+  if (!res.ok) return
+
+  const subs: { endpoint: string; p256dh: string; auth: string }[] = await res.json()
+
+  const payload = JSON.stringify({
+    title: '⭐ How was your order?',
+    body:  "Tap to rate your recent order from B'luru Fresh Chicken!",
+    icon:  '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    url:   `/order?feedback=${orderId}`,
+  })
+
+  await Promise.allSettled(
+    subs.map(sub =>
+      webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        payload
+      ).catch(async (err) => {
+        if (err?.statusCode === 410) {
+          await fetch(
+            `${SUPA_URL()}/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`,
+            { method: 'DELETE', headers: { 'apikey': SUPA_SRV(), 'Authorization': `Bearer ${SUPA_SRV()}` } }
+          ).catch(() => {})
+        }
+      })
+    )
+  )
+}
+
 export async function notifyUserOrderStatus(userId: string, status: string) {
   const msg = STATUS_MESSAGES[status]
   if (!msg) return

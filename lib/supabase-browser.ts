@@ -70,8 +70,11 @@ export type OrderRow = {
   driver_id: string | null
   driver_name: string | null
   driver_phone: string | null
-  customer_phone: string | null
-  customer_name: string | null
+  customer_phone:        string | null
+  customer_name:         string | null
+  feedback_rating:       number | null
+  feedback_comment:      string | null
+  feedback_at:           string | null
   created_at: string
   updated_at: string | null
 }
