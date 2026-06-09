@@ -42,7 +42,7 @@ export async function POST(
 
   // Verify the order belongs to this user and is delivered
   const findRes = await fetch(
-    `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&user_id=eq.${encodeURIComponent(session.userId)}&order_status=eq.delivered&select=id,feedback_rating`,
+    `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&user_id=eq.${encodeURIComponent(session.userId)}&order_status=eq.delivered&select=id`,
     { headers: srvHeaders() }
   )
   const rows = await findRes.json().catch(() => [])
