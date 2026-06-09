@@ -611,6 +611,11 @@ function OrderCard({
               Order #{order.id.slice(0, 8).toUpperCase()} ·{' '}
               {order.items.reduce((s, i) => s + i.quantity, 0)} pcs · ₹{order.total_amount}
             </p>
+            {order.customer_name && (
+              <p style={{ margin: '-4px 0 0', fontSize: '0.875rem', color: '#ebebf5', textAlign: 'center' }}>
+                👤 {order.customer_name}
+              </p>
+            )}
 
             {/* COD cash reminder */}
             {isCOD && pendingStatus === 'delivered' && (
@@ -667,6 +672,11 @@ function OrderCard({
                 <span style={S.codChip}>COD</span>
               )}
             </div>
+            {order.customer_name && (
+              <p style={{ margin: '2px 0 0', fontSize: '0.8125rem', color: '#a1a1aa', letterSpacing: '0.01em' }}>
+                👤 {order.customer_name}
+              </p>
+            )}
             <p style={S.orderMeta}>
               {order.items.reduce((s, i) => s + i.quantity, 0)} pcs ·{' '}
               <span style={{ color: '#e8e8ed', fontWeight: 700 }}>₹{order.total_amount}</span>
