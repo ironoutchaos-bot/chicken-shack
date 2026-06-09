@@ -169,13 +169,20 @@ export default function DriverPage() {
     finally { setOrdersLoad(false) }
   }, [])
 
-  // Check push permission state when dashboard opens
+  // Check push permission state when dashboard opens.
+  // If permission is already granted, silently re-register so every phone
+  // that opens the driver app gets its subscription saved to Supabase —
+  // without this, only the first phone to explicitly tap "Allow" gets saved.
   useEffect(() => {
     if (view !== 'dashboard') return
     if (typeof Notification !== 'undefined') {
-      if (Notification.permission === 'granted') setPushStatus('subscribed')
-      if (Notification.permission === 'denied')  setPushStatus('denied')
+      if (Notification.permission === 'granted') {
+        setPushStatus('subscribed')
+        subscribePush() // re-register silently; upserts on endpoint so safe to call every open
+      }
+      if (Notification.permission === 'denied') setPushStatus('denied')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view])
 
   // Poll every 20s when dashboard is visible

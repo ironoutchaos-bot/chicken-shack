@@ -47,13 +47,16 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Fetch all orders, profiles, and shop visit count in parallel
+    // Fetch all orders, profiles, and shop visit counts in parallel
     const [ordersRes, profilesRes, visitsRes] = await Promise.all([
       fetch(`${SUPA_URL()}/rest/v1/orders?select=*`, { headers: srvHeaders() }),
       fetch(`${SUPA_URL()}/rest/v1/profiles?select=id,phone_number,full_name,created_at`, {
         headers: srvHeaders(),
       }),
-      fetch(`${SUPA_URL()}/rest/v1/settings?key=in.(shop_visits,shop_unique_devices)&select=key,value`, { headers: srvHeaders() }),
+      fetch(
+        `${SUPA_URL()}/rest/v1/settings?key=in.(shop_visits,shop_unique_devices,shop_visits_today,shop_visits_today_date,shop_device_ids_today)&select=key,value`,
+        { headers: srvHeaders() }
+      ),
     ])
 
     const orders: Order[] = await ordersRes.json()
@@ -62,6 +65,19 @@ export async function GET(req: NextRequest) {
     const visitsMap  = Object.fromEntries(visitsRows.map(r => [r.key, r.value]))
     const shopVisits        = typeof visitsMap['shop_visits']         === 'number' ? visitsMap['shop_visits']         : 0
     const shopUniqueDevices = typeof visitsMap['shop_unique_devices'] === 'number' ? visitsMap['shop_unique_devices'] : 0
+
+    // Today's stats — valid only when the saved date matches today in IST
+    const nowIST       = new Date(Date.now() + 330 * 60 * 1000)
+    const todayIST     = nowIST.toISOString().slice(0, 10)
+    const savedDate    = visitsMap['shop_visits_today_date'] as string | null
+    const todayValid   = savedDate === todayIST
+    const todayVisits  = todayValid && typeof visitsMap['shop_visits_today'] === 'number'
+      ? (visitsMap['shop_visits_today'] as number)
+      : 0
+    const todayDevicesObj = todayValid
+      ? ((visitsMap['shop_device_ids_today'] ?? {}) as Record<string, number>)
+      : {}
+    const todayDevices = Object.keys(todayDevicesObj).length
 
     // --- Date range filtering ---
     const range = req.nextUrl.searchParams.get('range') ?? '30d'
@@ -105,6 +121,8 @@ export async function GET(req: NextRequest) {
       totalCustomers: profiles.length,
       shopVisits,
       shopUniqueDevices,
+      todayVisits,
+      todayDevices,
     }
 
     // --- Status breakdown ---

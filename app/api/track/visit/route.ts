@@ -53,6 +53,12 @@ async function setSetting(key: string, value: unknown) {
   }
 }
 
+/** Returns today's date string (YYYY-MM-DD) in IST (UTC+5:30) */
+function getTodayIST(): string {
+  const now = new Date(Date.now() + 330 * 60 * 1000)
+  return now.toISOString().slice(0, 10)
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
@@ -67,7 +73,7 @@ export async function POST(req: NextRequest) {
       : 0
     await setSetting('shop_visits', currentVisits + 1)
 
-    // ── 2. Check if this device is new ────────────────────────────────────
+    // ── 2. Check if this device is new (all-time) ─────────────────────────
     const deviceIds = (await getSetting('shop_device_ids') ?? {}) as Record<string, number>
     const isNewDevice = !deviceIds[deviceId]
 
@@ -81,6 +87,29 @@ export async function POST(req: NextRequest) {
         ? (await getSetting('shop_unique_devices') as number)
         : 0
       await setSetting('shop_unique_devices', currentUnique + 1)
+    }
+
+    // ── 3. Track today's visits & devices (resets at midnight IST) ────────
+    const todayIST  = getTodayIST()
+    const savedDate = (await getSetting('shop_visits_today_date')) as string | null
+    const isNewDay  = savedDate !== todayIST
+
+    if (isNewDay) {
+      // New day — reset all daily counters
+      await setSetting('shop_visits_today_date', todayIST)
+      await setSetting('shop_visits_today',       1)
+      await setSetting('shop_device_ids_today',   { [deviceId]: Date.now() })
+    } else {
+      // Same day — increment today's visit count
+      const todayVisits = (await getSetting('shop_visits_today') as number | null) ?? 0
+      await setSetting('shop_visits_today', todayVisits + 1)
+
+      // Add device to today's set if it hasn't been seen today yet
+      const todayDevices = ((await getSetting('shop_device_ids_today') ?? {}) as Record<string, number>)
+      if (!todayDevices[deviceId]) {
+        todayDevices[deviceId] = Date.now()
+        await setSetting('shop_device_ids_today', todayDevices)
+      }
     }
 
     return NextResponse.json({ ok: true, new_device: isNewDevice })
