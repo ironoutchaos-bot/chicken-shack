@@ -532,12 +532,22 @@ function OrderCard({
             )}
           </div>
           {order.customer_phone && (
-            <a
-              href={`tel:${order.customer_phone}`}
-              style={{ background: '#16a34a', color: '#fff', borderRadius: 8, padding: '0.4rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-            >
-              📲 Call
-            </a>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <a
+                href={`tel:${order.customer_phone}`}
+                style={{ background: '#16a34a', color: '#fff', borderRadius: 8, padding: '0.4rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                📲 Call
+              </a>
+              <a
+                href={`https://wa.me/${order.customer_phone.replace(/\D/g, '').replace(/^0/, '91').replace(/^(?!91)(\d{10})$/, '91$1')}?text=${encodeURIComponent("Hi! Thank you for ordering from B'luru Fresh Chicken 🍗 We'd love to hear your feedback. How was your recent order? 😊")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ background: '#25d366', color: '#fff', borderRadius: 8, padding: '0.4rem 0.875rem', fontSize: '0.8125rem', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                💬 WA
+              </a>
+            </div>
           )}
         </div>
       )}
