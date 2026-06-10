@@ -36,7 +36,7 @@ export default function AdminOrdersPage() {
   const [saving,    setSaving]    = useState<string | null>(null)
   const [orderError, setOrderError] = useState<string | null>(null)
   const [etaInputs, setEtaInputs] = useState<Record<string, string>>({})
-  const [filter,    setFilter]    = useState<'active' | 'all'>('active')
+  const [filter,    setFilter]    = useState<'active' | 'delivered' | 'all'>('active')
   const [search,    setSearch]    = useState('')
   const [selected,  setSelected]  = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<OrderRow['order_status']>('placed')
@@ -224,7 +224,9 @@ export default function AdminOrdersPage() {
   }
 
   const baseDisplayed = filter === 'active'
-    ? orders.filter(o => o.order_status !== 'delivered')
+    ? orders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled')
+    : filter === 'delivered'
+    ? orders.filter(o => o.order_status === 'delivered')
     : orders
 
   const displayed = search.trim()
@@ -331,15 +333,19 @@ export default function AdminOrdersPage() {
         <div>
           <h1 style={S.title}>Orders Dashboard</h1>
           <p style={S.subtitle}>
-            {loading ? '⏳ Loading…' : `${orders.filter(o => o.order_status !== 'delivered').length} active · ${orders.length} total`}
+            {loading ? '⏳ Loading…' : `${orders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled').length} active · ${orders.filter(o => o.order_status === 'delivered').length} delivered · ${orders.length} total`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={S.filterGroup}>
-            {(['active', 'all'] as const).map(f => (
-              <button key={f} onClick={() => setFilter(f)}
-                style={{ ...S.filterBtn, ...(filter === f ? S.filterActive : {}) }}>
-                {f === 'active' ? 'Active' : 'All orders'}
+            {([
+              { key: 'active',    label: 'Active' },
+              { key: 'delivered', label: '✅ Delivered' },
+              { key: 'all',       label: 'All' },
+            ] as const).map(f => (
+              <button key={f.key} onClick={() => setFilter(f.key)}
+                style={{ ...S.filterBtn, ...(filter === f.key ? S.filterActive : {}) }}>
+                {f.label}
               </button>
             ))}
           </div>
