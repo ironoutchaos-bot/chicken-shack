@@ -212,7 +212,8 @@ export default function RootLayout({
               "priceRange": "₹₹",
               "currenciesAccepted": "INR",
               "paymentAccepted": "Cash, Credit Card, Debit Card, UPI",
-              "hasMap": "https://maps.google.com/?q=13.1007,77.5963",
+              "hasMap": "https://maps.app.goo.gl/5RjKDAgEM7vcD5aq6",
+              "sameAs": ["https://maps.app.goo.gl/5RjKDAgEM7vcD5aq6"],
               "contactPoint": {
                 "@type": "ContactPoint",
                 "telephone": "+917012488951",
