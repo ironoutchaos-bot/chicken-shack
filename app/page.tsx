@@ -153,15 +153,15 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.05);padding:
 .fc-l a:hover{color:var(--g);}
 .fb{padding:1.5rem 3rem;background:var(--ink);border-top:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;}
 .fb span{font-size:.55rem;letter-spacing:.08em;color:rgba(255,255,255,.15);}
-.float-order{position:fixed;bottom:2rem;right:2rem;z-index:800;display:flex;align-items:center;gap:.8rem;background:var(--p);color:#fff;border:none;padding:1rem 1.8rem;font-family:'Unbounded',sans-serif;font-weight:700;font-size:.78rem;letter-spacing:.03em;cursor:none;box-shadow:0 8px 32px rgba(147,24,204,.45);transition:background .25s,box-shadow .25s,transform .2s;animation:floatBob 3s ease-in-out infinite;outline:none;}
-.float-order::after{content:'';position:absolute;inset:-3px;border:2px solid rgba(147,24,204,.5);animation:fRing 2.5s ease-out infinite;pointer-events:none;}
-@keyframes fRing{0%{opacity:.7;transform:scale(1);}100%{opacity:0;transform:scale(1.12);}}
-.float-order:hover{background:var(--gd);color:var(--ink);box-shadow:0 12px 40px rgba(106,184,46,.45);animation:none;transform:translateY(-3px) scale(1.04);}
-.fo-icon{font-size:1.1rem;line-height:1;}
-.fo-text{display:flex;flex-direction:column;gap:.15rem;}
-.fo-main{font-size:.78rem;font-weight:700;line-height:1;}
-.fo-sub{font-family:'DM Mono',monospace;font-size:.5rem;font-weight:400;opacity:.65;letter-spacing:.1em;text-transform:uppercase;}
-@keyframes floatBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
+.float-order{position:fixed;bottom:2rem;right:2rem;z-index:800;display:flex;align-items:center;gap:.9rem;background:#f97316;color:#fff;border:none;padding:1.1rem 2.2rem;font-family:'Unbounded',sans-serif;font-weight:900;font-size:1rem;letter-spacing:.01em;cursor:none;box-shadow:0 8px 36px rgba(249,115,22,.55),0 2px 8px rgba(0,0,0,.18);transition:background .25s,box-shadow .25s,transform .2s;animation:floatBob 3s ease-in-out infinite;outline:none;border-radius:60px;}
+.float-order::after{content:'';position:absolute;inset:-4px;border:3px solid rgba(249,115,22,.5);border-radius:64px;animation:fRing 2.5s ease-out infinite;pointer-events:none;}
+@keyframes fRing{0%{opacity:.8;transform:scale(1);}100%{opacity:0;transform:scale(1.14);}}
+.float-order:hover{background:#ea6c0a;color:#fff;box-shadow:0 14px 44px rgba(249,115,22,.65);animation:none;transform:translateY(-3px) scale(1.04);}
+.fo-icon{font-size:1.5rem;line-height:1;}
+.fo-text{display:flex;flex-direction:column;gap:.2rem;}
+.fo-main{font-size:1.05rem;font-weight:900;line-height:1;}
+.fo-sub{font-family:'DM Mono',monospace;font-size:.65rem;font-weight:500;opacity:.9;letter-spacing:.08em;text-transform:uppercase;}
+@keyframes floatBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 .dnav{position:fixed;right:1.5rem;top:50%;transform:translateY(-50%);z-index:400;display:flex;flex-direction:column;gap:.5rem;}
 .dn{width:5px;height:5px;border-radius:50%;background:rgba(22,20,15,.15);cursor:pointer;transition:all .3s;}
 .dn.on{background:var(--p);transform:scale(1.6);}
@@ -187,8 +187,9 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.05);padding:
   .hero-ctas{justify-content:flex-start;flex-wrap:wrap;gap:.6rem;}
   .hero-scroll-hint{display:none;}
   .f-badge,.fb1,.fb2,.fb3{display:none;}
-  .float-order{padding:.75rem 1.2rem;bottom:1rem;right:1rem;}
-  .fo-sub{display:none;}
+  .float-order{padding:.9rem 1.5rem;bottom:1rem;right:1rem;font-size:.9rem;}
+  .fo-main{font-size:.9rem;}
+  .fo-sub{font-size:.58rem;}
   .ti{font-size:.62rem;}
   .sf-heading{font-size:clamp(1.8rem,9vw,3.5rem);}
   .sf-spicy{font-size:clamp(2rem,9vw,4rem);}
@@ -405,7 +406,7 @@ export default function Home() {
         <span className="fo-icon">⚡</span>
         <span className="fo-text">
           <span className="fo-main">Order Now</span>
-          <span className="fo-sub">Delivery in 1 hour</span>
+          <span className="fo-sub">Delivery in 60 min</span>
         </span>
       </button>
 
@@ -427,7 +428,7 @@ export default function Home() {
       <section id="hero">
         <div className="hero-bg-word">FRESH</div>
         <div className="f-badge fb1"><span className="fb-dot" />Cut fresh daily</div>
-        <div className="f-badge fb2"><span className="fb-dot" />1hr delivery</div>
+        <div className="f-badge fb2"><span className="fb-dot" />60 min delivery</div>
         <div className="f-badge fb3"><span className="fb-dot" />FSSAI 11226331000344</div>
         <div className="hero-scroll-hint"><div className="hero-scroll-line" />Scroll</div>
         <div className="hero-statement rv d1">
@@ -459,7 +460,7 @@ export default function Home() {
 
       <div className="ticker">
         <div className="ticker-track">
-          {['NO FOUL SMELL','CUT AFTER ORDER','1 HOUR DELIVERY','ZERO PRESERVATIVES',"BENGALURU'S FIRST",'ULTRA-FRESH SYSTEM','NO FOUL SMELL','CUT AFTER ORDER','1 HOUR DELIVERY','ZERO PRESERVATIVES',"BENGALURU'S FIRST",'ULTRA-FRESH SYSTEM'].map((t,i) => (
+          {['NO FOUL SMELL','CUT AFTER ORDER','60 MIN DELIVERY','ZERO PRESERVATIVES',"BENGALURU'S FIRST",'ULTRA-FRESH SYSTEM','NO FOUL SMELL','CUT AFTER ORDER','60 MIN DELIVERY','ZERO PRESERVATIVES',"BENGALURU'S FIRST",'ULTRA-FRESH SYSTEM'].map((t,i) => (
             <div key={i} className="ti">{t}<span className="ti-sep">✦</span></div>
           ))}
         </div>
@@ -519,7 +520,7 @@ export default function Home() {
         <div className="why-h-scroll rv d1" id="whyScroll">
           {[
             {num:'01',icon:'🚫',spicy:'ZERO SH*T.',title:'No Foul Smell. No Sliminess. Ever.',desc:"That disgusting smell while unpacking? That's stored meat decomposing. We cut only after your order. That smell has never existed in our system — and never will."},
-            {num:'02',icon:'⚡',spicy:'IN HOURS.\nNOT DAYS.',title:'From Our Kitchen To Your Door',desc:"Not 'we'll try.' Not 'approximately.' Under 1 hour. Your masala will still be sizzling when the doorbell rings."},
+            {num:'02',icon:'⚡',spicy:'IN 60 MIN.\nNOT DAYS.',title:'From Our Kitchen To Your Door',desc:"Not 'we'll try.' Not 'approximately.' Under 60 minutes. Your masala will still be sizzling when the doorbell rings."},
             {num:'03',icon:'🔬',spicy:'NOT VIBES.\nVERIFIED.',title:'Zero Additives. FSSAI Licensed.',desc:'FSSAI Lic. 11226331000344. No additives. No chemicals. No preservatives. We have the receipts — you never have to take our word for it.'},
             {num:'04',icon:'🎯',spicy:'YOUR ORDER\n= THE KNIFE.',title:'Cut-To-Order. Every Single Time.',desc:"No pre-cut pieces sitting around. The moment you place your order — that's when the cutting begins. Not before. Not after."},
             {num:'05',icon:'🏆',spicy:'THE OLD WAY\nIS DEAD.',title:"Bengaluru's First Ultra-Fresh System",desc:"We didn't upgrade the old system. We removed it entirely and built something this city has never seen before. This is what fresh actually means."},
@@ -560,7 +561,7 @@ export default function Home() {
             {icon:'📲',title:'You Place The Order',desc:'Tap. Done. Your order hits our system instantly. The clock starts the moment you confirm — not a second before.',tag:'Trigger Point'},
             {icon:'🔪',title:'We Start Cutting — Right Now',desc:'Only after your order does the cutting begin. Not this morning. Not the night before. Your order is what triggers the knife.',tag:'Zero Pre-Cuts'},
             {icon:'📦',title:'Hygienically Packed & Sealed',desc:'Cut fresh, packed under sterile conditions, and vacuum-sealed to lock in freshness. Never stored after packing. Straight to you.',tag:'Sterile Sealed'},
-            {icon:'🏍️',title:'At Your Door In Under 1 Hour',desc:'Not hopefully. Not usually. Under 60 minutes, guaranteed. No smell. No slime. Just clean, fresh chicken at its best.',tag:'Under 60 Mins'},
+            {icon:'🏍️',title:'At Your Door In Under 60 Minutes',desc:'Not hopefully. Not usually. Under 60 minutes, guaranteed. No smell. No slime. Just clean, fresh chicken at its best.',tag:'Under 60 Mins'},
           ].map((s,i) => (
             <div key={i} className="pstep rv" style={{transitionDelay:`${(i%2)*.1}s`}}>
               <div className="ps-num">0{i+1}</div>
@@ -582,7 +583,7 @@ export default function Home() {
           <button className="btn-glow" onClick={goOrder}>Order Now ⚡</button>
           <button className="btn-ghost-white" onClick={() => window.location.href='tel:+917012488951'}>📞 +91 70124 88951</button>
         </div>
-        <div className="cta-meta rv d4">YELAHANKA · BANGALORE · DELIVERY IN 1 HOUR · FSSAI LIC. 11226331000344</div>
+        <div className="cta-meta rv d4">YELAHANKA · BANGALORE · DELIVERY IN 60 MIN · FSSAI LIC. 11226331000344</div>
       </section>
 
       {/* FAQ section — visible to Google AI for AI Overview, minimal styling for users */}
@@ -593,9 +594,9 @@ export default function Home() {
             Everything about fresh chicken<br/>in Bengaluru
           </h2>
           {[
-            { q: 'Where can I get fresh chicken in Bengaluru?', a: "B'LURU Fresh delivers farm-fresh chicken across Bengaluru — especially Yelahanka and nearby areas. We cut the chicken only after you place your order. Zero stored meat. Order at blurufresh.com and receive delivery within 1 hour." },
+            { q: 'Where can I get fresh chicken in Bengaluru?', a: "B'LURU Fresh delivers farm-fresh chicken across Bengaluru — especially Yelahanka and nearby areas. We cut the chicken only after you place your order. Zero stored meat. Order at blurufresh.com and receive delivery within 60 minutes." },
             { q: 'What makes B\'LURU Fresh different from other chicken delivery in Bangalore?', a: "We follow a strict cut-to-order policy. We never pre-cut chicken and store it. Your order literally triggers the cutting process — meaning no foul smell, no sliminess, no stored meat. FSSAI licensed (11226331000344). Zero preservatives." },
-            { q: 'How quickly does B\'LURU Fresh deliver in Bangalore?', a: 'We deliver fresh chicken within 1 hour of placing your order. Cut → packed under sterile conditions → dispatched immediately. The entire process happens in under 60 minutes.' },
+            { q: 'How quickly does B\'LURU Fresh deliver in Bangalore?', a: 'We deliver fresh chicken within 60 minutes of placing your order. Cut → packed under sterile conditions → dispatched immediately. The entire process happens in under 60 minutes.' },
             { q: 'Does B\'LURU Fresh deliver to Yelahanka?', a: "Yes — we are based in Yelahanka, Bengaluru (Thirumenahalli Main Road, Agrahara Layout, 560064) and deliver across Yelahanka and surrounding Bangalore areas." },
             { q: 'Is B\'LURU Fresh FSSAI certified?', a: 'Yes. FSSAI License: 11226331000344. Zero preservatives, zero additives. Fully compliant with food safety standards in Karnataka.' },
           ].map(({ q, a }, i) => (
