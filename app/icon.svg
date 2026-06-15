@@ -1,13 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#F59E0B"/>
-      <stop offset="100%" stop-color="#B45309"/>
-    </linearGradient>
-  </defs>
-  <rect width="32" height="32" rx="8" fill="url(#bg)"/>
-  <!-- Drumstick meat -->
-  <circle cx="16" cy="12" r="8" fill="white"/>
-  <!-- Bone handle -->
-  <rect x="14.5" y="17" width="3" height="11" rx="1.5" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="#ffffff" stroke="#c44ef5" stroke-width="10"/>
+  <text x="248" y="332" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="300" fill="#9318cc" text-anchor="middle" letter-spacing="-6">B</text>
+  <circle cx="350" cy="318" r="34" fill="#84cc16"/>
 </svg>
