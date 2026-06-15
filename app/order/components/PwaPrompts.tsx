@@ -150,22 +150,12 @@ export default function PwaPrompts({
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm leading-tight">Install B&apos;luru Fresh</p>
                   <p className="text-stone-400 text-xs mt-0.5 leading-snug">
-                    Faster ordering, offline access &amp; order alerts
+                    Get exclusive offers &amp; faster future orders
                   </p>
                 </div>
                 <button onClick={dismissInstall} className="p-1.5 rounded-full hover:bg-stone-800 transition-colors shrink-0 -mt-0.5">
                   <X size={15} className="text-stone-400" />
                 </button>
-              </div>
-              <div className="mt-3 flex items-start gap-2 bg-stone-800 rounded-2xl px-3 py-2.5">
-                <span className="text-base shrink-0 mt-0.5">🛡️</span>
-                <p className="text-xs text-stone-300 leading-snug">
-                  If your phone shows a{' '}
-                  <span className="text-amber-400 font-semibold">&quot;security warning&quot;</span> — it&apos;s a
-                  known Google quirk for new sites and is{' '}
-                  <span className="text-white font-semibold">completely safe</span>. Tap{' '}
-                  <span className="text-white font-semibold">More details → Install anyway</span>.
-                </p>
               </div>
               <div className="flex items-center gap-2 mt-3">
                 <button
