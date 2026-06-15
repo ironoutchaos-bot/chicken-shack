@@ -5,14 +5,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: 'https://www.blurufresh.com',
       lastModified: new Date(),
-      changeFrequency: 'weekly',
+      changeFrequency: 'daily',
       priority: 1,
+      images: ['https://www.blurufresh.com/assets/raw_chicken_breast.jpg'],
     },
     {
       url: 'https://www.blurufresh.com/order',
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
+      images: ['https://www.blurufresh.com/assets/raw_chicken_breast.jpg'],
     },
     {
       url: 'https://www.blurufresh.com/legal/privacy',
@@ -22,6 +24,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: 'https://www.blurufresh.com/legal/terms',
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.3,
+    },
+    {
+      url: 'https://www.blurufresh.com/legal/refund',
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.3,

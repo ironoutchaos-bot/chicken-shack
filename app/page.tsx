@@ -11,6 +11,7 @@ const css = `
   --white:#ffffff;
 }
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 html{scroll-behavior:smooth;}
 body{background:var(--cream);color:var(--ink);font-family:'DM Mono',monospace;overflow-x:hidden;cursor:none;}
 #cur{width:10px;height:10px;background:var(--p);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;transition:transform .08s,background .2s;}
@@ -426,6 +427,7 @@ export default function Home() {
       </nav>
 
       <section id="hero">
+        <h1 className="sr-only">Fresh Chicken Delivery in Bengaluru — Cut After Your Order | B&apos;LURU Fresh. Order fresh curry cut, boneless, drumstick &amp; wings chicken online in Yelahanka, Bangalore. Zero preservatives, delivered in 60 minutes.</h1>
         <div className="hero-bg-word">FRESH</div>
         <div className="f-badge fb1"><span className="fb-dot" />Cut fresh daily</div>
         <div className="f-badge fb2"><span className="fb-dot" />60 min delivery</div>
@@ -439,12 +441,12 @@ export default function Home() {
           <div className="hs-divider" />
         </div>
         <div className="hero-main">
-          <h1 className="hero-h1">
+          <div className="hero-h1" aria-hidden="true">
             <div className="split-word d1">THE <span className="line-p">END</span></div><br/>
             <div className="split-word d2">OF <span>OLD</span></div><br/>
             <div className="split-word d3"><span className="line-g">STOCK</span></div><br/>
             <div className="split-word d4">CHICKEN.</div>
-          </h1>
+          </div>
           <div className="rv d4" style={{marginTop:'1.5rem',fontFamily:"'Archivo Black',sans-serif",fontSize:'clamp(1.2rem,2.5vw,2.2rem)',letterSpacing:'-.02em',color:'var(--ink2)',display:'flex',alignItems:'center',gap:'1rem'}}>
             <span style={{width:36,height:3,background:'linear-gradient(to right,var(--gd),var(--p))',display:'inline-block',flexShrink:0}} />
             <span>From Now — <span style={{color:'var(--gd)'}}>Not frozen. Not stored overnight.</span></span>

@@ -2,7 +2,7 @@
   "id": "/order",
   "name": "B'LURU FRESH – Fresh Chicken",
   "short_name": "B'LURU FRESH",
-  "description": "Order fresh chicken online — cut fresh after your order, delivered within 1 hour. No preservatives. FSSAI licensed.",
+  "description": "Order fresh chicken online — cut fresh after your order, delivered within 60 minutes. No preservatives. FSSAI licensed.",
   "start_url": "/order",
   "scope": "/order",
   "display": "standalone",

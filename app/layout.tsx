@@ -101,6 +101,14 @@ export const metadata: Metadata = {
     canonical: 'https://www.blurufresh.com',
   },
 
+  // ── Local-SEO geo signals (help Google Maps / local pack ranking)
+  other: {
+    'geo.region': 'IN-KA',
+    'geo.placename': 'Yelahanka, Bengaluru',
+    'geo.position': '13.1007;77.5963',
+    'ICBM': '13.1007, 77.5963',
+  },
+
   // ── Open Graph — for social sharing and Google rich results
   openGraph: {
     title: "Fresh Chicken Bengaluru | B'LURU Fresh — Delivered in 1 Hour",
@@ -213,7 +221,25 @@ export default function RootLayout({
               "currenciesAccepted": "INR",
               "paymentAccepted": "Cash, Credit Card, Debit Card, UPI",
               "hasMap": "https://maps.app.goo.gl/5RjKDAgEM7vcD5aq6",
-              "sameAs": ["https://maps.app.goo.gl/5RjKDAgEM7vcD5aq6"],
+              "sameAs": [
+                "https://maps.app.goo.gl/5RjKDAgEM7vcD5aq6",
+                "https://www.swiggy.com/city/bangalore/bluru-fresh-yelahanka-rest1390519"
+              ],
+              "hasMenu": {
+                "@type": "Menu",
+                "name": "B'LURU Fresh — Fresh Chicken Cuts",
+                "hasMenuSection": {
+                  "@type": "MenuSection",
+                  "name": "Fresh Chicken (Cut After Your Order)",
+                  "hasMenuItem": [
+                    { "@type": "MenuItem", "name": "Curry Cut Chicken", "description": "Fresh curry cut chicken, cut after your order — perfect for everyday curries and gravies." },
+                    { "@type": "MenuItem", "name": "Boneless Chicken", "description": "Fresh boneless chicken, cut after your order — ideal for biryani, fry and tikka." },
+                    { "@type": "MenuItem", "name": "Chicken Drumstick", "description": "Fresh chicken drumsticks, cut after your order." },
+                    { "@type": "MenuItem", "name": "Chicken Wings", "description": "Fresh chicken wings, cut after your order." },
+                    { "@type": "MenuItem", "name": "Chicken Liver & Other", "description": "Fresh chicken liver and other parts, packed after your order." }
+                  ]
+                }
+              },
               "contactPoint": {
                 "@type": "ContactPoint",
                 "telephone": "+917012488951",
