@@ -2519,6 +2519,18 @@ a {
   to   { opacity: 1; transform: translateY(0)  scale(1) }
 }
 
+/* Utility animations for PwaPrompts / InstallPrompt popups */
+.animate-slide-up { animation: bf-slide-up 320ms cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes bf-slide-up {
+  from { opacity: 0; transform: translateY(40px) }
+  to   { opacity: 1; transform: translateY(0) }
+}
+.animate-fade-in { animation: bf-fade-in 240ms ease both; }
+@keyframes bf-fade-in {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
 .ob-header {
   display: flex;
   align-items: flex-start;

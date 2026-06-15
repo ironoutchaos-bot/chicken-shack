@@ -12,7 +12,7 @@ import LoginDrawer from './components/LoginDrawer'
 import CartSheet from './components/CartSheet'
 import PincodeGate from './components/PincodeGate'
 import EntryPage from './components/EntryPage'
-// InstallPrompt removed — no install popup on any device
+import PwaPrompts from './components/PwaPrompts'
 import VisitTracker from './components/VisitTracker'
 import { usePushNotifications } from './hooks/usePushNotifications'
 
@@ -93,6 +93,12 @@ export default function OrderApp() {
   // Silently ignored if denied or unavailable.
   useEffect(() => {
     if (!navigator.geolocation) return
+    // When running as an installed app, the PwaPrompts popup drives the
+    // location request instead — skip the silent warmup so it leads cleanly.
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true)
+    if (standalone) return
     // Small delay so the page renders first before the permission prompt
     const t = setTimeout(() => {
       navigator.geolocation.getCurrentPosition(
@@ -530,6 +536,8 @@ export default function OrderApp() {
         )}
 
         <VisitTracker />
+
+        <PwaPrompts userId={user?.id ?? null} onSubscribePush={subscribePush} />
 
         <LoginDrawer
           open={loginOpen}
