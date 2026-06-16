@@ -40,7 +40,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content
 .hs-cursor{display:inline-block;color:var(--p);font-weight:900;animation:cursorBlink .9s step-end infinite;}
 @keyframes cursorBlink{0%,100%{opacity:1;}50%{opacity:0;}}
 .hero-main{display:grid;grid-template-columns:1fr auto;align-items:flex-end;gap:2rem;position:relative;z-index:1;}
-.hero-h1{font-family:'Archivo Black',sans-serif;font-size:clamp(3.5rem,9vw,10.5rem);line-height:.96;letter-spacing:-.03em;color:var(--ink);transition:transform .4s cubic-bezier(.25,.46,.45,.94);padding-top:.1em;}
+.hero-h1{font-family:'Archivo Black',sans-serif;font-size:clamp(3.5rem,9vw,10.5rem);line-height:.96;letter-spacing:-.03em;color:var(--ink);transition:transform .4s cubic-bezier(.25,.46,.45,.94);padding-top:.1em;text-shadow:none;}
 .hero-h1 .line-g{font-family:'Instrument Serif',serif;font-style:italic;color:var(--gd);display:block;}
 .hero-h1 .line-p{color:var(--p);}
 .hero-right{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:1.5rem;max-width:360px;padding-bottom:.5rem;}
