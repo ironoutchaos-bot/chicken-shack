@@ -8,7 +8,14 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-type Mode = 'hidden' | 'install-android' | 'install-ios' | 'permissions'
+declare global {
+  interface Window {
+    __bipEvent?: BeforeInstallPromptEvent | null
+    __bipInstalled?: boolean
+  }
+}
+
+type Mode = 'hidden' | 'install-android' | 'install-android-manual' | 'install-ios' | 'permissions'
 
 const LS_INSTALL_DISMISSED = 'bf-install-dismissed'
 const LS_PERMS_DONE        = 'bf-perms-done'
@@ -71,23 +78,64 @@ export default function PwaPrompts({
       return () => clearTimeout(t)
     }
 
-    // Android / Chromium — wait for the browser's install event
-    const handler = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
-      setTimeout(() => setMode('install-android'), 2500)
+    // Android / Chromium.
+    // The install event is captured in <head> (window.__bipEvent) before React
+    // mounts, so check for it immediately. Also keep listening in case it fires
+    // a little later, or never (older Chrome / criteria edge-cases).
+    let shown = false
+    const showWith = (e: BeforeInstallPromptEvent) => {
+      if (shown) return
+      shown = true
+      setDeferredPrompt(e)
+      setTimeout(() => setMode('install-android'), 2000)
     }
-    window.addEventListener('beforeinstallprompt', handler)
+
+    if (window.__bipEvent) showWith(window.__bipEvent)
+
+    const onReady = () => { if (window.__bipEvent) showWith(window.__bipEvent) }
+    const onPrompt = (e: Event) => { e.preventDefault(); showWith(e as BeforeInstallPromptEvent) }
+    window.addEventListener('bip-ready', onReady)
+    window.addEventListener('beforeinstallprompt', onPrompt)
     window.addEventListener('appinstalled', () => setMode('hidden'))
-    return () => window.removeEventListener('beforeinstallprompt', handler)
+
+    // Fallback: if the native prompt never arrives (but we're on Android Chrome
+    // and not yet installed), show manual "Add to Home screen" instructions so
+    // the user can still install via the browser menu.
+    const ua = navigator.userAgent
+    const androidChrome = /Android/.test(ua) && /Chrome/.test(ua) && !/Edg|OPR|SamsungBrowser/.test(ua)
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null
+    if (androidChrome) {
+      fallbackTimer = setTimeout(() => {
+        if (!shown && !window.__bipInstalled && !isStandaloneMode()) {
+          setMode('install-android-manual')
+        }
+      }, 6000)
+    }
+
+    return () => {
+      window.removeEventListener('bip-ready', onReady)
+      window.removeEventListener('beforeinstallprompt', onPrompt)
+      if (fallbackTimer) clearTimeout(fallbackTimer)
+    }
   }, [])
 
   // ── Actions ─────────────────────────────────────────────────────
   const installAndroid = useCallback(async () => {
-    if (!deferredPrompt) return
-    await deferredPrompt.prompt()
-    await deferredPrompt.userChoice
+    const evt = deferredPrompt ?? window.__bipEvent
+    if (!evt) {
+      // No native prompt available — guide the user through the manual route.
+      setMode('install-android-manual')
+      return
+    }
+    try {
+      await evt.prompt()
+      await evt.userChoice
+    } catch {
+      setMode('install-android-manual')
+      return
+    }
     setDeferredPrompt(null)
+    window.__bipEvent = null
     setMode('hidden')
   }, [deferredPrompt])
 
@@ -168,6 +216,44 @@ export default function PwaPrompts({
                   Not now
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── ANDROID MANUAL INSTALL (fallback) ───────────────── */}
+        {mode === 'install-android-manual' && (
+          <div className="mx-3 mb-3 bg-stone-900 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="h-1 w-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-fuchsia-500" />
+            <div className="px-4 py-4">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 shadow-lg border border-purple-200">
+                  <span className="text-2xl font-black text-purple-700">B<span className="text-lime-500">.</span></span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-white text-sm leading-tight">Add B&apos;luru Fresh to your phone</p>
+                  <p className="text-stone-400 text-xs mt-0.5 leading-snug">Get exclusive offers &amp; faster future orders</p>
+                </div>
+                <button onClick={dismissInstall} className="p-1.5 rounded-full hover:bg-stone-800 transition-colors shrink-0 -mt-0.5">
+                  <X size={15} className="text-stone-400" />
+                </button>
+              </div>
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center gap-3 bg-stone-800 rounded-2xl px-3 py-2.5">
+                  <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shrink-0">1</span>
+                  <p className="text-xs text-stone-200 leading-snug">
+                    Tap the <span className="font-black text-white text-sm">⋮</span> <span className="font-semibold text-white">menu</span> (top-right of your browser)
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 bg-stone-800 rounded-2xl px-3 py-2.5">
+                  <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shrink-0">2</span>
+                  <p className="text-xs text-stone-200 leading-snug">
+                    Tap <span className="font-semibold text-white">Install app</span> or <span className="font-semibold text-white">Add to Home screen</span>
+                  </p>
+                </div>
+              </div>
+              <button onClick={dismissInstall} className="w-full mt-3 py-2.5 text-xs font-semibold text-stone-400 hover:text-stone-300 transition-colors">
+                Got it
+              </button>
             </div>
           </div>
         )}

@@ -166,6 +166,24 @@ export default function RootLayout({
         <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" href="/icons/splash-750x1334.png" />
         <link rel="apple-touch-startup-image" media="screen and (device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="/icons/splash-2732.png" />
         <link rel="apple-touch-startup-image" media="screen and (device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="/icons/splash-1668.png" />
+        {/* Capture the Android install prompt as early as possible.
+            Chrome fires `beforeinstallprompt` before React mounts, so we stash
+            it on window here and re-broadcast it for the in-app install popup. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('beforeinstallprompt', function (e) {
+                e.preventDefault();
+                window.__bipEvent = e;
+                window.dispatchEvent(new Event('bip-ready'));
+              });
+              window.addEventListener('appinstalled', function () {
+                window.__bipEvent = null;
+                window.__bipInstalled = true;
+              });
+            `,
+          }}
+        />
         {/* Order page editorial fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
