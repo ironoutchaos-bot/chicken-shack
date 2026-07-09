@@ -158,6 +158,17 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable} ${playfair.variable} ${fraunces.variable} ${montserrat.variable}`} style={{ background: '#ffffff' }}>
       <head>
+        {/* Google Tag Manager — placed as high in <head> as possible */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','GTM-5D2C64W6');`,
+          }}
+        />
+        {/* End Google Tag Manager */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="color-scheme" content="only light" />
         {/* iOS splash screens */}
@@ -190,6 +201,16 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Unbounded:wght@400;700;900&family=DM+Mono:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
       </head>
       <body style={{ background: '#ffffff' }}>
+        {/* Google Tag Manager (noscript) — immediately after opening <body> */}
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-5D2C64W6"
+            height="0"
+            width="0"
+            style={{ display: 'none', visibility: 'hidden' }}
+          />
+        </noscript>
+        {/* End Google Tag Manager (noscript) */}
         <AuthProvider>
           {children}
         </AuthProvider>
