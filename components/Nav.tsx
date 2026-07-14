@@ -46,8 +46,8 @@ export default function Nav() {
             <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
               <defs>
                 <linearGradient id="nav-lg" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#F59E0B"/>
-                  <stop offset="100%" stopColor="#B45309"/>
+                  <stop offset="0%" stopColor="#A81A1A"/>
+                  <stop offset="100%" stopColor="#801010"/>
                 </linearGradient>
               </defs>
               <rect width="28" height="28" rx="7" fill="url(#nav-lg)"/>

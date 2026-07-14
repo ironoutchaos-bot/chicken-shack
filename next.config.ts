@@ -4,7 +4,7 @@ const securityHeaders = [
   // Stop MIME-type sniffing
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   // Referrer policy
-  { key: 'Referrer-Policy',        value: 'strict-origin-when-cross-origin' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   // NOTE: X-Frame-Options and Content-Security-Policy are intentionally omitted.
   // Cashfree's payment SDK dynamically loads resources from many subdomains and
   // opens iframes for 3DS authentication. A CSP strict enough to block attacks
@@ -12,6 +12,9 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     unoptimized: true,
   },

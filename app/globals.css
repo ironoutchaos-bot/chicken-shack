@@ -19,19 +19,20 @@
 }
 
 :root {
-  --bg:         #fcfcfc;
-  --bg-alt:     #F7F1E8;
-  --fg:         #1A1109;
-  --fg-muted:   #6B5744;
-  --accent:     #D97706;
-  --accent-dk:  #92400E;
-  --accent-lt:  #FDE68A;
-  --sage:       #9CAF8F;
+  --bg:         #FAF7F0; /* Premium warm cream */
+  --bg-alt:     #F5EFE0; /* Warm cream accent background */
+  --fg:         #1F110B; /* Deep dark chocolate charcoal */
+  --fg-muted:   #6E5C54; /* Muted warm grey */
+  --accent:     #A81A1A; /* Deep premium red */
+  --accent-dk:  #801010; /* Darker red */
+  --accent-lt:  #FBD5D5; /* Soft pink-red highlight */
+  --gold:       #E29924; /* Golden spice / orange-gold accent */
+  --sage:       #8FA893; /* Soft green representing farm-freshness */
   --sage-soft:  #EEF4EA;
   --ink-soft:   #2F241A;
   --surface:    #FFFFFF;
-  --surface-alt:#FFF8ED;
-  --border:     rgba(217, 119, 6, 0.15);
+  --surface-alt:#FAF5EB;
+  --border:     rgba(168, 26, 26, 0.12); /* Red-tinted soft border */
 
   --font-display:    'Playfair Display', Georgia, serif;
   --font-body:       'Outfit', system-ui, sans-serif;
