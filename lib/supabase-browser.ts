@@ -28,6 +28,8 @@ export type ProductRow = {
   id: string
   name: string
   price_per_kg: number
+  discount_percentage: number
+  weight_per_unit: number | null
   image_url: string | null
   stock_quantity: number
   category: string
@@ -53,6 +55,9 @@ export type DeliveryAddress = {
   lng?: number
   mapsUrl?: string
   customerPhone?: string
+  adminDeleted?: boolean
+  adminDeletedAt?: string
+  adminDeletedFromStatus?: string | null
 }
 
 export type OrderRow = {
@@ -70,11 +75,11 @@ export type OrderRow = {
   driver_id: string | null
   driver_name: string | null
   driver_phone: string | null
-  customer_phone:        string | null
-  customer_name:         string | null
-  feedback_rating:       number | null
-  feedback_comment:      string | null
-  feedback_at:           string | null
+  customer_phone: string | null
+  customer_name: string | null
+  feedback_rating: number | null
+  feedback_comment: string | null
+  feedback_at: string | null
   created_at: string
   updated_at: string | null
 }
@@ -85,6 +90,7 @@ export type CartItem = {
   pricePerKg: number
   quantity: number
   imageUrl: string | null
+  weightPerUnit?: number | null
 }
 
 export type DriverRow = {

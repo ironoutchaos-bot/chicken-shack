@@ -7,11 +7,11 @@ export type Product = {
 
 /** Canonical list — IDs must match Supabase rows */
 export const PRODUCTS: Product[] = [
-  { id: 'boneless',   name: 'Boneless',         price_per_kg: 0, unit: 'kg' },
-  { id: 'curry-cut',  name: 'Curry Cut',         price_per_kg: 0, unit: 'kg' },
-  { id: 'wings',      name: 'Wings',             price_per_kg: 0, unit: 'kg' },
-  { id: 'liver',      name: 'Liver and Other',   price_per_kg: 0, unit: 'kg' },
-  { id: 'drumstick',  name: 'Drumstick',         price_per_kg: 0, unit: 'kg' },
+  { id: 'boneless', name: 'Boneless', price_per_kg: 0, unit: 'kg' },
+  { id: 'curry-cut', name: 'Curry Cut', price_per_kg: 0, unit: 'kg' },
+  { id: 'wings', name: 'Wings', price_per_kg: 0, unit: 'kg' },
+  { id: 'liver', name: 'Liver and Other', price_per_kg: 0, unit: 'kg' },
+  { id: 'drumstick', name: 'Drumstick', price_per_kg: 0, unit: 'kg' },
 ]
 
 /** Merge DB rows into the canonical list (fallback to 0 if row missing) */

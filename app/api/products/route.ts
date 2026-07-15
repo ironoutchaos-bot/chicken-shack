@@ -27,12 +27,12 @@ export async function GET() {
       if (Array.isArray(data) && data.length > 0) {
         // Normalise: fill in defaults for any nulls
         const rows = data.map((p: Record<string, unknown>) => ({
-          id:             p.id,
-          name:           p.name,
-          price_per_kg:   p.price_per_kg ?? 0,
-          image_url:      p.image_url ?? null,
+          id: p.id,
+          name: p.name,
+          price_per_kg: p.price_per_kg ?? 0,
+          image_url: p.image_url ?? null,
           stock_quantity: p.stock_quantity ?? 50,
-          category:       p.category ?? 'chicken',
+          category: p.category ?? 'chicken',
         }))
         return NextResponse.json(rows)
       }
@@ -46,12 +46,12 @@ export async function GET() {
       const data2 = await res2.json()
       if (Array.isArray(data2) && data2.length > 0) {
         const rows = data2.map((p: Record<string, unknown>) => ({
-          id:             p.id,
-          name:           p.name,
-          price_per_kg:   p.price_per_kg ?? 0,
-          image_url:      null,
+          id: p.id,
+          name: p.name,
+          price_per_kg: p.price_per_kg ?? 0,
+          image_url: null,
           stock_quantity: 50,
-          category:       'chicken',
+          category: 'chicken',
         }))
         return NextResponse.json(rows)
       }
@@ -88,7 +88,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
   }
 
-  const url  = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '')
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '')
   const skey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!url || !skey) {
@@ -101,10 +101,10 @@ export async function PATCH(req: NextRequest) {
       {
         method: 'PATCH',
         headers: {
-          'apikey':        skey,
+          'apikey': skey,
           'Authorization': `Bearer ${skey}`,
-          'Content-Type':  'application/json',
-          'Prefer':        'return=minimal',
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal',
         },
         body: JSON.stringify({ price_per_kg, updated_at: new Date().toISOString() }),
       }

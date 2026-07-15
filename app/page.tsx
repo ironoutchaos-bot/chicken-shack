@@ -1,7 +1,15 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { Sparkles, Clock, Scissors, ShieldCheck, Plus, Minus, ShoppingBag, X, Loader2, MapPin } from 'lucide-react'
+import type { CartItem, ProductRow } from '@/lib/supabase-browser'
+import type { AuthUser } from '@/lib/auth-types'
+import { UNIT_LABEL } from '@/lib/units'
+import LoginDrawer from '@/app/order/components/LoginDrawer'
+import CartSheet from '@/app/order/components/CartSheet'
+import PincodeGate from '@/app/order/components/PincodeGate'
 
 const css = `
 :root{
@@ -125,31 +133,101 @@ nav{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%);width:calc(10
   .story-card{min-height:auto;padding:2.5rem 2rem;}
   .sc-wide .sf-sub{max-width:100%;}
 }
-#why{padding:8rem 5% 6rem;background:var(--cream2);position:relative;overflow:hidden;}
-.why-container{display:grid;grid-template-columns:1fr 1.2fr;gap:5rem;max-width:1200px;margin:0 auto;position:relative;z-index:2;}
-.why-sticky-left{position:sticky;top:7.5rem;height:fit-content;display:flex;flex-direction:column;gap:2rem;}
-.why-right-cards{display:flex;flex-direction:column;gap:1.5rem;}
-.why-rule-card{background:var(--white);border:1px solid rgba(168,26,26,0.06);border-radius:24px;padding:2.2rem 2rem;display:flex;gap:1.5rem;transition:all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);position:relative;overflow:hidden;box-shadow:0 4px 20px rgba(31,17,11,0.01);}
-.why-rule-card:hover{transform:translateX(8px);border-color:rgba(168,26,26,0.15);box-shadow:0 15px 40px rgba(168,26,26,0.06);}
-.why-rule-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--p);transform:scaleY(0);transition:transform 0.3s;}
-.why-rule-card:hover::after{transform:scaleY(1);}
-.wrc-num-circle{width:50px;height:50px;border-radius:50%;background:rgba(168,26,26,0.04);display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-weight:700;font-size:0.9rem;color:var(--p);flex-shrink:0;transition:all 0.3s;}
-.why-rule-card:hover .wrc-num-circle{background:var(--p);color:#fff;transform:scale(1.05);}
-.wrc-content{display:flex;flex-direction:column;gap:0.6rem;}
-.wrc-spicy{font-family:'Archivo Black',sans-serif;font-size:1.15rem;color:var(--p);letter-spacing:-0.01em;line-height:1.1;text-transform:uppercase;}
-.wrc-title{font-family:'Unbounded',sans-serif;font-size:0.95rem;font-weight:800;color:var(--ink);letter-spacing:-0.02em;}
-.wrc-desc{font-family:'Outfit',sans-serif;font-size:0.85rem;color:var(--ink2);line-height:1.6;}
-.why-stats-panel{display:grid;grid-template-columns:repeat(3, 1fr);gap:1rem;margin-top:2rem;background:var(--white);padding:2rem 1.5rem;border-radius:28px;border:1px solid rgba(168,26,26,0.06);box-shadow:0 10px 30px rgba(31,17,11,0.02);}
-.stat-box{display:flex;flex-direction:column;align-items:center;text-align:center;}
-.stat-value{font-family:'Unbounded',sans-serif;font-weight:900;font-size:2.2rem;color:var(--p);line-height:1;}
-.stat-unit{font-size:0.9rem;color:var(--pl);font-weight:700;}
-.stat-label{font-size:0.58rem;letter-spacing:0.08em;color:var(--ink2);text-transform:uppercase;margin-top:0.5rem;font-family:'DM Mono',monospace;}
+.hero-manifesto-wrap {
+  width: 100%;
+  margin: 3.5rem auto 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  padding: 0 1rem;
+}
+.hero-manifesto-title {
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--p);
+  background: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  display: inline-block;
+  text-transform: uppercase;
+  margin-bottom: 2.5rem;
+}
+.hero-manifesto-desc {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--ink2);
+  margin-bottom: 2.2rem;
+  max-width: 50ch;
+  text-align: center;
+  line-height: 1.6;
+}
+.hero-manifesto-desc strong {
+  color: var(--p);
+  font-weight: 600;
+}
+.hero-manifesto-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2.2rem;
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+  justify-content: center;
+}
+.hero-manifesto-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.8rem;
+  transition: transform 0.3s ease;
+}
+.hero-manifesto-item:hover {
+  transform: translateY(-4px);
+}
+.hmi-circle {
+  width: 62px;
+  height: 62px;
+  border-radius: 18px;
+  border: 1.5px dashed rgba(168,26,26,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(168,26,26,0.04);
+  box-shadow: 0 6px 16px rgba(31,17,11,0.02);
+  transition: all 0.3s ease;
+  color: var(--p);
+}
+.hmi-circle svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.8px;
+}
+.hero-manifesto-item:hover .hmi-circle {
+  border-color: var(--p);
+  background: rgba(168,26,26,0.08);
+  box-shadow: 0 10px 20px rgba(168,26,26,0.08);
+  transform: scale(1.08);
+}
+.hmi-label {
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 800;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-transform: uppercase;
+}
 .wtl-kicker{font-size:.6rem;letter-spacing:.2em;color:var(--p);text-transform:uppercase;margin-bottom:1.2rem;}
-.wtl-h{font-family:'Archivo Black',sans-serif;font-size:clamp(2.4rem,4.8vw,5.5rem);line-height:0.9;letter-spacing:-.03em;color:var(--ink);}
+.wtl-h{font-family:'Archivo Black',sans-serif;font-size:clamp(2.4rem,4.8vw,5.5rem);line-height:0.9;letter-spacing:-.03em;color:var(--ink);margin-bottom:1rem;}
 .wtl-h .it{font-family:'Instrument Serif',serif;font-style:italic;color:var(--gd);}
 .wtl-h .pp{color:var(--p);}
-.wtr-quote{font-family:'Instrument Serif',serif;font-style:italic;font-size:1.35rem;line-height:1.5;color:var(--ink2);}
-.wtr-sub{font-size:.78rem;color:rgba(22,20,15,.45);line-height:1.7;}
 
 #process{padding:8rem 5% 7rem;background:var(--cream);position:relative;overflow:hidden;}
 .proc-bg-txt{position:absolute;bottom:-2rem;right:-1rem;font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(6rem,15vw,18rem);color:rgba(22,20,15,.03);letter-spacing:-.04em;pointer-events:none;line-height:1;z-index:0;}
@@ -236,15 +314,15 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.05);padding:
   .sf-heading{font-size:clamp(1.8rem,9vw,3.5rem);}
   .sf-spicy{font-size:clamp(2rem,9vw,4rem);}
   .sf-sub{font-size:.75rem;padding:0 1rem;}
-  #why{padding:4rem 1.2rem;}
-  .why-container{grid-template-columns:1fr;gap:3rem;}
-  .why-sticky-left{position:relative;top:0;}
-  .why-stats-panel{grid-template-columns:repeat(3, 1fr);padding:1.5rem 1rem;}
-  .stat-value{font-size:1.6rem;}
-  .stat-unit{font-size:0.75rem;}
-  .stat-label{font-size:0.5rem;}
-  .why-rule-card{padding:1.5rem;gap:1rem;flex-direction:column;}
-  .wrc-num-circle{width:40px;height:40px;font-size:0.8rem;}
+  #why{padding:2rem 1.2rem;}
+  .hero-manifesto-wrap{margin-top:2.5rem;padding:0 0.5rem;}
+  .hero-manifesto-title{font-size:clamp(1.15rem, 5.5vw, 1.65rem);padding:0;margin-bottom:1.8rem;line-height:1.2;background:transparent;border:none;box-shadow:none;}
+  .hero-manifesto-desc{font-size:0.78rem;margin-bottom:1.5rem;max-width:100%;}
+  .hero-manifesto-grid{display:flex;flex-direction:row;justify-content:space-between;gap:0.4rem;}
+  .hero-manifesto-item{gap:0.4rem;flex:1;}
+  .hmi-circle{width:36px;height:36px;border-radius:10px;border-width:1.2px;}
+  .hmi-circle svg{width:14px;height:14px;stroke-width:1.8px;}
+  .hmi-label{font-size:0.42rem;letter-spacing:0;line-height:1.1;}
   #process{padding:4rem 1.2rem;}
   .proc-line-track{display:none;}
   .proc-grid{grid-template-columns:1fr;gap:3rem;}
@@ -269,9 +347,404 @@ footer{background:var(--ink);border-top:1px solid rgba(255,255,255,.05);padding:
   .sf-spicy{font-size:clamp(1.6rem,8vw,3rem);}
   .cta-h{font-size:clamp(2.5rem,11vw,4.5rem);}
 }
+
+/* ── Menu Section & Product Grid ── */
+#menu {
+  padding: 6rem 5%;
+  background: var(--cream2);
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(22,20,15,.04);
+}
+.menu-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+.menu-header {
+  margin-bottom: 3.5rem;
+  text-align: center;
+}
+.menu-kicker {
+  font-family: 'DM Mono', monospace;
+  font-size: .6rem;
+  letter-spacing: .2em;
+  color: var(--p);
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+.menu-h {
+  font-family: 'Archivo Black', sans-serif;
+  font-weight: 900;
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  letter-spacing: -.03em;
+  line-height: 1;
+  color: var(--ink);
+}
+.menu-h span {
+  color: var(--p);
+}
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+.menu-card {
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1.5px solid rgba(22, 20, 15, 0.06);
+  box-shadow: 0 2px 16px rgba(22, 20, 15, 0.06);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.menu-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(168, 26, 26, 0.15);
+  box-shadow: 0 8px 25px rgba(168, 26, 26, 0.05);
+}
+.menu-card.in-cart {
+  border-color: rgba(168, 26, 26, 0.3);
+}
+.menu-img-wrap {
+  width: 100%;
+  height: 130px;
+  position: relative;
+  background: #f2ede0;
+  overflow: hidden;
+}
+.menu-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+.menu-card:hover .menu-img-wrap img {
+  transform: scale(1.05);
+}
+.menu-card-num {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(22, 20, 15, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.menu-card-badge {
+  position: absolute;
+  bottom: 7px;
+  right: 7px;
+  z-index: 2;
+  background: var(--gd);
+  color: #fff;
+  font-size: 7.5px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.1em;
+}
+.menu-card-qty-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  background: linear-gradient(135deg, var(--p), var(--pl));
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 20px;
+}
+.menu-card-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+.menu-card-title {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 14.5px;
+  color: var(--ink);
+  line-height: 1.25;
+  margin-bottom: 4px;
+}
+.menu-card-unit {
+  font-size: 9.5px;
+  color: rgba(22, 20, 15, 0.38);
+  margin-bottom: 9px;
+  letter-spacing: 0.04em;
+}
+.menu-card-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 10px;
+  margin-top: auto;
+}
+.menu-card-old-price {
+  font-size: 10px;
+  color: rgba(22, 20, 15, 0.28);
+  text-decoration: line-through;
+}
+.menu-card-price {
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 17px;
+  color: var(--p);
+}
+.menu-card-price-unit {
+  font-size: 9px;
+  color: rgba(22, 20, 15, 0.3);
+}
+.btn-add-cart {
+  width: 100%;
+  background: rgba(168, 26, 26, 0.05);
+  color: var(--p);
+  border: 1.5px solid rgba(168, 26, 26, 0.18);
+  border-radius: 12px;
+  padding: 9px 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.2s;
+  max-width: 100%;
+}
+.btn-add-cart:hover:not(:disabled) {
+  background: var(--p);
+  color: var(--white);
+  border-color: var(--p);
+}
+.btn-add-cart:disabled {
+  background: rgba(22, 20, 15, 0.04);
+  color: rgba(22, 20, 15, 0.25);
+  border-color: rgba(22, 20, 15, 0.07);
+  cursor: default;
+}
+.qty-selector {
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--p), #801010);
+  overflow: hidden;
+  max-width: 100%;
+}
+.qty-btn {
+  width: 38px;
+  height: 36px;
+  background: rgba(0, 0, 0, 0.2);
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qty-val {
+  flex: 1;
+  text-align: center;
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  color: #fff;
+}
+
+/* Modal and Pincode Dialog overlay classes */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.pincode-modal-card {
+  width: 100%;
+  max-width: 430px;
+  background: var(--cream);
+  border-radius: 28px;
+  border: 1px solid rgba(168, 26, 26, 0.12);
+  box-shadow: 0 20px 50px rgba(31, 17, 11, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 900px) {
+  #menu {
+    padding: 4rem 1.2rem;
+  }
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .menu-img-wrap {
+    height: 145px;
+  }
+  .menu-card-body {
+    padding: 12px;
+  }
+}
+@media (max-width: 480px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
 `
 
 export default function Home() {
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
+  const [pincodeOpen, setPincodeOpen] = useState(false)
+
+  const [pincode, setPincode] = useState<string | null>(null)
+  const [areaName, setAreaName] = useState('')
+
+  // Live settings
+  const [storeOpen, setStoreOpen] = useState(true)
+  const [announcement, setAnnouncement] = useState('')
+  const [minOrder, setMinOrder] = useState(0)
+  const [deliveryFee, setDeliveryFee] = useState(0)
+
+  // Products
+  const [products, setProducts] = useState<ProductRow[]>([])
+  const [productsLoading, setProductsLoading] = useState(true)
+  const [productsError, setProductsError] = useState('')
+  const [activeProductId, setActiveProductId] = useState<string | null>(null)
+
+  // Hydrate user
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(data => { if (data.user) setUser(data.user) })
+      .catch(() => { })
+      .finally(() => setAuthLoading(false))
+  }, [])
+
+  // Hydrate settings
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(d => {
+        setStoreOpen(d.store_open !== false)
+        setAnnouncement(typeof d.announcement === 'string' ? d.announcement : '')
+        setMinOrder(typeof d.min_order_amount === 'number' ? d.min_order_amount : 0)
+        setDeliveryFee(typeof d.delivery_fee === 'number' ? d.delivery_fee : 0)
+      })
+      .catch(() => { })
+  }, [])
+
+  // Hydrate products
+  useEffect(() => {
+    async function load() {
+      setProductsLoading(true)
+      try {
+        const res = await fetch('/api/products')
+        console.log(res)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        setProducts(data)
+        if (data.length > 0) setActiveProductId(data[0].id)
+      } catch (e) {
+        setProductsError(e instanceof Error ? e.message : 'Failed to load products')
+      } finally {
+        setProductsLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  // Hydrate pincode from localStorage
+  useEffect(() => {
+    try {
+      const pc = localStorage.getItem('bf-pincode')
+      const area = localStorage.getItem('bf-area-name')
+      if (pc) {
+        setPincode(pc)
+        if (area) setAreaName(area)
+      }
+    } catch { }
+  }, [])
+
+  // Hydrate cart from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bf-cart')
+      if (saved) setCart(JSON.parse(saved))
+    } catch { }
+  }, [])
+
+  // Sync cart to localStorage and backend
+  useEffect(() => {
+    localStorage.setItem('bf-cart', JSON.stringify(cart))
+    if (user) {
+      fetch('/api/user/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart, updatedAt: new Date().toISOString() }),
+      }).catch(() => { })
+    }
+  }, [cart, user])
+
+  // Cart operations
+  const addToCart = useCallback((item: CartItem) => {
+    if (!pincode) {
+      setPincodeOpen(true)
+      return
+    }
+    setCart(prev => {
+      const idx = prev.findIndex(c => c.productId === item.productId)
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = { ...next[idx], quantity: +(next[idx].quantity + item.quantity).toFixed(1) }
+        return next
+      }
+      return [...prev, item]
+    })
+  }, [pincode])
+
+  const updateCartQty = useCallback((productId: string, qty: number) => {
+    if (qty <= 0) {
+      setCart(prev => prev.filter(c => c.productId !== productId))
+    } else {
+      setCart(prev => prev.map(c => c.productId === productId ? { ...c, quantity: qty } : c))
+    }
+  }, [])
+
+  const clearCart = useCallback(() => setCart([]), [])
+
+  const cartTotal = cart.reduce((s, c) => s + c.pricePerKg * c.quantity, 0)
+  const cartItemCount = cart.reduce((s, c) => s + c.quantity, 0)
+
   useEffect(() => {
     // Cursor
     const cur = document.getElementById('cur')
@@ -291,7 +764,7 @@ export default function Home() {
       raf = requestAnimationFrame(animRing)
     }
     animRing()
-    document.querySelectorAll<HTMLElement>('button,a,.why-rule-card,.proc-card,.float-order').forEach(el => {
+    document.querySelectorAll<HTMLElement>('button,a,.hero-manifesto-item,.proc-card,.float-order,.menu-card,.btn-add-cart,.qty-btn').forEach(el => {
       el.addEventListener('mouseenter', () => { cur.style.transform = 'scale(2.5)'; cur.style.background = 'var(--g)'; ring.style.transform = 'scale(1.5)'; ring.style.borderColor = 'var(--p)' })
       el.addEventListener('mouseleave', () => { cur.style.transform = 'scale(1)'; cur.style.background = 'var(--p)'; ring.style.transform = 'scale(1)'; ring.style.borderColor = 'var(--g)' })
     })
@@ -344,7 +817,7 @@ export default function Home() {
     if (whyEl) new IntersectionObserver(en => { en.forEach(e => { if (e.isIntersecting && !(e.target as HTMLElement).dataset.done) { (e.target as HTMLElement).dataset.done = '1'; e.target.querySelectorAll('.count-num').forEach(n => animC(n, parseInt((n as HTMLElement).dataset.count || '0'))) } }) }, { threshold: .5 }).observe(whyEl)
 
     // 3D tilt
-    document.querySelectorAll<HTMLElement>('.why-rule-card,.proc-card').forEach(c => {
+    document.querySelectorAll<HTMLElement>('.hero-manifesto-item,.proc-card,.menu-card').forEach(c => {
       c.addEventListener('mousemove', (e: Event) => { const me = e as MouseEvent; const r = c.getBoundingClientRect(); const x = (me.clientX - r.left) / r.width - .5, y = (me.clientY - r.top) / r.height - .5; c.style.transform = `perspective(800px) rotateX(${y * -6}deg) rotateY(${x * 6}deg) translateZ(8px)` })
       c.addEventListener('mouseleave', () => { c.style.transform = '' })
     })
@@ -372,7 +845,13 @@ export default function Home() {
     }
   }, [])
 
-  const goOrder = () => { window.location.href = 'https://www.blurufresh.com/order' }
+  const goOrder = () => {
+    if (cartItemCount > 0) {
+      setCartOpen(true)
+    } else {
+      document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
   const goStory = () => { document.getElementById('scroll-story')?.scrollIntoView({ behavior: 'smooth' }) }
 
   return (
@@ -384,11 +863,15 @@ export default function Home() {
       <div id="cur" />
       <div id="ring" />
 
-      <button className="float-order" onClick={goOrder}>
-        <span className="fo-icon">⚡</span>
+      <button className="float-order" onClick={goOrder} style={cartItemCount > 0 ? { background: 'var(--p)', color: '#fff', boxShadow: '0 8px 30px rgba(168, 26, 26, 0.45)' } : undefined}>
+        <span className="fo-icon">{cartItemCount > 0 ? '🛒' : '⚡'}</span>
         <span className="fo-text">
-          <span className="fo-main">Order Now</span>
-          <span className="fo-sub">Delivery in 60 min</span>
+          <span className="fo-main" style={cartItemCount > 0 ? { color: '#fff' } : undefined}>
+            {cartItemCount > 0 ? `Cart (${cartItemCount})` : 'Order Now'}
+          </span>
+          <span className="fo-sub" style={cartItemCount > 0 ? { color: 'rgba(255,255,255,0.7)' } : undefined}>
+            {cartItemCount > 0 ? `Total: ₹${cartTotal.toFixed(0)}` : 'Delivery in 60 min'}
+          </span>
         </span>
       </button>
 
@@ -403,7 +886,9 @@ export default function Home() {
           <a href="#process">Process</a>
           <a href="#menu">Menu</a>
           <a href="tel:+917012488951">Call</a>
-          <button className="nav-btn" onClick={goOrder}>Order ⚡</button>
+          <button className="nav-btn" onClick={goOrder} style={cartItemCount > 0 ? { background: 'var(--p)', color: '#fff', borderColor: 'var(--p)' } : undefined}>
+            {cartItemCount > 0 ? `Cart (${cartItemCount}) 🛒` : 'Order ⚡'}
+          </button>
         </div>
       </nav>
 
@@ -453,14 +938,127 @@ export default function Home() {
 
           {/* Description & CTAs */}
           <div className="hero-bottom-content rv d4">
-            <p className="hero-desc-para">
-              From Now — <strong>Not frozen. Not stored overnight.</strong> Cut only after you order. Delivered in 60 minutes.
-            </p>
             <div className="hero-ctas">
-              <button className="btn-fill" onClick={goOrder}><span>Order Now ⚡</span></button>
+              <button className="btn-fill" onClick={goOrder}>
+                <span>{cartItemCount > 0 ? 'Proceed to Checkout 🛒' : 'Order Now ⚡'}</span>
+              </button>
               <button className="btn-line" onClick={goStory}>Watch ↓</button>
             </div>
+
+            {/* Redesigned highlighted manifesto & 4 circular items grid */}
+            <div className="hero-manifesto-wrap" id="why">
+              <div className="hero-manifesto-title">Introducing Bengaluru&apos;s First<br />Ultra-Fresh System</div>
+              <p className="hero-manifesto-desc">
+                From Now — <strong>Not frozen. Not stored overnight.</strong> Cut only after you order. Delivered in 60 minutes.
+              </p>
+              <div className="hero-manifesto-grid">
+                {[
+                  { Icon: Sparkles, label: 'Zero Smell' },
+                  { Icon: Clock, label: '60 Min Delivery' },
+                  { Icon: Scissors, label: 'Cut-to-Order' },
+                  { Icon: ShieldCheck, label: 'Verified Clean' }
+                ].map((item, idx) => (
+                  <div key={idx} className="hero-manifesto-item">
+                    <div className="hmi-circle">
+                      <item.Icon />
+                    </div>
+                    <div className="hmi-label">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
+      <section id="menu">
+        <div className="menu-container">
+          {productsLoading && (
+            <div className="menu-grid">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="menu-card" style={{ height: 300, animation: 'pulse 1.5s ease-in-out infinite', background: '#fff', opacity: 0.6 }}>
+                  <div style={{ height: 130, background: '#e5e7eb' }} />
+                  <div style={{ padding: 12 }}>
+                    <div style={{ height: 14, width: '70%', background: '#e5e7eb', borderRadius: 6 }} />
+                    <div style={{ height: 10, width: '45%', background: '#e5e7eb', borderRadius: 4, marginTop: 8 }} />
+                    <div style={{ height: 36, background: '#e5e7eb', borderRadius: 12, marginTop: 20 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {productsError && (
+            <div className="rounded-2xl p-4 text-center" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}>
+              Failed to load fresh selection: {productsError}
+            </div>
+          )}
+
+          {!productsLoading && !productsError && (
+            <div className="menu-grid">
+              {products.map((p, idx) => {
+                const qty = cart.find(c => c.productId === p.id)?.quantity ?? 0
+                const inCart = qty > 0
+                const outOfStock = p.stock_quantity === 0
+                const fallbacks: Record<string, string> = {
+                  'boneless': '/assets/raw_chicken_breast.png',
+                  'curry-cut': '/assets/raw_chicken_cuts.png',
+                  'drumstick': '/assets/raw_drumsticks_plate.png',
+                  'wings': '/assets/packaged_chicken_new.jpg',
+                  'liver': '/assets/packaged_chicken_new.jpg',
+                  'biriyani-cut': '/assets/raw_chicken_cuts.png',
+                }
+                const imgSrc = p.image_url ?? fallbacks[p.id] ?? '/assets/packaged_chicken_new.jpg'
+                const cardNum = String(idx + 1).padStart(2, '0')
+                const discount = p.discount_percentage ?? 0
+                const oldPrice = discount > 0 ? Math.round(p.price_per_kg / (1 - discount / 100)) : Math.round(p.price_per_kg / 0.75)
+                const weightLabel = p.id.includes('drumstick') ? '4 pcs' : (p.weight_per_unit ? `${p.weight_per_unit}g` : UNIT_LABEL)
+
+                return (
+                  <div key={p.id} className={`menu-card ${inCart ? 'in-cart' : ''}`} style={{ transitionDelay: `${idx * 0.1}s` }}>
+                    <div className="menu-img-wrap">
+                      <img src={imgSrc} alt={p.name} style={outOfStock ? { filter: 'grayscale(0.5)', opacity: 0.6 } : undefined} />
+                      <div className="menu-card-num">{cardNum}</div>
+                      {!outOfStock && <div className="menu-card-badge">{discount > 0 ? `${discount}% OFF` : 'FRESH'}</div>}
+                      {inCart && <div className="menu-card-qty-badge">✓ {qty}</div>}
+                      {!outOfStock && p.stock_quantity > 0 && p.stock_quantity <= 5 && !inCart && (
+                        <div className="menu-card-qty-badge" style={{ background: '#f97316' }}>
+                          ONLY {p.stock_quantity} LEFT
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="menu-card-body">
+                      <h3 className="menu-card-title">{p.name}</h3>
+                      <p className="menu-card-unit">{weightLabel} · Cut fresh on order</p>
+
+                      <div className="menu-card-price-row">
+                        {!outOfStock && <span className="menu-card-old-price">₹{oldPrice}</span>}
+                        <span className="menu-card-price">₹{p.price_per_kg}</span>
+                        <span className="menu-card-price-unit">/pc</span>
+                      </div>
+
+                      {outOfStock ? (
+                        <button disabled className="btn-add-cart" style={{ opacity: 0.5, cursor: 'default' }}>Out of Stock</button>
+                      ) : qty === 0 ? (
+                        <button
+                          className="btn-add-cart"
+                          onClick={() => addToCart({ productId: p.id, name: p.name, pricePerKg: p.price_per_kg, quantity: 1, imageUrl: p.image_url })}
+                        >
+                          <Plus size={14} /> Add to Cart
+                        </button>
+                      ) : (
+                        <div className="qty-selector">
+                          <button className="qty-btn" onClick={() => updateCartQty(p.id, qty - 1)}>−</button>
+                          <span className="qty-val">{qty}</span>
+                          <button className="qty-btn" onClick={() => updateCartQty(p.id, qty + 1)}>+</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 
@@ -545,55 +1143,7 @@ export default function Home() {
         </div>
       </div>
 
-      <section id="why">
-        <div className="why-container">
-          <div className="why-sticky-left">
-            <div className="wtl-kicker rv">— The Revolution</div>
-            <h2 className="wtl-h rv d1">
-              INTRODUCING<br />
-              <span className="it">Bengaluru&apos;s</span><br />
-              <span className="pp">FIRST</span><br />
-              ULTRA-FRESH<br />
-              SYSTEM
-            </h2>
-            <div className="wtr-quote rv d2">&quot;The freshest chicken Bengaluru has ever tasted.&quot;</div>
-            <div className="wtr-sub rv d2">We didn&apos;t just build a delivery app. We built an entirely new supply chain that removes cold storage from the equation completely. What you get is what nature intended — pure, same-day protein.</div>
 
-            {/* Sticky Stats Panel */}
-            <div className="why-stats-panel rv d3">
-              {[{ count: 1, unit: 'hr', label: 'Cut to door' }, { count: 0, unit: '%', label: 'Preservatives' }, { count: 100, unit: '%', label: 'Cut-to-order' }].map(s => (
-                <div key={s.label} className="stat-box">
-                  <div className="stat-value">
-                    <span className="count-num" data-count={s.count}>0</span>
-                    <span className="stat-unit">{s.unit}</span>
-                  </div>
-                  <div className="stat-label">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="why-right-cards">
-            {[
-              { num: '01', icon: '🚫', spicy: 'ZERO SH*T.', title: 'No Foul Smell. No Sliminess. Ever.', desc: "That disgusting smell while unpacking? That's stored meat decomposing. We cut only after your order. That smell has never existed in our system — and never will." },
-              { num: '02', icon: '⚡', spicy: 'IN 60 MIN. NOT DAYS.', title: 'From Our Kitchen To Your Door', desc: "Not 'we'll try.' Not 'approximately.' Under 60 minutes. Your masala will still be sizzling when the delivery rider rings." },
-              { num: '03', icon: '🔬', spicy: 'NOT VIBES. VERIFIED.', title: 'Zero Additives. FSSAI Licensed.', desc: 'FSSAI Lic. 11226331000344. No additives. No chemicals. No preservatives. We have the receipts — you never have to take our word for it.' },
-              { num: '04', icon: '🎯', spicy: 'YOUR ORDER = THE KNIFE.', title: 'Cut-To-Order. Every Single Time.', desc: "No pre-cut pieces sitting around. The moment you place your order — that's when the cutting begins. Not before. Not after." },
-              { num: '05', icon: '🏆', spicy: 'THE OLD WAY IS DEAD.', title: "Bengaluru's First Ultra-Fresh System", desc: "We didn't upgrade the old system. We removed it entirely and built something this city has never seen before. This is what fresh actually means." },
-            ].map((c, idx) => (
-              <div key={c.num} className="why-rule-card rv" style={{ transitionDelay: `${idx * 0.1}s` }}>
-                <div className="wrc-num-circle">{c.num}</div>
-                <div className="wrc-content">
-                  <span style={{ fontSize: '1.5rem', marginBottom: '0.2rem', display: 'block' }}>{c.icon}</span>
-                  <div className="wrc-spicy">{c.spicy}</div>
-                  <div className="wrc-title">{c.title}</div>
-                  <p className="wrc-desc">{c.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       <section id="process">
         <div className="proc-bg-txt">PROCESS</div>
@@ -626,13 +1176,16 @@ export default function Home() {
         </div>
       </section>
 
+
       <section id="cta">
         <div className="cta-bg-circle" /><div className="cta-bg-circle" /><div className="cta-bg-circle" />
         <div className="cta-kicker rv">— Done With Dead-Stock Chicken?</div>
         <h2 className="cta-h rv d1">ORDER<br /><span className="cg">FRESH.</span><br /><span className="cp">NOW.</span></h2>
         <div className="cta-quote rv d2">&quot;The Freshest Chicken Bengaluru Has Ever Tasted.&quot;<br />Taste it once. You&apos;ll understand everything.</div>
         <div className="cta-btns rv d3">
-          <button className="btn-glow" onClick={goOrder}>Order Now ⚡</button>
+          <button className="btn-glow" onClick={goOrder}>
+            {cartItemCount > 0 ? 'Proceed to Checkout 🛒' : 'Order Now ⚡'}
+          </button>
           <button className="btn-ghost-white" onClick={() => window.location.href = 'tel:+917012488951'}>📞 +91 70124 88951</button>
         </div>
         <div className="cta-meta rv d4">YELAHANKA · BANGALORE · DELIVERY IN 60 MIN · FSSAI LIC. 11226331000344</div>
@@ -688,6 +1241,56 @@ export default function Home() {
         <span>FSSAI Lic. 11226331000344</span>
         <a href="https://maps.app.goo.gl/5RjKDAgEM7vcD5aq6" target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.55rem', opacity: 0.3, color: 'inherit', textDecoration: 'none' }}>📍 maps</a>
       </div>
+
+      <LoginDrawer
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSuccess={(u) => {
+          setUser(u)
+          setLoginOpen(false)
+        }}
+      />
+
+      <CartSheet
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        cart={cart}
+        onUpdateQty={updateCartQty}
+        onClear={clearCart}
+        user={user}
+        authLoading={authLoading}
+        onLoginRequired={() => { if (!authLoading) { setCartOpen(false); setLoginOpen(true) } }}
+        savedPincode={pincode ?? undefined}
+        minOrderAmount={minOrder}
+        deliveryFee={deliveryFee}
+        onOrderPlaced={() => {
+          clearCart()
+          setCartOpen(false)
+          alert("Order placed successfully! Check progress in your active tab.")
+        }}
+      />
+
+      {pincodeOpen && (
+        <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) setPincodeOpen(false) }}>
+          <div className="pincode-modal-card">
+            <div className="flex justify-end p-4 pb-0">
+              <button
+                onClick={() => setPincodeOpen(false)}
+                className="w-8 h-8 rounded-full bg-stone-200 hover:bg-stone-300 transition-colors flex items-center justify-center cursor-pointer"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            <PincodeGate
+              onVerified={(pc, area) => {
+                setPincode(pc)
+                setAreaName(area)
+                setPincodeOpen(false)
+              }}
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }
