@@ -93,3 +93,30 @@ export async function PATCH(
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!isAdminRequest(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id } = await params
+
+  try {
+    const res = await fetch(
+      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,
+      { method: 'DELETE', headers: srvHeaders() }
+    )
+    if (!res.ok) {
+      const err = await res.text()
+      return NextResponse.json({ error: err || 'Failed to delete order' }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error('[orders DELETE]', err)
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+  }
+}

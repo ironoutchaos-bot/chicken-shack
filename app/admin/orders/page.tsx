@@ -204,6 +204,35 @@ export default function AdminOrdersPage() {
     } finally { setSaving(null) }
   }
 
+  async function deleteOrder(order: OrderRow) {
+    const label = `#${order.id.slice(0, 8).toUpperCase()}`
+    const ok = window.confirm(`Delete order ${label}? This cannot be undone.`)
+    if (!ok) return
+
+    setSaving(order.id + '-delete')
+    setOrderError(null)
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setOrderError(data.error ?? `Delete failed (${res.status})`)
+        return
+      }
+
+      setOrders(prev => prev.filter(o => o.id !== order.id))
+      setEtaInputs(prev => {
+        const next = { ...prev }
+        delete next[order.id]
+        return next
+      })
+      setSelected(prev => {
+        const next = new Set(prev)
+        next.delete(order.id)
+        return next
+      })
+    } finally { setSaving(null) }
+  }
+
   if (checking) return null
   if (!authed) {
     return (
@@ -422,6 +451,8 @@ export default function AdminOrdersPage() {
             onEtaSave={() => updateEta(order.id)}
             onDriverAssign={dId => assignDriver(order.id, dId)}
             onConfirmPayment={() => confirmPayment(order.id)}
+            onDelete={() => deleteOrder(order)}
+            deletePending={saving === order.id + '-delete'}
             checked={selected.has(order.id)}
             onToggleCheck={() => toggleSelected(order.id)}
           />
@@ -470,18 +501,20 @@ export default function AdminOrdersPage() {
 }
 
 function OrderCard({
-  order, drivers, saving, confirmPending, etaValue, onEtaChange, onStatusChange, onEtaSave, onDriverAssign, onConfirmPayment, checked, onToggleCheck,
+  order, drivers, saving, confirmPending, deletePending, etaValue, onEtaChange, onStatusChange, onEtaSave, onDriverAssign, onConfirmPayment, onDelete, checked, onToggleCheck,
 }: {
   order: OrderRow
   drivers: DriverRow[]
   saving: boolean
   confirmPending: boolean
+  deletePending: boolean
   etaValue: string
   onEtaChange: (v: string) => void
   onStatusChange: (s: OrderRow['order_status']) => void
   onEtaSave: () => void
   onDriverAssign: (driverId: string) => void
   onConfirmPayment: () => void
+  onDelete: () => void
   checked: boolean
   onToggleCheck: () => void
 }) {
@@ -685,6 +718,16 @@ function OrderCard({
           </div>
         )}
       </div>
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #f3f4f6', paddingTop: '0.75rem' }}>
+        <button
+          onClick={onDelete}
+          disabled={saving || deletePending}
+          style={S.deleteBtn}
+        >
+          {deletePending ? 'Deleting...' : 'Delete Order'}
+        </button>
+      </div>
     </div>
   )
 }
@@ -734,4 +777,5 @@ const S: Record<string, React.CSSProperties> = {
   select:      { width: '100%', border: '2px solid', borderRadius: 8, padding: '0.5rem 0.625rem', fontSize: '0.875rem', fontWeight: 600, outline: 'none', cursor: 'pointer', background: '#fff' },
   etaInput:    { flex: 1, border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '0.5rem 0.625rem', fontSize: '0.875rem', outline: 'none', minWidth: 0 },
   etaBtn:      { background: '#d97706', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 0.75rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', whiteSpace: 'nowrap' },
+  deleteBtn:   { background: '#fee2e2', color: '#b91c1c', border: '1.5px solid #fecaca', borderRadius: 8, padding: '0.5rem 0.875rem', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem', whiteSpace: 'nowrap' },
 }
