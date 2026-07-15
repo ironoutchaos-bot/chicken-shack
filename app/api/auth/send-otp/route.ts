@@ -8,6 +8,15 @@ const MSG91_HEADERS = {
   'Content-Type': 'application/json',
 }
 
+function providerMessage(data: unknown) {
+  if (!data || typeof data !== 'object') return 'OTP provider rejected the request'
+  const body = data as { message?: unknown; code?: unknown; error?: unknown }
+  const message = typeof body.message === 'string' ? body.message : ''
+  const error = typeof body.error === 'string' ? body.error : ''
+  const code = body.code !== undefined ? ` (${String(body.code)})` : ''
+  return `${message || error || 'OTP provider rejected the request'}${code}`
+}
+
 export async function POST(req: NextRequest) {
   let body: { phone?: string; countryCode?: string }
   try { body = await req.json() } catch {
@@ -20,14 +29,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Enter a valid 10-digit phone number' }, { status: 400 })
   }
 
+  const MSG91_TOKEN = process.env.MSG91_TOKEN ?? ''
+  const MSG91_WIDGET_ID = process.env.MSG91_WIDGET_ID ?? ''
+  if (!MSG91_TOKEN || !MSG91_WIDGET_ID) {
+    console.error('[send-otp] MSG91_TOKEN or MSG91_WIDGET_ID env var missing')
+    return NextResponse.json({ error: 'OTP service is not configured' }, { status: 503 })
+  }
+
   let msg91Res: Response
   try {
     msg91Res = await fetch('https://api.msg91.com/api/v5/widget/sendOtp', {
       method: 'POST',
       headers: MSG91_HEADERS,
       body: JSON.stringify({
-        tokenAuth: process.env.MSG91_TOKEN,
-        widgetId:  process.env.MSG91_WIDGET_ID,
+        tokenAuth: MSG91_TOKEN,
+        widgetId:  MSG91_WIDGET_ID,
         identifier: `${countryCode}${phone}`,
       }),
     })
@@ -41,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   if (data.type !== 'success') {
     console.error('[send-otp] MSG91 rejected:', data)
-    return NextResponse.json({ error: 'Failed to send OTP', detail: data }, { status: 500 })
+    return NextResponse.json({ error: providerMessage(data), detail: data }, { status: 502 })
   }
 
   return NextResponse.json({ reqId: data.message })
