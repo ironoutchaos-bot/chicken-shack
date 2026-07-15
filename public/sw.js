@@ -1,6 +1,6 @@
-// B'LURU FRESH Service Worker — v11
+// B'LURU FRESH Service Worker — v12
 // Bump the version any time sw.js changes so the browser installs the update.
-const CACHE = 'blurufresh-v11'
+const CACHE = 'blurufresh-v12'
 
 // ── NO pre-caching on install ─────────────────────────────────────────────────
 // Previously we pre-cached HTML pages in the install event using cache.addAll().
@@ -53,10 +53,16 @@ self.addEventListener('fetch', (event) => {
   // ── Skip API routes ───────────────────────────────────────────────────────
   if (event.request.url.includes('/api/')) return
 
-  // ── Skip admin pages ─────────────────────────────────────────────────────
-  // Admin screens should always come from the network so inventory/order tools
-  // do not get stuck on an old cached app shell after production deploys.
-  if (new URL(event.request.url).pathname.startsWith('/admin')) return
+  // ── Skip live app surfaces ───────────────────────────────────────────────
+  // Admin/order/driver screens should always come from the network so checkout
+  // and operations tools do not get stuck on an old cached app shell after
+  // production deploys.
+  const pathname = new URL(event.request.url).pathname
+  if (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/order') ||
+    pathname.startsWith('/driver')
+  ) return
 
   // ── For HTML navigation requests: network-first, fall back to cache ──────
   // This gives basic offline support for the app shell pages.
