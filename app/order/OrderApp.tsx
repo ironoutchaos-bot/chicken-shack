@@ -14,7 +14,9 @@ import PincodeGate from './components/PincodeGate'
 import EntryPage from './components/EntryPage'
 import PwaPrompts from './components/PwaPrompts'
 import VisitTracker from './components/VisitTracker'
+import DeliveredFeedbackModal from './components/DeliveredFeedbackModal'
 import { usePushNotifications } from './hooks/usePushNotifications'
+import { useDeliveredFeedback } from './hooks/useDeliveredFeedback'
 
 export type Tab = 'shop' | 'active' | 'history'
 
@@ -46,6 +48,7 @@ export default function OrderApp() {
 
   // Live settings
   const [storeOpen,    setStoreOpen]    = useState(true)
+  const [outOfStock,   setOutOfStock]   = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const [minOrder,     setMinOrder]     = useState(0)
   const [deliveryFee,  setDeliveryFee]  = useState(0)
@@ -55,6 +58,9 @@ export default function OrderApp() {
 
   const { status: pushStatus, subscribe: subscribePush } = usePushNotifications(user?.id ?? null)
   const [pushDismissed, setPushDismissed] = useState(false)
+
+  // Delivered-order feedback popup — fires when the driver marks an order delivered
+  const { pendingOrder: feedbackOrder, dismiss: dismissFeedback } = useDeliveredFeedback(user?.id ?? null)
 
   const showPushBanner = (
     user &&
@@ -193,6 +199,7 @@ export default function OrderApp() {
       .then(r => r.json())
       .then(d => {
         setStoreOpen(d.store_open !== false)
+        setOutOfStock(d.out_of_stock === true)
         setAnnouncement(typeof d.announcement === 'string' ? d.announcement : '')
         setMinOrder(typeof d.min_order_amount === 'number' ? d.min_order_amount : 0)
         setDeliveryFee(typeof d.delivery_fee === 'number' ? d.delivery_fee : 0)
@@ -358,6 +365,7 @@ export default function OrderApp() {
                     areaName={areaName}
                     pincode={pincode ?? undefined}
                     storeOpen={storeOpen}
+                    outOfStock={outOfStock}
                     announcement={announcement}
                     bannerImages={bannerImages}
                     productOrder={productOrder}
@@ -574,6 +582,10 @@ export default function OrderApp() {
             setActiveTab('active')
           }}
         />
+
+        {feedbackOrder && (
+          <DeliveredFeedbackModal order={feedbackOrder} onClose={dismissFeedback} />
+        )}
       </div>
     </div>
   )

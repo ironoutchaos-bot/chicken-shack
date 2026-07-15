@@ -22,7 +22,7 @@ import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import { sessionOptions, type SessionData } from '@/lib/session'
 import { type Coupon } from '@/app/api/coupons/route'
-import { notifyDriverAssignment } from '@/lib/push-notify'
+import { notifyDriverAssignment, notifyAllDrivers } from '@/lib/push-notify'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -237,8 +237,12 @@ export async function POST(req: NextRequest) {
     const data = await res.json()
     const order = Array.isArray(data) ? data[0] : data
 
-    // If the DB trigger auto-assigned a driver (COD orders), notify them now
-    if (order?.driver_id && order?.id) {
+    // Alert all drivers the moment a live order is placed. COD orders are
+    // actionable immediately; online orders only become live once paid (handled
+    // in the PATCH / webhook below), so don't double-alert for them here.
+    if (order?.id && (order.payment_status === 'cod' || order.payment_status === 'paid')) {
+      notifyAllDrivers(order.id).catch(() => {})
+    } else if (order?.driver_id && order?.id) {
       notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
     }
 
@@ -314,8 +318,9 @@ export async function PATCH(req: NextRequest) {
       if (updated.ok) {
         const rows = await updated.json()
         const order = rows?.[0]
-        if (order?.driver_id && order?.id) {
-          notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
+        // Online payment just confirmed → the order is now live. Alert all drivers.
+        if (order?.id) {
+          notifyAllDrivers(order.id).catch(() => {})
         }
       }
     } catch { /* notification is best-effort */ }

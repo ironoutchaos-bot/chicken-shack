@@ -38,6 +38,13 @@ export async function notifyDriverAssignment(driverId: string, orderId: string) 
     icon:  '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     url:   '/driver',
+    // Aggressive alert for drivers: long vibration, stays on screen until
+    // tapped, and a distinct tag so the open app rings its loud alarm.
+    tag:                'driver-new-order',
+    renotify:           true,
+    requireInteraction: true,
+    vibrate:            [500, 200, 500, 200, 500, 200, 700],
+    kind:               'driver_new_order',
   })
 
   await Promise.allSettled(
@@ -55,6 +62,75 @@ export async function notifyDriverAssignment(driverId: string, orderId: string) 
       })
     )
   )
+}
+
+/**
+ * Notify EVERY driver that a new order has come in — regardless of whether it
+ * has been assigned yet. Drivers can see and pick up unassigned orders, so this
+ * guarantees a loud alert pops every time an order is placed. A unique per-order
+ * tag means each order shows as its own notification (they don't collapse).
+ */
+export type DriverNotifyResult = { total: number; sent: number; failed: number; removed: number }
+
+export async function notifyAllDrivers(orderId: string, test = false): Promise<DriverNotifyResult> {
+  const short = orderId.slice(0, 8).toUpperCase()
+  const result: DriverNotifyResult = { total: 0, sent: 0, failed: 0, removed: 0 }
+
+  const res = await fetch(
+    `${SUPA_URL()}/rest/v1/driver_push_subscriptions?select=endpoint,p256dh,auth`,
+    {
+      headers: {
+        'apikey':        SUPA_SRV(),
+        'Authorization': `Bearer ${SUPA_SRV()}`,
+      },
+    }
+  )
+  if (!res.ok) return result
+
+  const subs: { endpoint: string; p256dh: string; auth: string }[] = await res.json()
+  if (!Array.isArray(subs) || subs.length === 0) return result
+  result.total = subs.length
+
+  const payload = JSON.stringify({
+    title: test ? '🔔 Test Alarm' : '🛵 New Order Received!',
+    body:  test
+      ? 'This is a test — your new-order alarm is working! 🎉'
+      : `Order #${short} just came in. Tap to view & deliver.`,
+    icon:  '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    url:   '/driver',
+    tag:                test ? `driver-test-${Date.now()}` : `driver-new-order-${short}`,
+    renotify:           true,
+    requireInteraction: true,
+    vibrate:            [500, 200, 500, 200, 500, 200, 700],
+    kind:               'driver_new_order',
+  })
+
+  await Promise.allSettled(
+    subs.map(sub =>
+      webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        payload,
+        { urgency: 'high', TTL: 600 } // wake the device promptly; expire after 10 min
+      ).then(() => {
+        result.sent++
+      }).catch(async (err) => {
+        result.failed++
+        const code = err?.statusCode
+        console.error('[notifyAllDrivers] send failed', code, err?.body ?? err?.message ?? '')
+        // 404 Not Found / 410 Gone → the subscription is dead; remove it.
+        if (code === 404 || code === 410) {
+          result.removed++
+          await fetch(
+            `${SUPA_URL()}/rest/v1/driver_push_subscriptions?endpoint=eq.${encodeURIComponent(sub.endpoint)}`,
+            { method: 'DELETE', headers: { 'apikey': SUPA_SRV(), 'Authorization': `Bearer ${SUPA_SRV()}` } }
+          ).catch(() => {})
+        }
+      })
+    )
+  )
+
+  return result
 }
 
 export async function notifyUserFeedbackRequest(userId: string, orderId: string) {

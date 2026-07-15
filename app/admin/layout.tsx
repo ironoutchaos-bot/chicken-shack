@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import AdminInstallPrompt from './components/AdminInstallPrompt'
 
 const NAV = [
   { href: '/admin/inventory', label: '📦 Inventory'              },
@@ -11,6 +12,7 @@ const NAV = [
   { href: '/admin/users',     label: '👥 Users'                  },
   { href: '/admin/analytics', label: '📊 Analytics'              },
   { href: '/admin/coupons',   label: '🎟️ Coupons'                },
+  { href: '/admin/broadcast', label: '📣 Broadcast'              },
   { href: '/admin/feedback',  label: '⭐ Feedback'               },
   { href: '/admin/settings',  label: '⚙️ Settings'               },
 ]
@@ -95,6 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </nav>
       {children}
+      <AdminInstallPrompt />
     </div>
   )
 }

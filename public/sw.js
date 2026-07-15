@@ -1,6 +1,6 @@
-// B'LURU FRESH Service Worker — v10
+// B'LURU FRESH Service Worker — v11
 // Bump the version any time sw.js changes so the browser installs the update.
-const CACHE = 'blurufresh-v10'
+const CACHE = 'blurufresh-v11'
 
 // ── NO pre-caching on install ─────────────────────────────────────────────────
 // Previously we pre-cached HTML pages in the install event using cache.addAll().
@@ -94,19 +94,22 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     Promise.all([
-      // Show the notification
+      // Show the notification. Options like vibrate / requireInteraction can be
+      // overridden per-message by the sender (e.g. aggressive alerts for drivers).
       self.registration.showNotification(data.title, {
-        body:     data.body,
-        icon:     data.icon,
-        badge:    data.badge,
-        vibrate:  [100, 50, 100],
-        tag:      'order-update',
-        renotify: true,
-        data:     { url: data.url ?? '/order' },
+        body:               data.body,
+        icon:               data.icon,
+        badge:              data.badge,
+        vibrate:            data.vibrate ?? [100, 50, 100],
+        tag:                data.tag ?? 'order-update',
+        renotify:           data.renotify ?? true,
+        requireInteraction: data.requireInteraction ?? false,
+        silent:             false, // never suppress the device notification sound
+        data:               { url: data.url ?? '/order' },
       }),
-      // Tell any open pages to refresh their order list immediately
+      // Tell any open pages to refresh + (for drivers) sound the alarm.
       clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-        list.forEach(c => c.postMessage({ type: 'ORDER_UPDATE' }))
+        list.forEach(c => c.postMessage({ type: 'ORDER_UPDATE', kind: data.kind }))
       }),
     ])
   )

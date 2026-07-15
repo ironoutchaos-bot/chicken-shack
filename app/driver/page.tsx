@@ -68,6 +68,13 @@ export default function DriverPage() {
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // New-order alarm (loud looping ring while the app is open)
+  const [alarmOn,      setAlarmOn]      = useState(false)
+  const audioCtxRef      = useRef<AudioContext | null>(null)
+  const alarmTimerRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const alarmPlayingRef  = useRef(false)
+  const seenOrderIdsRef  = useRef<Set<string> | null>(null)
+
   // ── Auth check on mount ─────────────────────────────────────
   useEffect(() => {
     fetch('/api/driver/ping')
@@ -159,15 +166,91 @@ export default function DriverPage() {
     }
   }
 
+  // ── New-order alarm (loud looping ring) ─────────────────────
+  // Synthesised with the Web Audio API so it needs no audio asset and can be
+  // made loud + piercing. Only works while the app is OPEN — a fully closed
+  // PWA cannot play a custom looping sound (OS limitation; push handles that).
+  const ensureAudio = useCallback((): AudioContext | null => {
+    if (typeof window === 'undefined') return null
+    if (!audioCtxRef.current) {
+      const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      if (AC) audioCtxRef.current = new AC()
+    }
+    const ctx = audioCtxRef.current
+    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {})
+    return ctx
+  }, [])
+
+  const stopAlarm = useCallback(() => {
+    alarmPlayingRef.current = false
+    if (alarmTimerRef.current) { clearInterval(alarmTimerRef.current); alarmTimerRef.current = null }
+    try { navigator.vibrate?.(0) } catch {}
+    setAlarmOn(false)
+  }, [])
+
+  const startAlarm = useCallback(() => {
+    if (alarmPlayingRef.current) return
+    alarmPlayingRef.current = true
+    setAlarmOn(true)
+    const ctx = ensureAudio()
+    const ring = () => {
+      try { navigator.vibrate?.([300, 120, 300, 120, 450]) } catch {}
+      if (!ctx) return
+      const now = ctx.currentTime
+      const tone = (freq: number, start: number, dur: number) => {
+        const osc  = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc.type = 'square'                       // piercing, attention-grabbing
+        osc.frequency.value = freq
+        gain.gain.setValueAtTime(0.0001, start)
+        gain.gain.exponentialRampToValueAtTime(0.55, start + 0.02)
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + dur)
+        osc.connect(gain); gain.connect(ctx.destination)
+        osc.start(start); osc.stop(start + dur + 0.02)
+      }
+      // "ring-ring" — two quick double-tone bursts
+      tone(1000, now,        0.18); tone(1320, now + 0.20, 0.18)
+      tone(1000, now + 0.50, 0.18); tone(1320, now + 0.70, 0.18)
+    }
+    ring()
+    alarmTimerRef.current = setInterval(ring, 1500)
+  }, [ensureAudio])
+
+  // Unlock the AudioContext on the first user interaction on the dashboard,
+  // so the alarm can play later when an order arrives (autoplay policy).
+  useEffect(() => {
+    if (view !== 'dashboard') return
+    const unlock = () => ensureAudio()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    return () => window.removeEventListener('pointerdown', unlock)
+  }, [view, ensureAudio])
+
+  // Stop the alarm if the component unmounts
+  useEffect(() => stopAlarm, [stopAlarm])
+
   // ── Load orders ─────────────────────────────────────────────
   const loadOrders = useCallback(async () => {
     setOrdersLoad(true)
     try {
       const res = await fetch('/api/driver/orders')
-      if (res.ok) setOrders(await res.json())
+      if (res.ok) {
+        const data: OrderRow[] = await res.json()
+        setOrders(data)
+
+        // Detect newly-arrived orders that still need action → ring the alarm.
+        const actionable = data.filter(o => o.order_status === 'placed' || o.order_status === 'packed')
+        if (seenOrderIdsRef.current === null) {
+          // First load — establish the baseline without ringing.
+          seenOrderIdsRef.current = new Set(data.map(o => o.id))
+        } else {
+          const hasNew = actionable.some(o => !seenOrderIdsRef.current!.has(o.id))
+          data.forEach(o => seenOrderIdsRef.current!.add(o.id))
+          if (hasNew) startAlarm()
+        }
+      }
     } catch {}
     finally { setOrdersLoad(false) }
-  }, [])
+  }, [startAlarm])
 
   // Check push permission state when dashboard opens.
   // If permission is already granted, silently re-register so every phone
@@ -198,11 +281,14 @@ export default function DriverPage() {
     if (view !== 'dashboard') return
     if (!('serviceWorker' in navigator)) return
     const handler = (event: MessageEvent) => {
-      if (event.data?.type === 'ORDER_UPDATE') loadOrders()
+      if (event.data?.type === 'ORDER_UPDATE') {
+        if (event.data?.kind === 'driver_new_order') startAlarm()
+        loadOrders()
+      }
     }
     navigator.serviceWorker.addEventListener('message', handler)
     return () => navigator.serviceWorker.removeEventListener('message', handler)
-  }, [view, loadOrders])
+  }, [view, loadOrders, startAlarm])
 
   // ── Login ────────────────────────────────────────────────────
   async function handleLogin(e: React.FormEvent) {
@@ -312,6 +398,19 @@ export default function DriverPage() {
 
   return (
     <div style={S.shell}>
+      {/* ── New-order ringing overlay ───────────────────────── */}
+      {alarmOn && (
+        <div style={S.alarmOverlay} onClick={stopAlarm}>
+          <div style={S.alarmCard} onClick={e => e.stopPropagation()}>
+            <div style={S.alarmBell}>🔔</div>
+            <p style={S.alarmTitle}>New Order!</p>
+            <p style={S.alarmSub}>A new order just came in. Tap below to view it.</p>
+            <button onClick={stopAlarm} style={S.alarmStopBtn}>Stop &amp; View Orders</button>
+          </div>
+          <style>{`@keyframes bfPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}`}</style>
+        </div>
+      )}
+
       {/* Top bar */}
       <div style={S.topBar}>
         <div style={S.topBarLeft}>
@@ -797,6 +896,32 @@ function OrderCard({
 
 // ── Styles ────────────────────────────────────────────────────
 const S: Record<string, React.CSSProperties> = {
+  // New-order alarm overlay
+  alarmOverlay: {
+    position: 'fixed', inset: 0, zIndex: 10000,
+    background: 'rgba(255,107,0,0.18)',
+    backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: 24,
+  },
+  alarmCard: {
+    width: '100%', maxWidth: 340, textAlign: 'center',
+    background: '#1c1c1e', border: '1.5px solid rgba(255,159,10,0.5)',
+    borderRadius: 24, padding: '2rem 1.5rem',
+    boxShadow: '0 20px 70px rgba(255,107,0,0.35)',
+  },
+  alarmBell: { fontSize: '3.75rem', lineHeight: 1, animation: 'bfPulse 0.7s ease-in-out infinite' },
+  alarmTitle: { fontSize: '1.5rem', fontWeight: 900, color: '#fff', margin: '0.75rem 0 0', letterSpacing: '-0.02em' },
+  alarmSub: { fontSize: '0.875rem', color: '#9a9a9f', margin: '0.5rem 0 0', lineHeight: 1.5 },
+  alarmStopBtn: {
+    width: '100%', marginTop: '1.5rem',
+    background: 'linear-gradient(135deg,#ff9f0a,#ff6b00)',
+    border: 'none', borderRadius: 16, padding: '1rem',
+    fontSize: '1.0625rem', fontWeight: 800, color: '#fff', cursor: 'pointer',
+    letterSpacing: '-0.01em', boxShadow: '0 6px 20px rgba(255,107,0,0.4)',
+  },
+  alarmMuted: { fontSize: '0.75rem', color: '#ff9f0a', margin: '0.875rem 0 0' },
+
   // Shell
   shell: {
     minHeight: '100dvh',
