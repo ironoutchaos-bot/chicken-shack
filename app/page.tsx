@@ -47,7 +47,7 @@ nav{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%);width:calc(10
 #prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--g),var(--p));z-index:600;transition:width .05s linear;width:0%;}
 #hero{min-height:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6.5rem 2rem 1.25rem;background:radial-gradient(circle at 50% 42%,rgba(138,43,226,.48) 0%,rgba(123,31,208,.35) 32%,rgba(101,23,184,0) 68%),linear-gradient(180deg,#6500A3 0%,#7B1FD0 48%,#6517B8 100%);position:relative;overflow:hidden;text-align:center;}
 #hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,rgba(255,255,255,.08) 0%,rgba(255,255,255,.035) 28%,transparent 62%),linear-gradient(90deg,rgba(70,0,118,.28),transparent 28%,transparent 72%,rgba(70,0,118,.32));pointer-events:none;z-index:0;}
-.hero-wave{position:absolute;left:0;right:0;top:30%;bottom:-1px;z-index:0;pointer-events:none;overflow:hidden;}
+.hero-wave{position:absolute;left:0;right:0;top:20%;bottom:-1px;z-index:0;pointer-events:none;overflow:hidden;}
 .hero-wave svg{width:100%;height:100%;display:block;}
 .hero-wave path{fill:var(--cream);}
 .hero-content-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:1000px;margin:0 auto;}
@@ -61,8 +61,8 @@ nav{position:fixed;top:1.25rem;left:50%;transform:translateX(-50%);width:calc(10
 @keyframes floatBig{0%,100%{transform:translateY(0) scale(1) rotate(0.5deg);}50%{transform:translateY(-15px) scale(1.02) rotate(-0.5deg);}}
 
 /* Side floating raw chicken plates */
-.float-side-left{position:absolute;left:clamp(-95px,1vw,42px);top:51%;transform:translateY(-50%) rotate(15deg);width:clamp(320px,23vw,450px);height:clamp(320px,23vw,450px);overflow:hidden;z-index:2;animation:floatSideL 7s ease-in-out infinite;pointer-events:none;}
-.float-side-right{position:absolute;right:clamp(-95px,1vw,42px);top:50%;transform:translateY(-50%) rotate(-12deg);width:clamp(320px,23vw,450px);height:clamp(320px,23vw,450px);overflow:hidden;z-index:2;animation:floatSideR 7s ease-in-out infinite;pointer-events:none;}
+.float-side-left{position:absolute;left:clamp(-95px,1vw,42px);top:35%;left:-10%;transform:translateY(-50%) rotate(15deg);width:clamp(320px,23vw,450px);height:clamp(320px,23vw,450px);overflow:hidden;z-index:2;animation:floatSideL 7s ease-in-out infinite;pointer-events:none;}
+.float-side-right{position:absolute;right:clamp(-95px,1vw,42px);top:35%;right:-10%;transform:translateY(-50%) rotate(-12deg);width:clamp(320px,23vw,450px);height:clamp(320px,23vw,450px);overflow:hidden;z-index:2;animation:floatSideR 7s ease-in-out infinite;pointer-events:none;}
 .float-side-left img, .float-side-right img{width:100%;height:100%;object-fit:cover;mix-blend-mode:multiply;}
 @keyframes floatSideL{0%,100%{transform:translateY(-50%) rotate(15deg) translateY(0);}50%{transform:translateY(-50%) rotate(13deg) translateY(-12px);}}
 @keyframes floatSideR{0%,100%{transform:translateY(-50%) rotate(-12deg) translateY(0);}50%{transform:translateY(-50%) rotate(-14deg) translateY(-12px);}}
@@ -1206,6 +1206,10 @@ export default function Home() {
           <div className="hs-pill">
             🐔 Bengaluru&apos;s first ultra-fresh system
           </div>
+
+          <p className="hero-statement-text rv d1">
+            Ever felt a foul smell or sliminess while unpacking the chicken?
+          </p>
 
           <div className="hero-h1 rv d2">
             B&apos;LURU
