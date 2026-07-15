@@ -24,6 +24,36 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 type ViewState = 'checking' | 'login' | 'dashboard'
 
+function toCoordinate(value: unknown) {
+  const n = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : NaN
+  return Number.isFinite(n) ? n : null
+}
+
+function getExactPin(address: DeliveryAddress | null | undefined) {
+  const lat = toCoordinate(address?.lat)
+  const lng = toCoordinate(address?.lng)
+  if (lat === null || lng === null) return null
+  return { lat, lng }
+}
+
+function getDriverNavigationUrl(address: DeliveryAddress | null | undefined) {
+  const pin = getExactPin(address)
+  if (pin) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${pin.lat},${pin.lng}&travelmode=driving`
+  }
+
+  if (address?.mapsUrl) return address.mapsUrl
+
+  const typedAddress = [
+    address?.houseNumber,
+    address?.streetAddress,
+    address?.landmark,
+    address?.pincode,
+  ].filter(Boolean).join(', ')
+  if (!typedAddress) return null
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(typedAddress)}`
+}
+
 const STATUS_LABEL: Record<string, string> = {
   placed:     'New Order',
   packed:     'Ready to Pick',
@@ -686,6 +716,8 @@ function OrderCard({
   const [pendingStatus, setPendingStatus] = useState<'on_the_way' | 'delivered' | null>(null)
 
   const addr    = order.delivery_address as DeliveryAddress | null
+  const exactPin = getExactPin(addr)
+  const navUrl  = getDriverNavigationUrl(addr)
   const isOTW   = order.order_status === 'on_the_way'
   const isDone  = order.order_status === 'delivered'
   const isCOD   = order.payment_status === 'cod'
@@ -796,7 +828,7 @@ function OrderCard({
       </div>
 
       {/* Call + Navigate buttons — hidden once delivered */}
-      {!isDone && (order.customer_phone || (order.delivery_address as DeliveryAddress | null)?.lat) && (
+      {!isDone && (order.customer_phone || navUrl) && (
         <div style={S.actionRow}>
           {order.customer_phone && (
             <a href={`tel:${order.customer_phone}`} style={{ ...S.callBtn, flex: 1 }}>
@@ -804,11 +836,10 @@ function OrderCard({
             </a>
           )}
           {(() => {
-            const a = order.delivery_address as DeliveryAddress | null
-            if (!a?.lat || !a?.lng) return null
+            if (!navUrl) return null
             return (
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${a.lat},${a.lng}`}
+                href={navUrl}
                 target="_blank" rel="noopener noreferrer"
                 style={{ ...S.navBtnInline, flex: 1 }}
               >
@@ -827,9 +858,9 @@ function OrderCard({
             <div style={S.addrBlock}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <p style={S.detailLabel}>📍 Delivery Address</p>
-                {!isDone && addr.lat && addr.lng && (
+                {!isDone && navUrl && (
                   <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${addr.lat},${addr.lng}`}
+                    href={navUrl}
                     target="_blank" rel="noopener noreferrer"
                     style={S.navBtn}
                   >
@@ -841,6 +872,11 @@ function OrderCard({
               {addr.streetAddress && <p style={S.addrDetail}>{addr.streetAddress}</p>}
               {addr.landmark      && <p style={S.addrDetail}>Near: {addr.landmark}</p>}
               {addr.pincode       && <p style={S.addrDetail}>Pin: {addr.pincode}</p>}
+              {exactPin ? (
+                <p style={S.pinDetail}>Exact map pin: {exactPin.lat.toFixed(6)}, {exactPin.lng.toFixed(6)}</p>
+              ) : (
+                <p style={S.pinWarning}>No exact map pin saved for this order. Navigation uses the typed address.</p>
+              )}
             </div>
           )}
 
@@ -1257,6 +1293,18 @@ const S: Record<string, React.CSSProperties> = {
   },
   addrMain:   { fontSize: '0.9375rem', fontWeight: 700, color: '#e8e8ed', margin: '4px 0 0' },
   addrDetail: { fontSize: '0.8125rem', color: '#9a9a9f', margin: '2px 0 0' },
+  pinDetail:  {
+    fontSize: '0.75rem',
+    color: '#30d158',
+    margin: '8px 0 0',
+    fontWeight: 700,
+  },
+  pinWarning: {
+    fontSize: '0.75rem',
+    color: '#ff9f0a',
+    margin: '8px 0 0',
+    fontWeight: 700,
+  },
   mapsLink: {
     display: 'inline-flex',
     alignItems: 'center',
