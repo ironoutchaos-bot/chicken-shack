@@ -161,7 +161,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   const hasLocation = lat !== null && lng !== null
   const phoneValid  = customerPhone.replace(/\D/g, '').length >= 10
   const nameValid   = customerName.trim().length >= 2
-  const canProceed  = nameValid && houseNumber.trim().length > 0 && hasLocation && phoneValid
+  const pinValid    = pincode.trim().length === 6
+  const canProceed  = nameValid && houseNumber.trim().length > 0 && hasLocation && phoneValid && pinValid
 
   function scrollIntoView(e: React.FocusEvent<HTMLInputElement>) {
     setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350)
@@ -172,24 +173,31 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     setPincodeError('')
     const cleanPin = pincode.trim()
 
-    if (cleanPin.length === 6) {
-      setValidating(true)
-      try {
-        let list = validPincodesRef.current
-        if (!list) {
-          const res = await fetch('/api/pincodes')
-          list = await res.json()
-          validPincodesRef.current = Array.isArray(list) ? list : []
-        }
-        const match = (list ?? []).find(p => p.pincode === cleanPin)
-        if (!match) {
-          setPincodeError(`Sorry, we don't deliver to ${cleanPin} yet.`)
-          setValidating(false)
-          return
-        }
-      } catch {}
-      setValidating(false)
+    if (cleanPin.length !== 6) {
+      setPincodeError('Enter a valid 6-digit pincode.')
+      return
     }
+
+    setValidating(true)
+    try {
+      let list = validPincodesRef.current
+      if (!list) {
+        const res = await fetch('/api/pincodes')
+        list = await res.json()
+        validPincodesRef.current = Array.isArray(list) ? list : []
+      }
+      const match = (list ?? []).find(p => p.pincode === cleanPin)
+      if (!match) {
+        setPincodeError(`Sorry, we don't deliver to ${cleanPin} yet.`)
+        setValidating(false)
+        return
+      }
+    } catch {
+      setPincodeError('Could not check this pincode. Please try again.')
+      setValidating(false)
+      return
+    }
+    setValidating(false)
 
     const addr: DeliveryAddress = {
       customerName:  customerName.trim(),
@@ -406,7 +414,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           </Field>
 
           {/* ── Pincode ── */}
-          <Field label="Pincode" error={pincodeError || undefined}>
+          <Field label="Pincode" required error={pincodeError || undefined}>
             <div className="relative">
               <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none z-10" />
               <Input
@@ -438,6 +446,12 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           )}
           {hasLocation && !houseNumber.trim() && (
             <p className="text-xs text-center text-stone-400">Enter your house / flat number to continue</p>
+          )}
+          {hasLocation && pincode.trim().length > 0 && !pinValid && (
+            <p className="text-xs text-center text-stone-400">Enter a 6-digit pincode to check delivery</p>
+          )}
+          {hasLocation && !pincode.trim() && (
+            <p className="text-xs text-center text-stone-400">Enter your pincode to check delivery availability</p>
           )}
           {pincodeError && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3.5 py-3">

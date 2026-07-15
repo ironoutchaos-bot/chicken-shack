@@ -19,6 +19,7 @@ interface Props {
   onLoginRequired: () => void
   onOrderPlaced: () => void
   savedPincode?: string
+  onDeliveryAddressSaved?: (address: DeliveryAddress) => void
   minOrderAmount?: number
   deliveryFee?: number
 }
@@ -44,6 +45,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, msg: string): Promise<T
 export default function CartSheet({
   open, onClose, cart, onUpdateQty, onClear,
   user, authLoading = false, onLoginRequired, onOrderPlaced, savedPincode,
+  onDeliveryAddressSaved,
   minOrderAmount = 0, deliveryFee = 0,
 }: Props) {
   const [loading,        setLoading]        = useState(false)
@@ -344,6 +346,7 @@ export default function CartSheet({
   }
 
   function onAddressConfirmed(addr: DeliveryAddress) {
+    onDeliveryAddressSaved?.(addr)
     if (checkoutMode === 'cod') proceedCOD(addr)
     else proceedCashfree(addr)
   }

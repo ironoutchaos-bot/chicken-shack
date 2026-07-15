@@ -10,7 +10,6 @@ import ActiveOrdersTab from './components/ActiveOrdersTab'
 import HistoryTab from './components/HistoryTab'
 import LoginDrawer from './components/LoginDrawer'
 import CartSheet from './components/CartSheet'
-import PincodeGate from './components/PincodeGate'
 import EntryPage from './components/EntryPage'
 import PwaPrompts from './components/PwaPrompts'
 import VisitTracker from './components/VisitTracker'
@@ -31,7 +30,7 @@ export default function OrderApp() {
   const [activeCount,          setActiveCount]          = useState(0)
   const [activeOrdersRefresh,  setActiveOrdersRefresh]  = useState(0)
 
-  // Entry / pincode gate — skip if returning from Cashfree payment
+  // Entry screen — skip if returning from Cashfree payment
   const [entryDone, setEntryDone] = useState(() => {
     if (typeof window === 'undefined') return false
     const p = new URLSearchParams(window.location.search)
@@ -43,7 +42,17 @@ export default function OrderApp() {
     if (typeof window === 'undefined') return null
     return new URLSearchParams(window.location.search).get('feedback')
   })
-  const [pincode,  setPincode]  = useState<string | null>(null)
+  const [pincode,  setPincode]  = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const saved = localStorage.getItem('bf-delivery-address-v2')
+      if (!saved) return null
+      const addr = JSON.parse(saved) as { pincode?: string }
+      return addr.pincode ?? null
+    } catch {
+      return null
+    }
+  })
   const [areaName, setAreaName] = useState('')
 
   // Live settings
@@ -267,18 +276,8 @@ export default function OrderApp() {
     setActiveTab(tab)
   }, [user, authLoading])
 
-  const handlePincodeVerified = useCallback((pc: string, area: string) => {
-    setPincode(pc)
-    setAreaName(area)
-  }, [])
-
   const handleAreaChange = useCallback(() => {
-    try {
-      localStorage.removeItem('bf-pincode')
-      localStorage.removeItem('bf-area-name')
-    } catch {}
-    setPincode(null)
-    setAreaName('')
+    setCartOpen(true)
   }, [])
 
   const DESKTOP_TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
@@ -293,8 +292,6 @@ export default function OrderApp() {
 
         {!entryDone ? (
           <EntryPage onContinue={() => setEntryDone(true)} />
-        ) : !pincode ? (
-          <PincodeGate onVerified={handlePincodeVerified} />
         ) : (
           <>
             {/* ── Main content column ─────────────────────────── */}
@@ -576,6 +573,10 @@ export default function OrderApp() {
           savedPincode={pincode ?? undefined}
           minOrderAmount={minOrder}
           deliveryFee={deliveryFee}
+          onDeliveryAddressSaved={(addr) => {
+            setPincode(addr.pincode)
+            setAreaName(addr.streetAddress || 'Saved address')
+          }}
           onOrderPlaced={() => {
             clearCart()
             setCartOpen(false)

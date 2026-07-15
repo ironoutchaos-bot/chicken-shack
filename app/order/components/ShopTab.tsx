@@ -147,9 +147,10 @@ export default function ShopTab({
   const heroProduct  = orderedProducts[0] ?? null
   const gridProducts = orderedProducts.slice(1)
 
+  const hasDeliveryAddress = Boolean(areaName || pincode)
   const locationText = areaName
     ? `${areaName}${pincode ? ` · ${pincode}` : ''}`
-    : pincode ?? 'Select area'
+    : pincode ?? 'Add pincode with address'
 
   return (
     <div style={{ minHeight: '100%', background: '#faf7f0', fontFamily: "'DM Mono', monospace" }}>
@@ -262,15 +263,15 @@ export default function ShopTab({
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: G, flexShrink: 0, animation: 'locpulse 2s ease-in-out infinite' }} />
             <div>
               <div style={{ fontSize: 8, letterSpacing: '0.12em', color: 'rgba(22,20,15,.4)', textTransform: 'uppercase' }}>
-                Delivering to
+                {hasDeliveryAddress ? 'Delivering to' : 'Delivery check'}
               </div>
               <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginTop: 1 }}>
                 {locationText}
               </div>
             </div>
           </div>
-          <button onClick={onChangeArea} style={{ fontSize: 8.5, fontWeight: 700, color: P, padding: '5px 10px', borderRadius: 20, letterSpacing: '0.08em', background: 'rgba(147,24,204,.07)', border: '1px solid rgba(147,24,204,.18)', cursor: 'pointer' }}>
-            CHANGE ›
+          <button onClick={onChangeArea ?? onOpenCart} style={{ fontSize: 8.5, fontWeight: 700, color: P, padding: '5px 10px', borderRadius: 20, letterSpacing: '0.08em', background: 'rgba(147,24,204,.07)', border: '1px solid rgba(147,24,204,.18)', cursor: 'pointer' }}>
+            {hasDeliveryAddress ? 'CHANGE ›' : 'AT CHECKOUT ›'}
           </button>
         </div>
       </div>
