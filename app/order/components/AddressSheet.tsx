@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { X, MapPin, Loader2, Navigation, Home, Building2, CheckCircle2, AlertTriangle, XCircle, Phone, User } from 'lucide-react'
+import { X, MapPin, Loader2, Home, Building2, CheckCircle2, AlertTriangle, XCircle, Phone, User, Search, Crosshair } from 'lucide-react'
 import { Input } from '@heroui/react'
+import AddressMapPicker from './AddressMapPicker'
 
 export interface DeliveryAddress {
   customerName:  string
@@ -62,12 +63,10 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   const [locDenied,     setLocDenied]     = useState(false)
   const [pincodeError,  setPincodeError]  = useState('')
   const [validating,    setValidating]    = useState(false)
+  const [resolvingMap,  setResolvingMap]  = useState(false)
+  const [mapOpen,       setMapOpen]       = useState(false)
 
   const validPincodesRef = useRef<{ pincode: string; area_name: string }[] | null>(null)
-  const cachedLatRef     = useRef<number | null>(null)
-  const cachedLngRef     = useRef<number | null>(null)
-  const cachedStreetRef  = useRef<string>('')
-  const cachedPincodeRef = useRef<string>('')
 
   useEffect(() => {
     if (!open) return
@@ -77,25 +76,27 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         const addr: Partial<DeliveryAddress> = JSON.parse(saved)
         setCustomerName(addr.customerName  ?? '')
         setHouseNumber(addr.houseNumber    ?? '')
+        setStreetAddress(addr.streetAddress ?? '')
         setLandmark(addr.landmark          ?? '')
         setPincode(addr.pincode            ?? savedPincode ?? '')
         setCustomerPhone(addr.customerPhone ?? '')
+        setLat(typeof addr.lat === 'number' ? addr.lat : null)
+        setLng(typeof addr.lng === 'number' ? addr.lng : null)
+        setMapOpen(typeof addr.lat === 'number' && typeof addr.lng === 'number')
       } else if (savedPincode) {
         setPincode(savedPincode)
+        setLat(null)
+        setLng(null)
+        setMapOpen(false)
+      } else {
+        setLat(null)
+        setLng(null)
+        setMapOpen(false)
       }
     } catch {}
     setPincodeError('')
     setLocError('')       // always clear previous error on open
     setLocDenied(false)   // always clear denied state on open
-
-    if (cachedLatRef.current !== null && cachedLngRef.current !== null) {
-      setLat(cachedLatRef.current)
-      setLng(cachedLngRef.current)
-      setStreetAddress(cachedStreetRef.current)
-      if (cachedPincodeRef.current) setPincode(cachedPincodeRef.current)
-    } else {
-      triggerLocation()
-    }
 
     if (!validPincodesRef.current) {
       fetch('/api/pincodes')
@@ -108,26 +109,64 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  async function triggerLocation() {
+  async function locateAddressOnMap() {
+    const cleanPin = pincode.trim()
+    const queryParts = [
+      houseNumber.trim(),
+      streetAddress.trim(),
+      landmark.trim(),
+      cleanPin,
+      'Bengaluru',
+      'Karnataka',
+      'India',
+    ].filter(Boolean)
+
+    if (!houseNumber.trim() || !streetAddress.trim() || cleanPin.length !== 6) {
+      setLocError('Enter house/flat, street/area, and pincode before finding the delivery pin.')
+      return
+    }
+
+    setResolvingMap(true)
+    setLocError('')
+    setLocDenied(false)
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&addressdetails=1&q=${encodeURIComponent(queryParts.join(', '))}`,
+        { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(10_000) }
+      )
+      const results: { lat: string; lon: string }[] = await r.json()
+      const best = Array.isArray(results) ? results[0] : null
+      if (!best) {
+        setLocError('Could not find this address on the map. Try adding a nearby landmark, then search again.')
+        return
+      }
+      setLat(Number(best.lat))
+      setLng(Number(best.lon))
+      setMapOpen(true)
+    } catch {
+      setLocError('Could not find the address right now. Please try again.')
+    } finally {
+      setResolvingMap(false)
+    }
+  }
+
+  async function useCurrentLocation() {
     if (!navigator.geolocation) {
-      setLocError('Geolocation not supported. Please enter your area manually.')
+      setLocError('Geolocation not supported on this device.')
       return
     }
     setLocating(true)
     setLocError('')
     setLocDenied(false)
     try {
-      // ── Step 1: Get GPS coordinates ───────────────────────────────────────
       const pos = await new Promise<GeolocationPosition>((res, rej) =>
         navigator.geolocation.getCurrentPosition(res, rej, { timeout: 12_000, enableHighAccuracy: true })
       )
       const { latitude, longitude } = pos.coords
-      setLat(latitude); setLng(longitude)
-      cachedLatRef.current = latitude; cachedLngRef.current = longitude
+      setLat(latitude)
+      setLng(longitude)
+      setMapOpen(true)
 
-      // ── Step 2: Reverse geocode for street name (optional — never blocks) ──
-      // If Nominatim fails for any reason, the location is still captured
-      // and the user can proceed. We silently ignore the error.
       try {
         const r = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
@@ -138,20 +177,18 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         const road   = addr.road ?? addr.pedestrian ?? addr.neighbourhood ?? addr.hamlet ?? ''
         const area   = addr.suburb ?? addr.quarter ?? addr.city_district ?? addr.village ?? ''
         const street = [road, area].filter(Boolean).join(', ')
-        setStreetAddress(street)
-        cachedStreetRef.current = street
-        if (addr.postcode) { setPincode(addr.postcode); cachedPincodeRef.current = addr.postcode }
+        if (!streetAddress.trim()) setStreetAddress(street)
+        if (!pincode.trim() && addr.postcode) setPincode(addr.postcode)
       } catch {
-        // Nominatim unavailable — GPS coords are still valid, user can proceed
+        // Reverse geocode is optional; the map pin is already set.
       }
     } catch (err: unknown) {
-      // GPS itself failed
       const geoErr = err as GeolocationPositionError
       if (geoErr?.code === 1) {
         setLocDenied(true)
-        setLocError('Location access was denied. Please enable it in your browser settings.')
+        setLocError('Location access was denied. You can still find the delivery address from the typed address.')
       } else {
-        setLocError('Could not detect location. Please try again or enter your area manually.')
+        setLocError('Could not detect current location. Please use the typed address search.')
       }
     } finally {
       setLocating(false)
@@ -214,8 +251,11 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         customerName:  addr.customerName,
         houseNumber:   addr.houseNumber,
+        streetAddress: addr.streetAddress,
         landmark:      addr.landmark,
         pincode:       addr.pincode,
+        lat:           addr.lat,
+        lng:           addr.lng,
         customerPhone: addr.customerPhone,
       }))
     } catch {}
@@ -262,7 +302,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 space-y-4 pb-2">
 
-          {/* GPS Status Card */}
+          {/* Delivery pin status */}
           <div className={`rounded-2xl p-3.5 transition-all ${
             hasLocation
               ? 'bg-emerald-50 border border-emerald-200'
@@ -276,16 +316,16 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                   <CheckCircle2 size={17} className="text-white" strokeWidth={2.5} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-emerald-800">Location captured ✓</p>
-                  {streetAddress && <p className="text-xs text-emerald-700 mt-0.5 truncate">{streetAddress}</p>}
+                  <p className="text-xs font-bold text-emerald-800">Delivery pin set</p>
+                  <p className="text-xs text-emerald-700 mt-0.5 truncate">Drag or tap the map to fine tune the exact drop point.</p>
                   <p className="text-[10px] text-emerald-600 font-mono mt-0.5">{lat?.toFixed(5)}, {lng?.toFixed(5)}</p>
                 </div>
                 <button
-                  onClick={triggerLocation}
-                  disabled={locating}
+                  onClick={locateAddressOnMap}
+                  disabled={resolvingMap}
                   className="shrink-0 text-[11px] font-bold text-emerald-700 bg-white border border-emerald-200 px-3 py-1.5 rounded-xl active:scale-95 transition-all shadow-sm"
                 >
-                  {locating ? <Loader2 size={12} className="animate-spin" /> : 'Refresh'}
+                  {resolvingMap ? <Loader2 size={12} className="animate-spin" /> : 'Update'}
                 </button>
               </div>
             ) : locDenied ? (
@@ -295,31 +335,31 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold text-red-700">Location access denied</p>
-                  <p className="text-[11px] text-red-600 mt-0.5 leading-relaxed">Enable location in browser settings for accurate delivery.</p>
-                  <button onClick={triggerLocation} className="mt-2 text-[11px] font-bold text-red-700 bg-red-100 px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-                    Try again
+                  <p className="text-[11px] text-red-600 mt-0.5 leading-relaxed">Use the typed delivery address search, or enable location only if delivery is to your current place.</p>
+                  <button onClick={locateAddressOnMap} className="mt-2 text-[11px] font-bold text-red-700 bg-red-100 px-3 py-1.5 rounded-xl active:scale-95 transition-all">
+                    Find address
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-                  {locating
+                  {resolvingMap
                     ? <Loader2 size={16} className="text-amber-600 animate-spin" />
-                    : <Navigation size={16} className="text-amber-600" />
+                    : <MapPin size={16} className="text-amber-600" />
                   }
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold text-amber-800">
-                    {locating ? 'Detecting your location…' : 'Location required'}
+                    {resolvingMap ? 'Finding delivery address...' : 'Set delivery pin'}
                   </p>
                   <p className="text-[11px] text-amber-700 mt-0.5">
-                    {locating ? 'Allow location access when prompted' : 'Needed for accurate delivery'}
+                    We will use the address you type below, not your phone's current place.
                   </p>
                 </div>
-                {!locating && (
-                  <button onClick={triggerLocation} className="shrink-0 text-[11px] font-bold text-amber-800 bg-amber-200 px-3 py-1.5 rounded-xl active:scale-95 transition-all">
-                    Allow
+                {!resolvingMap && (
+                  <button onClick={locateAddressOnMap} className="shrink-0 text-[11px] font-bold text-amber-800 bg-amber-200 px-3 py-1.5 rounded-xl active:scale-95 transition-all">
+                    Find
                   </button>
                 )}
               </div>
@@ -329,6 +369,15 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           {locError && !locDenied && (
             <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 leading-relaxed">{locError}</p>
           )}
+
+          <button
+            onClick={useCurrentLocation}
+            disabled={locating}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-white px-3 py-2.5 text-[11px] font-bold text-stone-600 active:scale-[0.98] transition-all disabled:opacity-50"
+          >
+            {locating ? <Loader2 size={14} className="animate-spin" /> : <Crosshair size={14} />}
+            {locating ? 'Checking current location...' : 'Use my current location instead'}
+          </button>
 
           {/* ── Name ── */}
           <Field label="Your Name" required hint="So we know who to deliver to">
@@ -384,12 +433,12 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           </Field>
 
           {/* ── Street / Area ── */}
-          <Field label="Street / Area" hint="Auto-filled from GPS — you can edit if needed">
+          <Field label="Street / Area" hint="Type the delivery area's road, apartment, or locality">
             <div className="relative">
               <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none z-10" />
               <Input
                 type="text"
-                placeholder="Detected automatically from GPS"
+                placeholder="Yelahanka New Town, 4th Phase"
                 value={streetAddress}
                 onChange={e => setStreetAddress(e.target.value)}
                 onFocus={scrollIntoView}
@@ -429,6 +478,35 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
             </div>
           </Field>
 
+          <button
+            onClick={locateAddressOnMap}
+            disabled={resolvingMap}
+            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-amber-500 px-4 py-3 text-sm font-black text-white shadow-sm active:scale-[0.98] transition-all disabled:opacity-60"
+          >
+            {resolvingMap ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} strokeWidth={2.4} />}
+            {hasLocation ? 'Update Map From Address' : 'Find Address On Map'}
+          </button>
+
+          {mapOpen && hasLocation && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] font-black text-stone-500 uppercase tracking-[0.1em]">Exact Delivery Pin</p>
+                <span className="text-[10px] font-mono text-stone-400">{lat?.toFixed(5)}, {lng?.toFixed(5)}</span>
+              </div>
+              <AddressMapPicker
+                lat={lat!}
+                lng={lng!}
+                onChange={(nextLat, nextLng) => {
+                  setLat(nextLat)
+                  setLng(nextLng)
+                }}
+              />
+              <p className="text-[10px] text-stone-400 leading-relaxed">
+                Tap the map or drag the pin to your gate, apartment entrance, or exact drop point.
+              </p>
+            </div>
+          )}
+
           <div className="h-1" />
         </div>
 
@@ -437,8 +515,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           {/* Inline hints */}
           {!hasLocation && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-              <Navigation size={13} className="text-amber-500 shrink-0" />
-              <p className="text-xs text-amber-700 font-medium">Allow location access above to proceed</p>
+              <MapPin size={13} className="text-amber-500 shrink-0" />
+              <p className="text-xs text-amber-700 font-medium">Find the delivery address on map before proceeding</p>
             </div>
           )}
           {hasLocation && !nameValid && customerName.length > 0 && (

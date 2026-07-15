@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Outfit, Fraunces, Montserrat } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
+import 'leaflet/dist/leaflet.css'
 import './globals.css'
 
 const outfit = Outfit({
