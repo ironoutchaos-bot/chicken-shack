@@ -55,6 +55,9 @@ export type DeliveryAddress = {
   lng?: number
   mapsUrl?: string
   customerPhone?: string
+  adminDeleted?: boolean
+  adminDeletedAt?: string
+  adminDeletedFromStatus?: string | null
 }
 
 export type OrderRow = {

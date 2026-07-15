@@ -105,16 +105,54 @@ export async function DELETE(
   const { id } = await params
 
   try {
+    const findRes = await fetch(
+      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}&select=order_status,delivery_address`,
+      { headers: { 'apikey': SUPA_SRV(), 'Authorization': `Bearer ${SUPA_SRV()}` } }
+    )
+    if (!findRes.ok) {
+      const err = await findRes.text()
+      return NextResponse.json({ error: err || 'Failed to find order' }, { status: 500 })
+    }
+
+    const rows: { order_status?: string; delivery_address?: unknown }[] = await findRes.json()
+    const order = rows[0]
+    if (!order) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    }
+
+    const previousAddress =
+      order.delivery_address &&
+      typeof order.delivery_address === 'object' &&
+      !Array.isArray(order.delivery_address)
+        ? order.delivery_address as Record<string, unknown>
+        : {}
+    const deletedAt = new Date().toISOString()
+    const deliveryAddress = {
+      ...previousAddress,
+      adminDeleted: true,
+      adminDeletedAt: deletedAt,
+      adminDeletedFromStatus: previousAddress.adminDeletedFromStatus ?? order.order_status ?? null,
+    }
+
     const res = await fetch(
       `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,
-      { method: 'DELETE', headers: srvHeaders() }
+      {
+        method: 'PATCH',
+        headers: { ...srvHeaders(), 'Prefer': 'return=representation' },
+        body: JSON.stringify({
+          order_status: 'cancelled',
+          updated_at: deletedAt,
+          delivery_address: deliveryAddress,
+        }),
+      }
     )
     if (!res.ok) {
       const err = await res.text()
       return NextResponse.json({ error: err || 'Failed to delete order' }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true })
+    const updated = await res.json().catch(() => [])
+    return NextResponse.json({ ok: true, deleted_at: deletedAt, order: updated?.[0] ?? null })
   } catch (err) {
     console.error('[orders DELETE]', err)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
