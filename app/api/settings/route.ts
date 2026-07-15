@@ -102,6 +102,8 @@ const DEFAULTS: Record<string, unknown> = {
   cod_enabled:                 true,
   cashfree_enabled:            true,
   store_open:                  true,
+  product_order:               [],    // custom display order on the order page (array of product ids)
+  product_units:               {},    // per-product display unit: { [id]: 'pc' | 'g' | 'kg' }
   auto_schedule:               false, // auto open 7:30 AM – close 6:30 PM IST
   min_order_amount:            0,
   delivery_fee:                0,

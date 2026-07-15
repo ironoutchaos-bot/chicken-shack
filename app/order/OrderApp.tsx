@@ -50,6 +50,8 @@ export default function OrderApp() {
   const [minOrder,     setMinOrder]     = useState(0)
   const [deliveryFee,  setDeliveryFee]  = useState(0)
   const [bannerImages, setBannerImages] = useState<string[]>([])
+  const [productOrder, setProductOrder] = useState<string[]>([])
+  const [productUnits, setProductUnits] = useState<Record<string, string>>({})
 
   const { status: pushStatus, subscribe: subscribePush } = usePushNotifications(user?.id ?? null)
   const [pushDismissed, setPushDismissed] = useState(false)
@@ -195,6 +197,8 @@ export default function OrderApp() {
         setMinOrder(typeof d.min_order_amount === 'number' ? d.min_order_amount : 0)
         setDeliveryFee(typeof d.delivery_fee === 'number' ? d.delivery_fee : 0)
         setBannerImages(Array.isArray(d.banner_images) ? d.banner_images : [])
+        setProductOrder(Array.isArray(d.product_order) ? d.product_order : [])
+        setProductUnits(d.product_units && typeof d.product_units === 'object' ? d.product_units : {})
       })
       .catch(() => {})
   }, [])
@@ -225,7 +229,7 @@ export default function OrderApp() {
       const idx = prev.findIndex(c => c.productId === item.productId)
       if (idx >= 0) {
         const next = [...prev]
-        next[idx] = { ...next[idx], quantity: +(next[idx].quantity + item.quantity).toFixed(1) }
+        next[idx] = { ...next[idx], ...item, quantity: +(next[idx].quantity + item.quantity).toFixed(1) }
         return next
       }
       return [...prev, item]
@@ -356,6 +360,8 @@ export default function OrderApp() {
                     storeOpen={storeOpen}
                     announcement={announcement}
                     bannerImages={bannerImages}
+                    productOrder={productOrder}
+                    productUnits={productUnits}
                   />
                 )}
                 {activeTab === 'active' && user && (

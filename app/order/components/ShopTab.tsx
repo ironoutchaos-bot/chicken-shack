@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { AlertCircle, LogOut, User } from 'lucide-react'
 import { type ProductRow, type CartItem } from '@/lib/supabase-browser'
 import type { AuthUser } from '@/lib/auth-types'
-import { UNIT_LABEL } from '@/lib/units'
 import Image from 'next/image'
 import BannerCarousel from './BannerCarousel'
 
@@ -24,9 +23,50 @@ const PRODUCT_IMAGES: Record<string, string> = {
   'liver':     '/assets/packaged_chicken.jpg',
 }
 
+// Display a product's pack size using the admin-chosen unit (pc / g / kg).
+// `amount` is the raw number the admin entered; `unit` decides how to label it.
+function formatUnit(amount: number | null | undefined, unit?: string | null): string {
+  if (!amount) return ''
+  const u = unit ?? 'g'
+  if (u === 'pc') return `${amount} pc${amount > 1 ? 's' : ''}`
+  if (u === 'kg') return `${amount % 1 === 0 ? amount : amount.toFixed(2)} kg`
+  return `${amount}g`
+}
+
 function productImage(p: ProductRow): string | null {
   return p.image_url ?? PRODUCT_IMAGES[p.id] ?? null
 }
+
+const REVIEWS: { name: string; initial: string; grad: string; text: string }[] = [
+  {
+    name: 'Roshan Chandy', initial: 'R', grad: 'linear-gradient(135deg,#3b82f6,#2563eb)',
+    text: 'Ordered from you for our Sunday family lunch. The pieces you sent were nicely cut and very fresh. Even my mother, who never trusts ordering meat online, was impressed 😄 well done team!',
+  },
+  {
+    name: 'Dhanya Ramakrishnan', initial: 'D', grad: 'linear-gradient(135deg,#ec4899,#db2777)',
+    text: 'Being a working mother I rarely get time to visit the market, so thank you for making this so easy. The chicken you delivered was so clean and fresh — no smell even while cooking. Such a relief 🙏',
+  },
+  {
+    name: 'Harsha', initial: 'H', grad: 'linear-gradient(135deg,#14b8a6,#0d9488)',
+    text: 'No more standing in line at the meat shop. Order in the morning, get it cut fresh and delivered. Quality is consistently great every time.',
+  },
+  {
+    name: 'Hemanth', initial: 'H', grad: 'linear-gradient(135deg,#9318cc,#c44ef5)',
+    text: 'Honestly fed up of frozen and old stuff. Ordered from you late evening and it reached chilled and fresh. Made chilli chicken the same night, turned out superb 😋 you guys have got a regular customer now!',
+  },
+  {
+    name: 'Prajwal Aiyappa Mallengada', initial: 'P', grad: 'linear-gradient(135deg,#9318cc,#6d28d9)',
+    text: 'The webApp is super-friendly and ordering is very easy within 4 clicks, that’s excellent. Also the product is toooo good 😍👍🏻',
+  },
+  {
+    name: 'Rakesh Sathish', initial: 'R', grad: 'linear-gradient(135deg,#91d852,#6ab82e)',
+    text: 'Really impressed with this order! The chicken arrived on time, was very well packed and had zero smell. Tasted fresh and delicious. Great job on packaging and delivery!👍🏻',
+  },
+  {
+    name: 'Sooraj Kumar', initial: 'S', grad: 'linear-gradient(135deg,#f59e0b,#d97706)',
+    text: 'My wife is very particular about meat and even she had no complaints with what you sent. Properly cleaned, hardly any extra fat and the weight was exactly as mentioned. At this age I value honesty in business, and you people deliver it. Keep it up 🙏',
+  },
+]
 
 interface Props {
   user: AuthUser | null
@@ -42,25 +82,29 @@ interface Props {
   areaName?: string
   pincode?: string
   storeOpen?: boolean
+  outOfStock?: boolean
   announcement?: string
   bannerImages?: string[]
+  productOrder?: string[]
+  productUnits?: Record<string, string>
 }
 
 export default function ShopTab({
   user, cart, onAddToCart, onUpdateQty, onOpenCart, onLoginRequired, onLogout, onChangeArea,
-  cartTotal, cartItemCount, areaName, pincode, storeOpen = true, announcement, bannerImages = [],
+  cartTotal, cartItemCount, areaName, pincode, storeOpen = true, outOfStock = false, announcement, bannerImages = [], productOrder = [], productUnits = {},
 }: Props) {
   const [products,     setProducts]     = useState<ProductRow[]>([])
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState('')
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [userMenuOpen,    setUserMenuOpen]    = useState(false)
+  const [expandedNameIdx, setExpandedNameIdx] = useState<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function load() {
       setLoading(true)
       try {
-        const res = await fetch('/api/products')
+        const res = await fetch('/api/products', { cache: 'no-store' })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         setProducts(await res.json())
       } catch (e) {
@@ -87,8 +131,21 @@ export default function ShopTab({
   }
 
   const hasCart = cartItemCount > 0
-  const heroProduct  = products[0] ?? null
-  const gridProducts = products.slice(1)
+
+  // Apply the admin's custom display order: products listed in `productOrder`
+  // come first (in that order); any not listed keep their original order at the end.
+  const orderedProducts = (() => {
+    if (!productOrder.length) return products
+    const rank = new Map(productOrder.map((id, i) => [id, i]))
+    return [...products].sort((a, b) => {
+      const ra = rank.has(a.id) ? rank.get(a.id)! : Number.MAX_SAFE_INTEGER
+      const rb = rank.has(b.id) ? rank.get(b.id)! : Number.MAX_SAFE_INTEGER
+      return ra - rb
+    })
+  })()
+
+  const heroProduct  = orderedProducts[0] ?? null
+  const gridProducts = orderedProducts.slice(1)
 
   const locationText = areaName
     ? `${areaName}${pincode ? ` · ${pincode}` : ''}`
@@ -238,6 +295,37 @@ export default function ShopTab({
         </div>
       )}
 
+      {/* ══ OUT OF STOCK BANNER ══ */}
+      {outOfStock && (
+        <div style={{ margin: '12px 12px 0', borderRadius: 18, overflow: 'hidden', boxShadow: '0 4px 20px rgba(217,119,6,.18)' }}>
+          <div style={{ height: 4, background: 'linear-gradient(90deg,#d97706,#f59e0b,#d97706)' }} />
+          <div style={{
+            padding: '14px 16px',
+            background: 'linear-gradient(135deg,#fff7ed 0%,#fffbf5 100%)',
+            border: '1.5px solid rgba(217,119,6,.15)', borderTop: 'none',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 20, background: 'linear-gradient(135deg,#d97706,#f59e0b)',
+                boxShadow: '0 2px 8px rgba(217,119,6,.4)',
+              }}>📦</div>
+              <div>
+                <p style={{ fontWeight: 900, fontSize: 14, lineHeight: 1.2, color: INK }}>Oops, you just missed it!</p>
+                <p style={{ fontSize: 11, fontWeight: 600, color: '#d97706' }}>Item sold out. But you can still pre-order! 🥰</p>
+              </div>
+            </div>
+            <div style={{ borderRadius: 12, padding: '10px 14px', background: 'rgba(217,119,6,.07)', border: '1px solid rgba(217,119,6,.12)', display: 'flex', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>🚚</span>
+              <p style={{ fontSize: 11, lineHeight: 1.6, color: INK }}>
+                Place your order now and it will be{' '}
+                <strong style={{ color: '#d97706' }}>freshly cut and delivered in the morning between 7 AM – 9 AM</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ══ STORE CLOSED BANNER ══ */}
       {!storeOpen && (
         <div style={{ margin: '12px 12px 0', borderRadius: 18, overflow: 'hidden', boxShadow: `0 4px 20px rgba(147,24,204,.2)` }}>
@@ -262,7 +350,7 @@ export default function ShopTab({
               <span style={{ fontSize: 16 }}>🚚</span>
               <p style={{ fontSize: 11, lineHeight: 1.6, color: INK }}>
                 Place your order now and it will be{' '}
-                <strong style={{ color: P }}>freshly cut and delivered tomorrow morning between 7 AM – 8 AM</strong>.
+                <strong style={{ color: P }}>freshly cut and delivered in the morning between 7 AM – 9 AM</strong>.
               </p>
             </div>
           </div>
@@ -271,9 +359,7 @@ export default function ShopTab({
 
       {/* ══ BANNER CAROUSEL ══ */}
       {bannerImages.length > 0 && (
-        <div style={{ padding: '10px 12px 0' }}>
-          <BannerCarousel images={bannerImages} />
-        </div>
+        <BannerCarousel images={bannerImages} />
       )}
 
       {/* ══ SCROLLABLE BODY ══ */}
@@ -307,8 +393,11 @@ export default function ShopTab({
           <>
             {/* ── EDITORIAL HERO (first product) ── */}
             {heroProduct && (() => {
-              const heroImg = productImage(heroProduct)
-              const heroOld = Math.round(heroProduct.price_per_kg / 0.75)
+              const heroImg      = productImage(heroProduct)
+              const heroDiscount = heroProduct.discount_percentage ?? 0
+              const heroSalePrice = heroDiscount > 0
+                ? Math.round(heroProduct.price_per_kg * (1 - heroDiscount / 100))
+                : heroProduct.price_per_kg
               const heroQty = getCartQty(heroProduct.id)
               const heroOOS = heroProduct.stock_quantity === 0
               return (
@@ -336,12 +425,21 @@ export default function ShopTab({
                         <span style={{ width: 5, height: 5, background: G, borderRadius: '50%', animation: 'heroBlink 1.2s ease infinite', display: 'inline-block' }} />
                         Most Popular
                       </div>
-                      <div style={{
-                        background: 'linear-gradient(135deg,#9318cc,#c44ef5)',
-                        color: '#fff', fontSize: 8, fontWeight: 700,
-                        padding: '4px 10px', borderRadius: 20, letterSpacing: '0.08em',
-                        boxShadow: '0 4px 16px rgba(147,24,204,.5)',
-                      }}>⭐ BEST SELLER</div>
+                      {heroDiscount > 0 ? (
+                        <div style={{
+                          background: 'linear-gradient(135deg,#16a34a,#22c55e)',
+                          color: '#fff', fontSize: 8, fontWeight: 700,
+                          padding: '4px 10px', borderRadius: 20, letterSpacing: '0.08em',
+                          boxShadow: '0 4px 16px rgba(22,163,74,.5)',
+                        }}>{heroDiscount}% OFF</div>
+                      ) : (
+                        <div style={{
+                          background: 'linear-gradient(135deg,#9318cc,#c44ef5)',
+                          color: '#fff', fontSize: 8, fontWeight: 700,
+                          padding: '4px 10px', borderRadius: 20, letterSpacing: '0.08em',
+                          boxShadow: '0 4px 16px rgba(147,24,204,.5)',
+                        }}>⭐ BEST SELLER</div>
+                      )}
                     </div>
 
                     {/* Bottom block */}
@@ -350,18 +448,19 @@ export default function ShopTab({
                         {heroProduct.name}
                       </h2>
                       <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)', marginBottom: 10, letterSpacing: '0.06em' }}>
-                        {UNIT_LABEL} · Cut fresh after order
+                        {formatUnit(heroProduct.weight_per_unit, productUnits[heroProduct.id])} · Cut fresh after order
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', textDecoration: 'line-through' }}>₹{heroOld}</span>
-                          <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 28, color: G, letterSpacing: '-0.02em' }}>₹{heroProduct.price_per_kg}</span>
-                          <span style={{ fontSize: 9, color: 'rgba(255,255,255,.4)' }}>/pc</span>
+                          {heroDiscount > 0 && (
+                            <span style={{ fontSize: 11, color: 'rgba(255,255,255,.3)', textDecoration: 'line-through' }}>₹{heroProduct.price_per_kg}</span>
+                          )}
+                          <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 28, color: G, letterSpacing: '-0.02em' }}>₹{heroSalePrice}</span>
                         </div>
                         {!heroOOS && (
                           heroQty === 0 ? (
                             <button
-                              onClick={() => onAddToCart({ productId: heroProduct.id, name: heroProduct.name, pricePerKg: heroProduct.price_per_kg, quantity: 1, imageUrl: heroProduct.image_url })}
+                              onClick={() => onAddToCart({ productId: heroProduct.id, name: heroProduct.name, pricePerKg: heroSalePrice, quantity: 1, imageUrl: heroProduct.image_url, weightPerUnit: heroProduct.weight_per_unit })}
                               style={{
                                 background: G, color: INK, border: 'none',
                                 borderRadius: 14, padding: '11px 20px',
@@ -411,7 +510,10 @@ export default function ShopTab({
                 const outOfStock = p.stock_quantity === 0
                 const imgSrc     = productImage(p)
                 const cardNum    = String(idx + 2).padStart(2, '0')
-                const oldPrice   = Math.round(p.price_per_kg / 0.75)
+                const discount   = p.discount_percentage ?? 0
+                const salePrice  = discount > 0
+                  ? Math.round(p.price_per_kg * (1 - discount / 100))
+                  : p.price_per_kg
 
                 return (
                   <div
@@ -420,6 +522,7 @@ export default function ShopTab({
                       background: '#fff', borderRadius: 18, overflow: 'hidden',
                       border: inCart ? `1.5px solid rgba(147,24,204,.3)` : '1.5px solid rgba(22,20,15,.06)',
                       boxShadow: '0 2px 16px rgba(22,20,15,.06)', position: 'relative',
+                      display: 'flex', flexDirection: 'column', height: '100%',
                     }}
                   >
                     {/* Image area */}
@@ -447,8 +550,16 @@ export default function ShopTab({
                         letterSpacing: '-0.02em',
                       }}>{cardNum}</div>
 
-                      {/* FRESH badge */}
-                      {!outOfStock && (
+                      {/* Discount badge (replaces FRESH when active) */}
+                      {!outOfStock && discount > 0 && (
+                        <div style={{
+                          position: 'absolute', bottom: 7, right: 7, zIndex: 2,
+                          background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff',
+                          fontSize: 7.5, fontWeight: 700, padding: '3px 7px',
+                          borderRadius: 20, letterSpacing: '0.1em',
+                        }}>{discount}% OFF</div>
+                      )}
+                      {!outOfStock && discount === 0 && (
                         <div style={{
                           position: 'absolute', bottom: 7, right: 7, zIndex: 2,
                           background: GD, color: '#fff',
@@ -478,21 +589,22 @@ export default function ShopTab({
                     </div>
 
                     {/* Card body */}
-                    <div style={{ padding: 12 }}>
+                    <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 14.5, color: INK, lineHeight: 1.25, marginBottom: 4 }}>
                         {p.name}
                       </div>
                       <div style={{ fontSize: 9.5, color: 'rgba(22,20,15,.38)', marginBottom: 9, letterSpacing: '0.04em' }}>
-                        {UNIT_LABEL}
+                        {formatUnit(p.weight_per_unit, productUnits[p.id])}
                       </div>
 
                       {/* Price row */}
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 10 }}>
-                        {!outOfStock && <span style={{ fontSize: 10, color: 'rgba(22,20,15,.28)', textDecoration: 'line-through' }}>₹{oldPrice}</span>}
-                        <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 17, color: outOfStock ? 'rgba(22,20,15,.25)' : P }}>
-                          ₹{p.price_per_kg}
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 10, marginTop: 'auto' }}>
+                        {!outOfStock && discount > 0 && (
+                          <span style={{ fontSize: 10, color: 'rgba(22,20,15,.28)', textDecoration: 'line-through' }}>₹{p.price_per_kg}</span>
+                        )}
+                        <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 17, color: outOfStock ? 'rgba(22,20,15,.25)' : discount > 0 ? '#16a34a' : P }}>
+                          ₹{outOfStock ? p.price_per_kg : salePrice}
                         </span>
-                        <span style={{ fontSize: 9, color: 'rgba(22,20,15,.3)' }}>/pc</span>
                       </div>
 
                       {/* Button */}
@@ -505,7 +617,7 @@ export default function ShopTab({
                         }}>Out of Stock</button>
                       ) : qty === 0 ? (
                         <button
-                          onClick={() => onAddToCart({ productId: p.id, name: p.name, pricePerKg: p.price_per_kg, quantity: 1, imageUrl: p.image_url })}
+                          onClick={() => onAddToCart({ productId: p.id, name: p.name, pricePerKg: salePrice, quantity: 1, imageUrl: p.image_url, weightPerUnit: p.weight_per_unit })}
                           style={{
                             width: '100%',
                             background: 'rgba(147,24,204,.08)', color: P,
@@ -533,6 +645,54 @@ export default function ShopTab({
           </>
         )}
 
+        {/* ══ CUSTOMER REVIEWS ══ */}
+        <div style={{ padding: '22px 0 10px' }}>
+          <div style={{ padding: '0 16px', marginBottom: 14, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ fontSize: 8, letterSpacing: '0.2em', color: GD, textTransform: 'uppercase', fontWeight: 700 }}>Loved by people</p>
+              <h3 style={{ fontFamily: "'Archivo Black', sans-serif", fontSize: 18, color: INK, marginTop: 4, letterSpacing: '-0.01em', lineHeight: 1.1 }}>What customers say</h3>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(145,216,82,.12)', border: '1px solid rgba(145,216,82,.3)', borderRadius: 20, padding: '5px 11px', flexShrink: 0 }}>
+              <span style={{ color: '#f5a623', fontSize: 13, lineHeight: 1 }}>★</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: INK }}>5.0</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(22,20,15,.45)' }}>· 1.1k</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '2px 16px 10px', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none' }}>
+            {REVIEWS.map((rv, i) => (
+              <div
+                key={i}
+                style={{
+                  flexShrink: 0, width: 256, scrollSnapAlign: 'start',
+                  background: '#fff', border: '1.5px solid rgba(22,20,15,.07)', borderRadius: 16,
+                  padding: 14, boxShadow: '0 2px 10px rgba(22,20,15,.04)',
+                  display: 'flex', flexDirection: 'column', gap: 10,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{
+                    width: 38, height: 38, borderRadius: '50%', background: rv.grad, flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff', fontWeight: 800, fontSize: 15, fontFamily: "'Unbounded', sans-serif",
+                  }}>{rv.initial}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p
+                      onClick={() => setExpandedNameIdx(expandedNameIdx === i ? null : i)}
+                      style={{ fontSize: 13, fontWeight: 700, color: INK, cursor: 'pointer', ...(expandedNameIdx === i ? {} : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }) }}
+                    >{rv.name}</p>
+                    <div style={{ display: 'flex', gap: 1, marginTop: 1 }}>
+                      {[0,1,2,3,4].map(s => <span key={s} style={{ color: '#f5a623', fontSize: 11, lineHeight: 1 }}>★</span>)}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: GD, background: 'rgba(106,184,46,.1)', border: '1px solid rgba(106,184,46,.25)', borderRadius: 20, padding: '3px 7px', flexShrink: 0, letterSpacing: '0.04em' }}>✓ Verified</span>
+                </div>
+                <p style={{ fontSize: 12, lineHeight: 1.5, color: 'rgba(22,20,15,.62)' }}>{rv.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Footer */}
         <div style={{ padding: '12px 16px 24px', textAlign: 'center', borderTop: '1px solid rgba(22,20,15,.06)', margin: '0 12px' }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginBottom: 6 }}>
@@ -541,7 +701,7 @@ export default function ShopTab({
             <a href="/legal/refund"  style={{ fontSize: 10, color: '#a8896a', textDecoration: 'none' }}>Refunds</a>
           </div>
           <p style={{ fontSize: 10, color: '#c4a882' }}>
-            © {new Date().getFullYear()} B&apos;LURU Fresh Chicken. All rights reserved.
+            © {new Date().getFullYear()} The Chicken Shack. All rights reserved.
           </p>
         </div>
 

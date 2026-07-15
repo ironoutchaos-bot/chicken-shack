@@ -6,7 +6,9 @@ import { useState, useEffect } from 'react'
 
 type Product = {
   id: string; name: string; price_per_kg: number
-  stock_quantity: number; category: string; image_url: string | null
+  stock_quantity: number; discount_percentage: number
+  weight_per_unit: number | null
+  category: string; image_url: string | null
 }
 
 const FALLBACK_IMAGES: Record<string, string> = {
@@ -32,12 +34,60 @@ export default function AdminInventoryPage() {
   const [deleteId,  setDeleteId]  = useState<string | null>(null)
   const [threshold, setThreshold] = useState(10)
 
+  // Display-order arrangement (stored in settings.product_order)
+  const [order,       setOrder]       = useState<string[]>([])
+  const [orderOpen,   setOrderOpen]   = useState(false)
+  const [savingOrder, setSavingOrder] = useState(false)
+  const [orderSaved,  setOrderSaved]  = useState(false)
+
+  // Per-product display unit (pc / g / kg), stored in settings.product_units
+  const [units, setUnits] = useState<Record<string, string>>({})
+
   async function load() {
     setLoading(true)
     try {
-      const data: Product[] = await fetch('/api/inventory').then(r => r.json())
-      setProducts(Array.isArray(data) ? data : [])
+      const [data, settings] = await Promise.all([
+        fetch('/api/inventory').then(r => r.json()),
+        fetch('/api/settings').then(r => r.json()).catch(() => ({})),
+      ])
+      const prods: Product[] = Array.isArray(data) ? data : []
+      setProducts(prods)
+      // Reconcile saved order with current products: saved ones first, new ones appended.
+      const saved: string[] = Array.isArray(settings.product_order) ? settings.product_order : []
+      const ids = prods.map(p => p.id)
+      setOrder([...saved.filter(id => ids.includes(id)), ...ids.filter(id => !saved.includes(id))])
+      setUnits(settings.product_units && typeof settings.product_units === 'object' ? settings.product_units : {})
     } catch {} finally { setLoading(false) }
+  }
+
+  async function saveUnit(id: string, unit: string) {
+    const next = { ...units, [id]: unit }
+    setUnits(next)
+    await fetch('/api/settings', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'product_units', value: next }),
+    }).catch(() => {})
+  }
+
+  function moveOrder(index: number, dir: -1 | 1) {
+    setOrder(prev => {
+      const next = [...prev]
+      const j = index + dir
+      if (j < 0 || j >= next.length) return prev
+      ;[next[index], next[j]] = [next[j], next[index]]
+      return next
+    })
+  }
+
+  async function saveOrder() {
+    setSavingOrder(true)
+    try {
+      await fetch('/api/settings', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'product_order', value: order }),
+      })
+      setOrderSaved(true); setTimeout(() => setOrderSaved(false), 2500)
+    } finally { setSavingOrder(false) }
   }
 
   useEffect(() => {
@@ -67,16 +117,21 @@ export default function AdminInventoryPage() {
   async function saveProduct(id: string, patch: Partial<Product>) {
     setSaving(id)
     try {
-      await fetch('/api/inventory', {
+      const res = await fetch('/api/inventory', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...patch }),
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Save failed' }))
+        alert('Save failed: ' + (err.error ?? 'Unknown error'))
+        return
+      }
       setProducts(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p))
       setSaved(id); setTimeout(() => setSaved(null), 2000)
     } finally { setSaving(null) }
   }
 
-  async function addProduct(p: Omit<Product, 'id' | 'category'> & { id: string }) {
+  async function addProduct(p: Omit<Product, 'category' | 'image_url'> & { image_url: string | null }) {
     setSaving('new')
     try {
       const res = await fetch('/api/inventory', {
@@ -161,6 +216,48 @@ export default function AdminInventoryPage() {
         </div>
       )}
 
+      {/* Display order arranger */}
+      {products.length > 1 && (
+        <div style={S.orderCard}>
+          <button onClick={() => setOrderOpen(o => !o)} style={S.orderToggle}>
+            <span>↕️ Arrange display order on order page</span>
+            <span style={{ color: '#9ca3af' }}>{orderOpen ? '▲' : '▼'}</span>
+          </button>
+          {orderOpen && (
+            <div style={{ padding: '0.25rem 1rem 1rem' }}>
+              <p style={{ fontSize: '0.75rem', color: '#6b5744', margin: '0 0 0.75rem' }}>
+                The top product is shown <strong>first (the big hero card)</strong>. Use ▲ ▼ to rearrange, then Save.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {order.map((id, i) => {
+                  const p = products.find(pr => pr.id === id)
+                  if (!p) return null
+                  const img = p.image_url || FALLBACK_IMAGES[p.id] || null
+                  return (
+                    <div key={id} style={S.orderRow}>
+                      <span style={S.orderNum}>{i === 0 ? '★' : i + 1}</span>
+                      {img
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={img} alt={p.name} style={S.orderThumb} />
+                        : <div style={{ ...S.orderThumb, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fef3c7' }}>🍗</div>}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: '0.875rem', fontWeight: 600, color: '#1a1109', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</p>
+                        {i === 0 && <p style={{ margin: 0, fontSize: '0.7rem', color: '#d97706', fontWeight: 700 }}>Shown first (hero)</p>}
+                      </div>
+                      <button onClick={() => moveOrder(i, -1)} disabled={i === 0} style={{ ...S.moveBtn, opacity: i === 0 ? 0.3 : 1 }}>▲</button>
+                      <button onClick={() => moveOrder(i, 1)} disabled={i === order.length - 1} style={{ ...S.moveBtn, opacity: i === order.length - 1 ? 0.3 : 1 }}>▼</button>
+                    </div>
+                  )
+                })}
+              </div>
+              <button onClick={saveOrder} disabled={savingOrder} style={{ ...S.saveBtn, marginTop: '0.875rem', ...(orderSaved ? S.saveBtnOk : {}) }}>
+                {savingOrder ? 'Saving…' : orderSaved ? '✓ Order saved' : 'Save display order'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Grid */}
       <div style={S.grid}>
         {products.map(p => (
@@ -173,6 +270,8 @@ export default function AdminInventoryPage() {
             onSave={patch => saveProduct(p.id, patch)}
             onDelete={() => setDeleteId(p.id)}
             threshold={threshold}
+            unit={units[p.id] ?? 'g'}
+            onUnitChange={u => saveUnit(p.id, u)}
           />
         ))}
       </div>
@@ -212,21 +311,27 @@ export default function AdminInventoryPage() {
 }
 
 /* ── Product Card ──────────────────────────────────────────── */
-function ProductCard({ product, saving, saved, deleting, onSave, onDelete, threshold }: {
+function ProductCard({ product, saving, saved, deleting, onSave, onDelete, threshold, unit, onUnitChange }: {
   product: Product; saving: boolean; saved: boolean; deleting: boolean
   onSave: (patch: Partial<Product>) => void
   onDelete: () => void
   threshold: number
+  unit: string
+  onUnitChange: (u: string) => void
 }) {
-  const [price,    setPrice]    = useState(product.price_per_kg)
-  const [stock,    setStock]    = useState(product.stock_quantity)
-  const [name,     setName]     = useState(product.name)
-  const [imageUrl, setImageUrl] = useState(product.image_url ?? '')
-  const [editOpen, setEditOpen] = useState(false)
+  const [price,      setPrice]      = useState(product.price_per_kg)
+  const [stock,      setStock]      = useState(product.stock_quantity)
+  const [discount,   setDiscount]   = useState(product.discount_percentage ?? 0)
+  const [weightGrams, setWeightGrams] = useState<number | ''>(product.weight_per_unit ?? '')
+  const [name,       setName]       = useState(product.name)
+  const [imageUrl,   setImageUrl]   = useState(product.image_url ?? '')
+  const [editOpen,   setEditOpen]   = useState(false)
 
   useEffect(() => {
     setPrice(product.price_per_kg)
     setStock(product.stock_quantity)
+    setDiscount(product.discount_percentage ?? 0)
+    setWeightGrams(product.weight_per_unit ?? '')
     setName(product.name); setImageUrl(product.image_url ?? '')
   }, [product])
 
@@ -235,7 +340,12 @@ function ProductCard({ product, saving, saved, deleting, onSave, onDelete, thres
   const borderLeft = stock === 0 ? '4px solid #dc2626' : (stock > 0 && stock < threshold) ? '4px solid #f59e0b' : undefined
 
   function handleSave() {
-    onSave({ price_per_kg: price, stock_quantity: stock })
+    onSave({
+      price_per_kg:        price,
+      stock_quantity:      stock,
+      discount_percentage: discount,
+      weight_per_unit:     weightGrams === '' ? null : weightGrams,
+    })
   }
 
   function handleSaveDetails() {
@@ -272,7 +382,7 @@ function ProductCard({ product, saving, saved, deleting, onSave, onDelete, thres
         </div>
       </div>
 
-      {/* Price + Stock */}
+      {/* Price + Discount */}
       <div style={S.row}>
         <div style={{ flex: 1 }}>
           <label style={S.label}>Price / pc</label>
@@ -283,7 +393,49 @@ function ProductCard({ product, saving, saved, deleting, onSave, onDelete, thres
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          <label style={S.label}>Stock (pcs)</label>
+          <label style={S.label}>Discount %</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <input type="number" min={0} max={100} step={1} value={discount}
+              onChange={e => setDiscount(Math.min(100, Math.max(0, Number(e.target.value))))}
+              style={{ ...S.numInput, borderColor: discount > 0 ? '#16a34a' : undefined }} />
+            <span style={{ color: '#6b5744', fontWeight: 600, flexShrink: 0 }}>%</span>
+          </div>
+          {discount > 0 && (
+            <p style={{ fontSize: '0.7rem', color: '#16a34a', margin: '3px 0 0', fontWeight: 600 }}>
+              Sale: ₹{Math.round(price * (1 - discount / 100))}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Weight per unit + Quantity */}
+      <div style={S.row}>
+        <div style={{ flex: 1 }}>
+          <label style={S.label}>Pack size · unit</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <input
+              type="number" min={0} step={unit === 'kg' ? 0.1 : 1}
+              value={weightGrams}
+              placeholder={unit === 'pc' ? 'e.g. 6' : unit === 'kg' ? 'e.g. 1' : 'e.g. 500'}
+              onChange={e => setWeightGrams(e.target.value === '' ? '' : Number(e.target.value))}
+              style={{ ...S.numInput, borderColor: '#9318cc' }}
+            />
+            <select
+              value={unit}
+              onChange={e => onUnitChange(e.target.value)}
+              style={{ ...S.numInput, width: 'auto', borderColor: '#9318cc', cursor: 'pointer', padding: '0.5rem 0.4rem' }}
+            >
+              <option value="pc">pc</option>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+            </select>
+          </div>
+          <p style={{ fontSize: '0.7rem', color: '#9318cc', margin: '3px 0 0', fontWeight: 600 }}>
+            Shows as: {weightGrams === '' ? '—' : unit === 'pc' ? `${weightGrams} pc${Number(weightGrams) > 1 ? 's' : ''}` : unit === 'kg' ? `${weightGrams} kg` : `${weightGrams}g`}
+          </p>
+        </div>
+        <div style={{ flex: 1 }}>
+          <label style={S.label}>Qty in Stock (pcs)</label>
           <input type="number" min={0} step={1} value={stock}
             onChange={e => setStock(Number(e.target.value))}
             style={{ ...S.numInput, borderColor: stockColor }} />
@@ -292,7 +444,7 @@ function ProductCard({ product, saving, saved, deleting, onSave, onDelete, thres
 
       <button onClick={handleSave} disabled={saving}
         style={{ ...S.saveBtn, ...(saved ? S.saveBtnOk : {}) }}>
-        {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save price & stock'}
+        {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
       </button>
 
       {/* Edit Details toggle */}
@@ -340,24 +492,28 @@ function ProductCard({ product, saving, saved, deleting, onSave, onDelete, thres
 /* ── Add Product Modal ─────────────────────────────────────── */
 function AddProductModal({ onClose, onAdd, saving }: {
   onClose: () => void
-  onAdd: (p: { id: string; name: string; price_per_kg: number; stock_quantity: number; image_url: string | null }) => void
+  onAdd: (p: { id: string; name: string; price_per_kg: number; stock_quantity: number; discount_percentage: number; weight_per_unit: number | null; image_url: string | null }) => void
   saving: boolean
 }) {
-  const [id,       setId]       = useState('')
-  const [name,     setName]     = useState('')
-  const [price,    setPrice]    = useState(0)
-  const [stock,    setStock]    = useState(50)
-  const [imageUrl, setImageUrl] = useState('')
+  const [id,          setId]          = useState('')
+  const [name,        setName]        = useState('')
+  const [price,       setPrice]       = useState(0)
+  const [stock,       setStock]       = useState(50)
+  const [discount,    setDiscount]    = useState(0)
+  const [weightGrams, setWeightGrams] = useState<number | ''>('')
+  const [imageUrl,    setImageUrl]    = useState('')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!id.trim() || !name.trim()) return
     onAdd({
-      id:             id.trim().toLowerCase().replace(/\s+/g, '-'),
-      name:           name.trim(),
-      price_per_kg:   price,
-      stock_quantity: stock,
-      image_url:      imageUrl.trim() || null,
+      id:                  id.trim().toLowerCase().replace(/\s+/g, '-'),
+      name:                name.trim(),
+      price_per_kg:        price,
+      stock_quantity:      stock,
+      discount_percentage: discount,
+      weight_per_unit:     weightGrams === '' ? null : weightGrams,
+      image_url:           imageUrl.trim() || null,
     })
   }
 
@@ -388,7 +544,20 @@ function AddProductModal({ onClose, onAdd, saving }: {
                 onChange={e => setPrice(Number(e.target.value))} style={S.numInput} />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={S.label}>Stock (pcs)</label>
+              <label style={S.label}>Discount %</label>
+              <input type="number" min={0} max={100} value={discount}
+                onChange={e => setDiscount(Math.min(100, Math.max(0, Number(e.target.value))))} style={S.numInput} />
+            </div>
+          </div>
+          <div style={S.formRow}>
+            <div style={{ flex: 1 }}>
+              <label style={S.label}>Weight / unit (g)</label>
+              <input type="number" min={1} value={weightGrams}
+                placeholder="e.g. 500"
+                onChange={e => setWeightGrams(e.target.value === '' ? '' : Number(e.target.value))} style={S.numInput} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={S.label}>Qty in Stock (pcs)</label>
               <input type="number" min={0} value={stock}
                 onChange={e => setStock(Number(e.target.value))} style={S.numInput} />
             </div>
@@ -428,6 +597,13 @@ const S: Record<string, React.CSSProperties> = {
   addBtn:       { background: '#1a1109', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 0.875rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem' },
   hint:         { background: '#fff8ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '1.25rem', color: '#92400e', fontWeight: 500 },
   grid:         { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' },
+
+  orderCard:    { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: '1rem', overflow: 'hidden' },
+  orderToggle:  { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'transparent', border: 'none', padding: '0.875rem 1rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700, color: '#1a1109' },
+  orderRow:     { display: 'flex', alignItems: 'center', gap: 10, padding: '0.5rem 0.625rem', border: '1px solid #f3f4f6', borderRadius: 10, background: '#fafafa' },
+  orderNum:     { width: 22, textAlign: 'center', fontSize: '0.8125rem', fontWeight: 800, color: '#d97706', flexShrink: 0 },
+  orderThumb:   { width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: '1px solid #e5e7eb' },
+  moveBtn:      { width: 30, height: 30, borderRadius: 8, border: '1.5px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontSize: '0.75rem', color: '#374151', flexShrink: 0 },
 
   card:         { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem', overflow: 'hidden' },
   imgWrap:      { position: 'relative', width: '100%', height: 120, borderRadius: 8, overflow: 'hidden', background: '#f3f4f6' },

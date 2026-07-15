@@ -28,6 +28,8 @@ export type ProductRow = {
   id: string
   name: string
   price_per_kg: number
+  discount_percentage: number
+  weight_per_unit: number | null
   image_url: string | null
   stock_quantity: number
   category: string
@@ -85,6 +87,7 @@ export type CartItem = {
   pricePerKg: number
   quantity: number
   imageUrl: string | null
+  weightPerUnit?: number | null
 }
 
 export type DriverRow = {
