@@ -145,16 +145,6 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
 
   async function openExactPinMap() {
     const cleanPin = pincode.trim()
-    const queryParts = [
-      houseNumber.trim(),
-      streetAddress.trim(),
-      landmark.trim(),
-      cleanPin,
-      'Bengaluru',
-      'Karnataka',
-      'India',
-    ].filter(Boolean)
-
     setPincodeError('')
     setLocError('')
     setMapHint('')
@@ -172,20 +162,26 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     setResolvingMap(true)
     setLocDenied(false)
     try {
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=in&addressdetails=1&q=${encodeURIComponent(queryParts.join(', '))}`,
-        { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(10_000) }
-      )
-      const results: { lat: string; lon: string }[] = await r.json()
-      const best = Array.isArray(results) ? results[0] : null
-      const nextLat = best ? Number(best.lat) : DEFAULT_MAP_CENTER.lat
-      const nextLng = best ? Number(best.lon) : DEFAULT_MAP_CENTER.lng
+      const r = await fetch('/api/geocode-address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          houseNumber: houseNumber.trim(),
+          streetAddress: streetAddress.trim(),
+          landmark: landmark.trim(),
+          pincode: cleanPin,
+        }),
+      })
+      const best = await r.json().catch(() => null) as { lat?: number; lng?: number } | null
+      const found = r.ok && typeof best?.lat === 'number' && typeof best?.lng === 'number'
+      const nextLat = found ? best.lat! : DEFAULT_MAP_CENTER.lat
+      const nextLng = found ? best.lng! : DEFAULT_MAP_CENTER.lng
       setLat(nextLat)
       setLng(nextLng)
       setMapOpen(true)
       setStep('map')
       setPinTouched(false)
-      setMapHint(best
+      setMapHint(found
         ? 'Move the pin to the exact gate or building entrance before payment.'
         : 'We opened the map near the delivery area. Move the pin to the exact home location before payment.'
       )
