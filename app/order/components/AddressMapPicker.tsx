@@ -83,7 +83,7 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
   return (
     <div
       ref={containerRef}
-      className="h-56 w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100"
+      className="h-[48vh] min-h-80 w-full overflow-hidden rounded-2xl border border-stone-200 bg-stone-100"
     />
   )
 }
