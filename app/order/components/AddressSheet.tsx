@@ -69,6 +69,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   const [step,          setStep]          = useState<'details' | 'map'>('details')
   const [pinTouched,    setPinTouched]    = useState(false)
   const [mapHint,       setMapHint]       = useState('')
+  const [mapSearch,     setMapSearch]     = useState('')
+  const [mapSearching,  setMapSearching]  = useState(false)
 
   const validPincodesRef = useRef<{ pincode: string; area_name: string }[] | null>(null)
 
@@ -88,6 +90,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         setLng(typeof addr.lng === 'number' ? addr.lng : null)
         setMapOpen(typeof addr.lat === 'number' && typeof addr.lng === 'number')
         setPinTouched(typeof addr.lat === 'number' && typeof addr.lng === 'number')
+        setMapSearch([addr.houseNumber, addr.streetAddress, addr.landmark, addr.pincode].filter(Boolean).join(', '))
       } else if (savedPincode) {
         setPincode(savedPincode)
         setLat(null)
@@ -161,6 +164,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
 
     setResolvingMap(true)
     setLocDenied(false)
+    const searchText = [houseNumber, streetAddress, landmark, cleanPin].map(v => v.trim()).filter(Boolean).join(', ')
+    setMapSearch(searchText)
     try {
       const r = await fetch('/api/geocode-address', {
         method: 'POST',
@@ -194,6 +199,51 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setMapHint('We could not auto-detect the address, so the map opened near the delivery area. Move the map until the fixed pin sits on the exact home location before payment.')
     } finally {
       setResolvingMap(false)
+    }
+  }
+
+  async function searchMapAddress() {
+    const cleanPin = pincode.trim()
+    const cleanSearch = mapSearch.trim()
+    if (!cleanSearch) {
+      setMapHint('Type a building, road, or landmark to search on the map.')
+      return
+    }
+
+    setMapSearching(true)
+    setMapHint('')
+    try {
+      const r = await fetch('/api/geocode-address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: cleanSearch,
+          houseNumber: houseNumber.trim(),
+          streetAddress: streetAddress.trim(),
+          landmark: landmark.trim(),
+          pincode: cleanPin,
+        }),
+      })
+      const best = await r.json().catch(() => null) as { lat?: number; lng?: number; provider?: string; confidence?: string } | null
+      const found = r.ok && typeof best?.lat === 'number' && typeof best?.lng === 'number'
+      if (!found) {
+        setMapHint('Could not find that place. Try nearby shop, apartment, road, or landmark name.')
+        return
+      }
+
+      setLat(best.lat!)
+      setLng(best.lng!)
+      setPinTouched(false)
+      const source = best.provider === 'google' ? 'Google Maps' : 'map search'
+      setMapHint(
+        best.confidence === 'high'
+          ? `Found an exact-looking match from ${source}. Check the fixed pin before payment.`
+          : `Found the nearest match from ${source}. Move the map if the pin is not on the exact gate.`
+      )
+    } catch {
+      setMapHint('Could not search the map right now. Please move the map manually to the exact delivery point.')
+    } finally {
+      setMapSearching(false)
     }
   }
 
@@ -475,6 +525,23 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] font-black text-stone-500 uppercase tracking-[0.1em]">Exact Delivery Pin</p>
                     <span className="text-[10px] font-mono text-stone-400">{lat?.toFixed(5)}, {lng?.toFixed(5)}</span>
+                  </div>
+                  <div className="flex gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm">
+                    <Input
+                      type="text"
+                      value={mapSearch}
+                      onChange={e => setMapSearch(e.target.value)}
+                      placeholder="Search building, road, or landmark"
+                      className="min-w-0 flex-1 rounded-xl bg-stone-50 text-xs text-stone-900 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={searchMapAddress}
+                      disabled={mapSearching}
+                      className="shrink-0 rounded-xl bg-stone-900 px-3 text-[11px] font-black text-white active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {mapSearching ? 'Finding' : 'Find'}
+                    </button>
                   </div>
                   <AddressMapPicker
                     lat={lat!}
