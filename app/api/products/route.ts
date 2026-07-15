@@ -19,7 +19,7 @@ export async function GET() {
 
   // Try full schema first (after running SCHEMA.sql)
   try {
-    const fullEndpoint = `${url}/rest/v1/products?select=id,name,price_per_kg,image_url,stock_quantity,category&order=name.asc`
+    const fullEndpoint = `${url}/rest/v1/products?select=id,name,price_per_kg,image_url,stock_quantity,category,discount_percentage,weight_per_unit&order=name.asc`
     const res = await fetch(fullEndpoint, { headers })
 
     if (res.ok) {
@@ -33,8 +33,14 @@ export async function GET() {
           image_url: p.image_url ?? null,
           stock_quantity: p.stock_quantity ?? 50,
           category: p.category ?? 'chicken',
+          discount_percentage: p.discount_percentage ?? 0,
+          weight_per_unit: p.weight_per_unit ?? null,
         }))
-        return NextResponse.json(rows)
+        const uniqueRows = rows.filter((product, index, list) => {
+          const nameKey = String(product.name).trim().toLowerCase()
+          return list.findIndex(item => String(item.name).trim().toLowerCase() === nameKey) === index
+        })
+        return NextResponse.json(uniqueRows)
       }
     }
 
