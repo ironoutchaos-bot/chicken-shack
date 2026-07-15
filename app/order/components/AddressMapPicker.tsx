@@ -3,16 +3,71 @@
 import { useEffect, useRef } from 'react'
 import type { Map as LeafletMap } from 'leaflet'
 
+type LatLng = { lat: number; lng: number }
+type LooseGoogleMap = {
+  getCenter: () => { lat: () => number; lng: () => number } | null | undefined
+  getZoom: () => number | undefined
+  panTo: (point: LatLng) => void
+  setCenter: (point: LatLng) => void
+  setZoom: (zoom: number) => void
+  addListener: (name: string, handler: (event?: { latLng?: { lat: () => number; lng: () => number } }) => void) => unknown
+}
+type GoogleMapsApi = {
+  Map: new (element: HTMLElement, options: Record<string, unknown>) => LooseGoogleMap
+  event: { clearInstanceListeners: (target: LooseGoogleMap) => void }
+}
+
 interface Props {
   lat: number
   lng: number
   onChange: (lat: number, lng: number) => void
 }
 
+declare global {
+  interface Window {
+    google?: { maps?: GoogleMapsApi }
+    __bfGoogleMapsPromise?: Promise<GoogleMapsApi>
+  }
+}
+
+const GOOGLE_MAPS_KEY =
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+  process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ||
+  ''
+
+function loadGoogleMaps() {
+  if (!GOOGLE_MAPS_KEY || typeof window === 'undefined') return null
+  if (window.google?.maps) return Promise.resolve(window.google.maps)
+  if (window.__bfGoogleMapsPromise) return window.__bfGoogleMapsPromise
+
+  window.__bfGoogleMapsPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src =
+      'https://maps.googleapis.com/maps/api/js?' +
+      new URLSearchParams({
+        key: GOOGLE_MAPS_KEY,
+        v: 'weekly',
+      }).toString()
+    script.async = true
+    script.defer = true
+    script.onload = () => {
+      if (window.google?.maps) resolve(window.google.maps)
+      else reject(new Error('Google Maps did not load'))
+    }
+    script.onerror = () => reject(new Error('Google Maps failed to load'))
+    document.head.appendChild(script)
+  })
+
+  return window.__bfGoogleMapsPromise
+}
+
 export default function AddressMapPicker({ lat, lng, onChange }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const mapRef = useRef<LeafletMap | null>(null)
+  const leafletRef = useRef<LeafletMap | null>(null)
+  const googleMapRef = useRef<LooseGoogleMap | null>(null)
+  const providerRef = useRef<'google' | 'leaflet' | null>(null)
   const onChangeRef = useRef(onChange)
+  const ignoreNextMoveRef = useRef(false)
 
   useEffect(() => {
     onChangeRef.current = onChange
@@ -22,7 +77,48 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
     let cancelled = false
 
     async function initMap() {
-      if (!containerRef.current || mapRef.current) return
+      if (!containerRef.current || leafletRef.current || googleMapRef.current) return
+
+      const googleMaps = await loadGoogleMaps()?.catch(() => null)
+      if (cancelled || !containerRef.current) return
+
+      if (googleMaps) {
+        const map = new googleMaps.Map(containerRef.current, {
+          center: { lat, lng },
+          zoom: 18,
+          mapTypeId: 'roadmap',
+          clickableIcons: true,
+          fullscreenControl: false,
+          mapTypeControl: false,
+          streetViewControl: false,
+          zoomControl: true,
+          gestureHandling: 'greedy',
+          disableDefaultUI: false,
+        })
+
+        map.addListener('dragstart', () => {
+          containerRef.current?.closest('.bf-map-shell')?.classList.add('bf-map-moving')
+        })
+        map.addListener('idle', () => {
+          containerRef.current?.closest('.bf-map-shell')?.classList.remove('bf-map-moving')
+          if (ignoreNextMoveRef.current) {
+            ignoreNextMoveRef.current = false
+            return
+          }
+          const center = map.getCenter()
+          if (center) onChangeRef.current(center.lat(), center.lng())
+        })
+        map.addListener('click', (event) => {
+          if (!event?.latLng) return
+          ignoreNextMoveRef.current = false
+          map.panTo({ lat: event.latLng.lat(), lng: event.latLng.lng() })
+          if ((map.getZoom() ?? 0) < 18) map.setZoom(18)
+        })
+
+        googleMapRef.current = map
+        providerRef.current = 'google'
+        return
+      }
 
       const L = await import('leaflet')
       if (cancelled || !containerRef.current) return
@@ -35,9 +131,10 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
       }).setView([lat, lng], 17)
 
       L.control.zoom({ position: 'bottomright' }).addTo(map)
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19,
-        attribution: 'Tiles &copy; Esri',
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxNativeZoom: 19,
+        maxZoom: 20,
+        attribution: '&copy; OpenStreetMap contributors',
       }).addTo(map)
 
       map.on('movestart', () => {
@@ -51,10 +148,11 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
       })
 
       map.on('click', (event) => {
-        map.setView(event.latlng, Math.max(map.getZoom(), 17), { animate: true })
+        map.setView(event.latlng, Math.max(map.getZoom(), 18), { animate: true })
       })
 
-      mapRef.current = map
+      leafletRef.current = map
+      providerRef.current = 'leaflet'
       setTimeout(() => map.invalidateSize(), 150)
     }
 
@@ -62,16 +160,31 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
 
     return () => {
       cancelled = true
-      mapRef.current?.remove()
-      mapRef.current = null
+      if (googleMapRef.current && window.google?.maps) {
+        window.google.maps.event.clearInstanceListeners(googleMapRef.current)
+      }
+      googleMapRef.current = null
+      leafletRef.current?.remove()
+      leafletRef.current = null
+      providerRef.current = null
     }
   }, [])
 
   useEffect(() => {
     const point: [number, number] = [lat, lng]
-    const current = mapRef.current?.getCenter()
-    if (!current || current.distanceTo(point) > 1) {
-      mapRef.current?.panTo(point)
+    const leafletCenter = leafletRef.current?.getCenter()
+    if (leafletRef.current && (!leafletCenter || leafletCenter.distanceTo(point) > 1)) {
+      leafletRef.current.panTo(point)
+    }
+
+    const googleCenter = googleMapRef.current?.getCenter()
+    if (googleMapRef.current && googleCenter) {
+      const currentLat = googleCenter.lat()
+      const currentLng = googleCenter.lng()
+      if (Math.abs(currentLat - lat) > 0.00001 || Math.abs(currentLng - lng) > 0.00001) {
+        ignoreNextMoveRef.current = true
+        googleMapRef.current.setCenter({ lat, lng })
+      }
     }
   }, [lat, lng])
 
@@ -99,6 +212,12 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
           color: #6b7280 !important;
           font-size: 9px !important;
           padding: 2px 5px !important;
+        }
+        .gm-style {
+          font-family: Arial, sans-serif !important;
+        }
+        .gm-style .gmnoprint.gm-bundled-control {
+          margin: 0 10px 56px 0 !important;
         }
         .bf-center-pin {
           position: absolute;
