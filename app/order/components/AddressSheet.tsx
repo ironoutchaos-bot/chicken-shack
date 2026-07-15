@@ -182,8 +182,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setStep('map')
       setPinTouched(false)
       setMapHint(found
-        ? 'Move the pin to the exact gate or building entrance before payment.'
-        : 'We opened the map near the delivery area. Move the pin to the exact home location before payment.'
+        ? 'Move the map until the fixed pin sits on the exact gate or building entrance before payment.'
+        : 'We opened the map near the delivery area. Move the map until the fixed pin sits on the exact home location before payment.'
       )
     } catch {
       setLat(DEFAULT_MAP_CENTER.lat)
@@ -191,7 +191,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setMapOpen(true)
       setStep('map')
       setPinTouched(false)
-      setMapHint('We could not auto-detect the address, so the map opened near the delivery area. Move the pin to the exact home location before payment.')
+      setMapHint('We could not auto-detect the address, so the map opened near the delivery area. Move the map until the fixed pin sits on the exact home location before payment.')
     } finally {
       setResolvingMap(false)
     }
@@ -275,7 +275,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     }
 
     if (!pinTouched || lat === null || lng === null) {
-      setMapHint('Move the pin to the exact delivery location before payment.')
+      setMapHint('Move the map until the fixed pin is on the exact delivery location before payment.')
       setStep('map')
       return
     }
@@ -457,7 +457,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3">
                 <p className="text-xs font-black text-amber-900">Point the exact delivery location</p>
                 <p className="text-[11px] text-amber-700 mt-1 leading-relaxed">
-                  {mapHint || 'Tap the map or drag the pin to your gate, apartment entrance, or exact drop point.'}
+                  {mapHint || 'Tap the map or move it until the fixed pin is on your gate, apartment entrance, or exact drop point.'}
                 </p>
               </div>
 
@@ -465,7 +465,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                 <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-3">
                   <AlertTriangle size={17} className="text-red-500 shrink-0 mt-0.5" strokeWidth={2} />
                   <p className="text-[11px] text-red-600 leading-relaxed">
-                    Location access was denied. You can still place the pin manually on the map.
+                    Location access was denied. You can still move the map manually to place the fixed pin.
                   </p>
                 </div>
               )}
@@ -519,7 +519,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           {step === 'map' && !pinTouched && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
               <MapPin size={13} className="text-amber-500 shrink-0" />
-              <p className="text-xs text-amber-700 font-medium">Tap or drag the pin to the exact delivery point to continue</p>
+              <p className="text-xs text-amber-700 font-medium">Tap anywhere or move the map until the fixed pin is on the exact delivery point to continue</p>
             </div>
           )}
           {pincodeError && (
