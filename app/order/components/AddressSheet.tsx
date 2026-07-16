@@ -562,14 +562,14 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
               <button
                 onClick={useCurrentLocation}
                 disabled={locating}
-                className="w-full flex items-center justify-center gap-3 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 px-4 py-4 text-[15px] font-black text-white shadow-lg shadow-amber-500/25 active:scale-[0.98] transition-all disabled:opacity-60"
+                className="w-full flex items-center justify-center gap-3 rounded-3xl border-2 border-amber-500 bg-amber-50 px-4 py-4 text-[15px] font-black text-stone-950 shadow-lg shadow-amber-500/20 active:scale-[0.98] transition-all disabled:opacity-60"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-500 text-white shadow-sm">
                   {locating ? <Loader2 size={22} className="animate-spin" /> : <Crosshair size={22} strokeWidth={2.6} />}
                 </span>
                 <span className="flex min-w-0 flex-col items-start text-left leading-tight">
                   <span>{locating ? 'Detecting Your Location...' : 'Use My Current Location'}</span>
-                  <span className="text-[11px] font-bold text-white/85">Best when you are at the delivery address</span>
+                  <span className="text-[11px] font-bold text-stone-700">Best when you are at the delivery address</span>
                 </span>
               </button>
 
