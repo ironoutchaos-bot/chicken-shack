@@ -2934,3 +2934,51 @@ iframe[src*="d3mkw6s8thqya7"],
 iframe[src*="aisensy"] {
   z-index: 40 !important;
 }
+
+/* Brand the floating WhatsApp launcher green when it is visible. */
+#df-btn-cont,
+#df-btn-cont button,
+#df-btn-cont a,
+#df-btn-cont [role="button"],
+[id*="whatsapp" i],
+[class*="whatsapp" i],
+[id*="wa-widget" i],
+[class*="wa-widget" i] {
+  --bf-whatsapp-green: #25D366;
+}
+
+#df-btn-cont button,
+#df-btn-cont a,
+#df-btn-cont [role="button"],
+#df-btn-cont > div,
+#df-btn-cont [style*="background"] {
+  background: #25D366 !important;
+  border-color: #25D366 !important;
+  color: #ffffff !important;
+}
+
+#df-btn-cont svg,
+#df-btn-cont svg * {
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Hide the WhatsApp widget completely while address/map selection is active. */
+body.bf-hide-wa-widget #df-btn-cont,
+body.bf-hide-wa-widget #df-btn-cont *,
+body.bf-hide-wa-widget iframe[src*="d3mkw6s8thqya7"],
+body.bf-hide-wa-widget iframe[src*="aisensy"],
+body.bf-hide-wa-widget iframe[src*="whatsapp" i],
+body.bf-hide-wa-widget [id*="aisensy" i],
+body.bf-hide-wa-widget [class*="aisensy" i],
+body.bf-hide-wa-widget [id*="whatsapp" i],
+body.bf-hide-wa-widget [class*="whatsapp" i],
+body.bf-hide-wa-widget [id*="wa-widget" i],
+body.bf-hide-wa-widget [class*="wa-widget" i],
+body.bf-hide-wa-widget [aria-label*="WhatsApp" i],
+body.bf-hide-wa-widget [title*="WhatsApp" i] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

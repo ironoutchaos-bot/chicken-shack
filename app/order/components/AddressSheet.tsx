@@ -96,6 +96,14 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
 
   useEffect(() => {
     if (!open) return
+    document.body.classList.add('bf-address-sheet-open', 'bf-hide-wa-widget')
+    return () => {
+      document.body.classList.remove('bf-address-sheet-open', 'bf-hide-wa-widget')
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
@@ -651,7 +659,10 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         </div>
 
         {/* CTA */}
-        <div className="px-5 pt-3 pb-2 border-t border-stone-100 shrink-0 space-y-2.5">
+        <div
+          className="px-5 pt-3 border-t border-stone-100 shrink-0 space-y-2.5"
+          style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 1rem)' }}
+        >
           {step === 'map' && !pinTouched && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
               <MapPin size={13} className="text-amber-500 shrink-0" />
