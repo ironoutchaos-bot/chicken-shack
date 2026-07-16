@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   const keys = subscription.keys as { p256dh: string; auth: string } | undefined
 
   const res = await fetch(
-    `${SUPA_URL()}/rest/v1/driver_push_subscriptions`,
+    `${SUPA_URL()}/rest/v1/driver_push_subscriptions?on_conflict=endpoint`,
     {
       method: 'POST',
       headers: srvHeaders({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
 
   if (!res.ok) {
     const err = await res.text()
+    console.error('[push/driver-subscribe] save failed:', res.status, err)
     return NextResponse.json({ error: err }, { status: 500 })
   }
 

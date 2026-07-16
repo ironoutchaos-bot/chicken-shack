@@ -22,7 +22,8 @@ import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import { sessionOptions, type SessionData } from '@/lib/session'
 import { type Coupon } from '@/app/api/coupons/route'
-import { notifyDriverAssignment } from '@/lib/push-notify'
+import { notifyDriverAssignment, notifyAllDrivers } from '@/lib/push-notify'
+import { ALLOWED_DELIVERY_PINCODES, checkDeliveryZone, isAllowedDeliveryPincode, normalizePincode } from '@/lib/delivery-zone'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -33,6 +34,58 @@ function srvHeaders(extra?: Record<string, string>) {
     'Authorization': `Bearer ${SUPA_SRV()}`,
     'Content-Type':  'application/json',
     ...extra,
+  }
+}
+
+function validateDeliveryAddressForZone(value: unknown):
+  | { ok: true; address: Record<string, unknown> }
+  | { ok: false; response: NextResponse } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Exact delivery location is required' }, { status: 400 }),
+    }
+  }
+
+  const address = value as Record<string, unknown>
+  const pincode = normalizePincode(address.pincode)
+  if (pincode.length !== 6 || !isAllowedDeliveryPincode(pincode)) {
+    return {
+      ok: false,
+      response: NextResponse.json({
+        error: `Delivery is available only for ${ALLOWED_DELIVERY_PINCODES.join(', ')}`,
+        allowedPincodes: ALLOWED_DELIVERY_PINCODES,
+      }, { status: 400 }),
+    }
+  }
+
+  const zone = checkDeliveryZone(address.lat, address.lng, pincode)
+  if (!zone) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Exact delivery pin is required' }, { status: 400 }),
+    }
+  }
+  if (!zone.deliverable) {
+    return {
+      ok: false,
+      response: NextResponse.json({
+        error: 'Delivery not available in your area',
+        distanceKm: zone.distanceKm,
+        radiusKm: zone.radiusKm,
+      }, { status: 400 }),
+    }
+  }
+
+  return {
+    ok: true,
+    address: {
+      ...address,
+      pincode,
+      deliveryDistanceKm: zone.distanceKm,
+      deliveryRadiusKm:   zone.radiusKm,
+      deliveryZoneCenter: zone.center,
+    },
   }
 }
 
@@ -79,6 +132,9 @@ export async function POST(req: NextRequest) {
   if (!items || !payment_status) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
+
+  const deliveryAddressCheck = validateDeliveryAddressForZone(body.delivery_address)
+  if (!deliveryAddressCheck.ok) return deliveryAddressCheck.response
 
   // ── Fetch live settings for coupon validation + delivery fee ──────────────
   let settings: Record<string, unknown> = {}
@@ -189,7 +245,7 @@ export async function POST(req: NextRequest) {
     total_amount:     verifiedTotal,
     payment_status:   payment_status ?? 'cod',
     order_status:     order_status   ?? 'placed',
-    delivery_address: body.delivery_address ?? null,
+    delivery_address: deliveryAddressCheck.address,
     notes:            body.notes            ?? null,
     customer_phone:   body.customer_phone   ?? null,
     customer_name:    body.customer_name    ?? null,
@@ -237,8 +293,12 @@ export async function POST(req: NextRequest) {
     const data = await res.json()
     const order = Array.isArray(data) ? data[0] : data
 
-    // If the DB trigger auto-assigned a driver (COD orders), notify them now
-    if (order?.driver_id && order?.id) {
+    // Alert all drivers the moment a live order is placed. COD orders are
+    // actionable immediately; online orders only become live once paid (handled
+    // in the PATCH / webhook below), so don't double-alert for them here.
+    if (order?.id && (order.payment_status === 'cod' || order.payment_status === 'paid')) {
+      notifyAllDrivers(order.id).catch(() => {})
+    } else if (order?.driver_id && order?.id) {
       notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
     }
 
@@ -314,8 +374,9 @@ export async function PATCH(req: NextRequest) {
       if (updated.ok) {
         const rows = await updated.json()
         const order = rows?.[0]
-        if (order?.driver_id && order?.id) {
-          notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
+        // Online payment just confirmed → the order is now live. Alert all drivers.
+        if (order?.id) {
+          notifyAllDrivers(order.id).catch(() => {})
         }
       }
     } catch { /* notification is best-effort */ }

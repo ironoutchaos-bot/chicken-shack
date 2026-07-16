@@ -1938,7 +1938,7 @@ export default function Home() {
         </div>
       </footer>
       <div className="fb">
-        <span>© 2026 B&apos;LURU Fresh. All rights reserved.</span>
+        <span>© 2026 The Chicken Shack. All rights reserved.</span>
         <span>FSSAI Lic. 11226331000344</span>
         <a
           href="https://maps.app.goo.gl/5RjKDAgEM7vcD5aq6"

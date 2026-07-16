@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Outfit, Fraunces, Montserrat } from 'next/font/google'
 import { AuthProvider } from '@/context/AuthContext'
+import 'leaflet/dist/leaflet.css'
 import './globals.css'
 
 const outfit = Outfit({
@@ -386,7 +387,19 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
+                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    reg.update();
+                    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    reg.addEventListener('updatefound', function() {
+                      var worker = reg.installing;
+                      if (!worker) return;
+                      worker.addEventListener('statechange', function() {
+                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                          worker.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                      });
+                    });
+                  }).catch(function() {});
                 });
               }
             `,

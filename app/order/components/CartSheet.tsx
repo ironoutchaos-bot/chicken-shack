@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, ShieldCheck, Banknote, AlertTriangle, RotateCcw, Tag, CheckCircle2 } from 'lucide-react'
 import { type CartItem } from '@/lib/supabase-browser'
 import { type AuthUser } from '@/lib/auth-types'
-import { UNIT_LABEL } from '@/lib/units'
 import AddressSheet, { type DeliveryAddress } from './AddressSheet'
 
 type CheckoutMode = 'cashfree' | 'cod'
@@ -20,8 +19,18 @@ interface Props {
   onLoginRequired: () => void
   onOrderPlaced: () => void
   savedPincode?: string
+  onDeliveryAddressSaved?: (address: DeliveryAddress) => void
   minOrderAmount?: number
   deliveryFee?: number
+}
+
+// Formats a product's pack size using the admin-chosen unit (pc / g / kg).
+function formatUnit(amount: number | null | undefined, unit?: string | null): string {
+  if (!amount) return ''
+  const u = unit ?? 'g'
+  if (u === 'pc') return `${amount} pc${amount > 1 ? 's' : ''}`
+  if (u === 'kg') return `${amount % 1 === 0 ? amount : amount.toFixed(2)} kg`
+  return `${amount}g`
 }
 
 // Wraps any promise with a hard timeout. Rejects with a user-friendly message
@@ -36,6 +45,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, msg: string): Promise<T
 export default function CartSheet({
   open, onClose, cart, onUpdateQty, onClear,
   user, authLoading = false, onLoginRequired, onOrderPlaced, savedPincode,
+  onDeliveryAddressSaved,
   minOrderAmount = 0, deliveryFee = 0,
 }: Props) {
   const [loading,        setLoading]        = useState(false)
@@ -47,6 +57,8 @@ export default function CartSheet({
   const [codEnabled,     setCodEnabled]     = useState(true)
   const [cfEnabled,      setCfEnabled]      = useState(true)
   const [outOfStock,     setOutOfStock]     = useState<string[]>([])
+  const [weightMap,      setWeightMap]      = useState<Record<string, number | null>>({})
+  const [unitMap,        setUnitMap]        = useState<Record<string, string>>({})
   const [lastAddr,       setLastAddr]       = useState<DeliveryAddress | null>(null)
 
   // Coupon state
@@ -86,9 +98,9 @@ export default function CartSheet({
 
     // Out-of-stock check
     if (cart.length > 0) {
-      fetch('/api/products')
+      fetch('/api/products', { cache: 'no-store' })
         .then(r => r.json())
-        .then((products: { id: string; stock_quantity: number; name: string }[]) => {
+        .then((products: { id: string; stock_quantity: number; name: string; weight_per_unit: number | null }[]) => {
           const oos = cart
             .filter(item => {
               const p = products.find(p => p.id === item.productId)
@@ -96,7 +108,17 @@ export default function CartSheet({
             })
             .map(item => item.name)
           setOutOfStock(oos)
+
+          const wmap: Record<string, number | null> = {}
+          for (const p of products) wmap[p.id] = p.weight_per_unit ?? null
+          setWeightMap(wmap)
         })
+        .catch(() => {})
+
+      // Per-product display units (pc / g / kg) chosen by the admin
+      fetch('/api/settings', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(d => setUnitMap(d?.product_units && typeof d.product_units === 'object' ? d.product_units : {}))
         .catch(() => {})
     } else {
       setOutOfStock([])
@@ -324,6 +346,7 @@ export default function CartSheet({
   }
 
   function onAddressConfirmed(addr: DeliveryAddress) {
+    onDeliveryAddressSaved?.(addr)
     if (checkoutMode === 'cod') proceedCOD(addr)
     else proceedCashfree(addr)
   }
@@ -384,7 +407,7 @@ export default function CartSheet({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm truncate" style={{ color: '#1C0F00' }}>{item.name}</p>
-                      <p className="text-xs" style={{ color: 'rgba(22,20,15,.4)' }}>₹{item.pricePerKg} / pc · {UNIT_LABEL}</p>
+                      <p className="text-xs" style={{ color: 'rgba(22,20,15,.4)' }}>₹{item.pricePerKg}{(() => { const w = formatUnit(weightMap[item.productId] ?? item.weightPerUnit, unitMap[item.productId]); return w ? ` · ${w}` : '' })()}</p>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button onClick={() => onUpdateQty(item.productId, item.quantity - 1)} className="w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-all" style={{ background: '#f2ede0', border: '1px solid rgba(22,20,15,.1)' }}>
@@ -452,18 +475,19 @@ export default function CartSheet({
           {/* Footer */}
           {cart.length > 0 && (
             <div className="px-5 pt-3 pb-2 space-y-3" style={{ borderTop: '1px solid rgba(22,20,15,.08)' }}>
-              {(deliveryFee > 0 || couponApplied) && (
-                <div className="space-y-1.5">
+              <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-sm">
                     <span style={{ color: 'rgba(22,20,15,.4)' }}>Subtotal</span>
                     <span style={{ color: 'rgba(22,20,15,.6)', fontWeight: 500 }}>₹{subtotal.toFixed(0)}</span>
                   </div>
-                  {deliveryFee > 0 && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span style={{ color: 'rgba(22,20,15,.4)' }}>Delivery fee</span>
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: 'rgba(22,20,15,.4)' }}>Delivery fee</span>
+                    {deliveryFee > 0 ? (
                       <span style={{ color: 'rgba(22,20,15,.6)', fontWeight: 500 }}>₹{deliveryFee}</span>
-                    </div>
-                  )}
+                    ) : (
+                      <span style={{ color: '#6ab82e', fontWeight: 700 }}>FREE</span>
+                    )}
+                  </div>
                   {couponApplied && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-1 font-medium" style={{ color: '#91d852' }}><Tag size={12} /> {couponInput.toUpperCase()}</span>
@@ -472,7 +496,6 @@ export default function CartSheet({
                   )}
                   <div className="h-px" style={{ background: 'rgba(22,20,15,.08)' }} />
                 </div>
-              )}
 
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium" style={{ color: 'rgba(22,20,15,.5)' }}>Total</span>

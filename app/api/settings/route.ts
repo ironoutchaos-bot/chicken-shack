@@ -20,13 +20,14 @@ function flatten(rows: { key: string; value: unknown }[]): Record<string, unknow
   return Object.fromEntries(rows.map(r => [r.key, r.value]))
 }
 
-/** Returns true if current IST time is within open hours (7:30 AM – 6:30 PM) */
+/** Returns true if current IST time is within open hours (7:00 AM – 7:00 PM).
+ *  Outside this window (7:00 PM → 6:59 AM) the store reads as closed. */
 function isStoreOpenBySchedule(): boolean {
   const now = new Date()
   // IST = UTC + 5h 30m
   const istMinutes = (now.getUTCHours() * 60 + now.getUTCMinutes() + 330) % (24 * 60)
-  const openMinutes  = 7 * 60 + 30   // 7:30 AM IST
-  const closeMinutes = 18 * 60 + 30  // 6:30 PM IST
+  const openMinutes  = 7 * 60   // 7:00 AM IST
+  const closeMinutes = 19 * 60  // 7:00 PM IST
   return istMinutes >= openMinutes && istMinutes < closeMinutes
 }
 
@@ -102,7 +103,10 @@ const DEFAULTS: Record<string, unknown> = {
   cod_enabled:                 true,
   cashfree_enabled:            true,
   store_open:                  true,
-  auto_schedule:               false, // auto open 7:30 AM – close 6:30 PM IST
+  out_of_stock:                false, // global "out of stock — order for morning delivery" banner
+  product_order:               [],    // custom display order on the order page (array of product ids)
+  product_units:               {},    // per-product display unit: { [id]: 'pc' | 'g' | 'kg' }
+  auto_schedule:               false, // auto open 7:00 AM – close 7:00 PM IST
   min_order_amount:            0,
   delivery_fee:                0,
   delivery_hours:              '8am – 8pm',

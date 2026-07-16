@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import Image from 'next/image'
 
 interface Props {
   images: string[]
@@ -12,7 +11,6 @@ export default function BannerCarousel({ images }: Props) {
   const [fading,  setFading]    = useState(false)
   const timerRef                = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Reset index if images change (e.g. admin deletes one)
   useEffect(() => { setCurrent(0) }, [images.length])
 
   useEffect(() => {
@@ -38,7 +36,6 @@ export default function BannerCarousel({ images }: Props) {
     setTimeout(() => {
       setCurrent(idx)
       setFading(false)
-      // Restart auto-cycle
       timerRef.current = setInterval(() => {
         setFading(true)
         setTimeout(() => {
@@ -99,45 +96,48 @@ export default function BannerCarousel({ images }: Props) {
   // ── Image banner (single or carousel) ──
   return (
     <div
-      className="mx-3 mt-3 rounded-3xl overflow-hidden relative"
-      style={{ aspectRatio: '16/7', background: '#FEF3C7' }}
+      className="mx-auto w-full lg:max-w-[680px]"
+      style={{ position: 'relative', aspectRatio: '16/7', overflow: 'hidden', background: '#111' }}
     >
-      {/* Image with crossfade */}
-      <div
-        className="absolute inset-0 transition-opacity"
-        style={{ opacity: fading ? 0 : 1, transitionDuration: '350ms' }}
-      >
-        <Image
-          key={images[current]}
-          src={images[current]}
-          alt="Banner"
-          fill
-          className="object-cover"
-          sizes="(max-width: 430px) 100vw, 430px"
-          priority={current === 0}
-        />
-      </div>
 
-      {/* Subtle bottom gradient for readability */}
-      <div
-        className="absolute inset-x-0 bottom-0 h-8 pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.25), transparent)' }}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        key={images[current]}
+        src={images[current]}
+        alt="Banner"
+        style={{
+          position: 'absolute', inset: 0,
+          width: '100%', height: '100%',
+          objectFit: 'cover',
+          opacity: fading ? 0 : 1,
+          transition: 'opacity 350ms',
+        }}
       />
 
-      {/* Dot indicators — only if multiple images */}
+      {/* Dot indicators */}
       {images.length > 1 && (
-        <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+        <div
+          style={{
+            position: 'absolute', bottom: 10,
+            left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 6, zIndex: 10,
+          }}
+        >
           {images.map((_, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
               aria-label={`Go to banner ${i + 1}`}
-              className="rounded-full transition-all"
               style={{
                 width:      i === current ? 16 : 6,
                 height:     6,
+                borderRadius: 99,
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
                 background: i === current ? '#fff' : 'rgba(255,255,255,0.45)',
                 boxShadow:  i === current ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+                transition: 'width 0.2s, background 0.2s',
               }}
             />
           ))}

@@ -18,6 +18,17 @@ type Step = 'phone' | 'otp'
 const RESEND_SECONDS = 30
 const OTP_LEN = 4
 
+function otpErrorMessage(data: unknown, fallback: string) {
+  if (!data || typeof data !== 'object') return fallback
+  const body = data as { error?: unknown; detail?: { message?: unknown; code?: unknown } }
+  if (typeof body.error === 'string' && body.error.trim()) return body.error
+  if (typeof body.detail?.message === 'string' && body.detail.message.trim()) {
+    const code = body.detail.code !== undefined ? ` (${String(body.detail.code)})` : ''
+    return `${body.detail.message}${code}`
+  }
+  return fallback
+}
+
 export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
   const [step,        setStep]        = useState<Step>('phone')
   const [phone,       setPhone]       = useState('')
@@ -65,7 +76,7 @@ export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
         body:    JSON.stringify({ phone: phone.trim(), countryCode: COUNTRY_CODE }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Failed to send OTP'); return }
+      if (!res.ok) { setError(otpErrorMessage(data, 'Failed to send OTP')); return }
       setReqId(data.reqId); setStep('otp'); startResendTimer()
     } catch { setError('Network error — please try again') }
     finally { setLoading(false) }
@@ -101,7 +112,7 @@ export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
         body:    JSON.stringify({ phone: phone.trim(), countryCode: COUNTRY_CODE }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Failed to resend OTP'); return }
+      if (!res.ok) { setError(otpErrorMessage(data, 'Failed to resend OTP')); return }
       setReqId(data.reqId); startResendTimer()
     } catch { setError('Network error — please try again') }
     finally { setLoading(false) }

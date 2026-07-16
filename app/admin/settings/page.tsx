@@ -8,6 +8,7 @@ type Settings = {
   cod_enabled:      boolean
   cashfree_enabled: boolean
   store_open:       boolean
+  out_of_stock:     boolean
   auto_schedule:    boolean
   min_order_amount: number
   delivery_fee:     number
@@ -20,6 +21,7 @@ const DEFAULTS: Settings = {
   cod_enabled:      true,
   cashfree_enabled: true,
   store_open:       true,
+  out_of_stock:     false,
   auto_schedule:    false,
   min_order_amount: 0,
   delivery_fee:     0,
@@ -143,8 +145,16 @@ export default function AdminSettingsPage() {
             onChange={v => saveSetting('store_open', v)}
           />
           <ToggleRow
+            label="📦 Out of Stock"
+            description="When on, customers see an 'Out of stock' banner — they can still order and it'll be delivered next morning between 7 AM – 9 AM."
+            value={settings.out_of_stock}
+            saving={saving === 'out_of_stock'}
+            saved={saved === 'out_of_stock'}
+            onChange={v => saveSetting('out_of_stock', v)}
+          />
+          <ToggleRow
             label="⏰ Auto Shop Open / Close"
-            description="Auto opens at 7:30 AM IST and closes at 6:30 PM IST every day. Overrides the Store Open toggle above."
+            description="Auto opens at 7:00 AM IST and closes at 7:00 PM IST every day. Overrides the Store Open toggle above."
             value={settings.auto_schedule}
             saving={saving === 'auto_schedule'}
             saved={saved === 'auto_schedule'}
@@ -342,6 +352,27 @@ function TextRow({ label, description, placeholder, value, saving, saved, onSave
   )
 }
 
+function compressImage(file: File, maxPx: number, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      let { width, height } = img
+      if (width > maxPx || height > maxPx) {
+        if (width >= height) { height = Math.round(height * maxPx / width); width = maxPx }
+        else                  { width = Math.round(width * maxPx / height); height = maxPx }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width; canvas.height = height
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Canvas toBlob failed')), 'image/jpeg', quality)
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')) }
+    img.src = url
+  })
+}
+
 function BannerImagesRow({
   images,
   onChange,
@@ -360,18 +391,19 @@ function BannerImagesRow({
     setError('')
 
     for (const file of Array.from(files)) {
-      // Client-side validation
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
         setError('Only JPEG, PNG or WebP allowed'); break
       }
-      if (file.size > 10 * 1024 * 1024) {
-        setError('Max file size is 10 MB'); break
+      if (file.size > 30 * 1024 * 1024) {
+        setError('Max file size is 30 MB'); break
       }
 
       try {
-        // Single step: send file to our server — it uploads to Supabase server-to-server (no CORS)
+        // Compress/resize client-side to stay under Vercel's 4.5 MB body limit
+        const compressed = await compressImage(file, 1600, 0.85)
+
         const form = new FormData()
-        form.append('file', file)
+        form.append('file', compressed, file.name.replace(/\.[^.]+$/, '.jpg'))
         const res  = await fetch('/api/admin/banner-images', { method: 'POST', body: form })
         const data: { url?: string; error?: string } = await res.json().catch(() => ({}))
         if (!res.ok) {
@@ -382,7 +414,7 @@ function BannerImagesRow({
         onChange([...images, data.url!])
         images = [...images, data.url!]
       } catch (e) {
-        setError(`Network error: ${e instanceof Error ? e.message : String(e)}`)
+        setError(`Upload error: ${e instanceof Error ? e.message : String(e)}`)
         break
       }
     }
@@ -417,7 +449,7 @@ function BannerImagesRow({
       }}>
         <span style={{ fontSize: 16 }}>📐</span>
         <div>
-          <strong>Recommended size: 800 × 350 px</strong> — landscape JPEG or PNG, up to 10 MB each.<br />
+          <strong>Recommended size: 800 × 350 px</strong> — landscape JPEG or PNG, up to 30 MB each (auto-compressed before upload).<br />
           This gives a crisp 16:7 banner on all phones. Upload multiple images to enable the auto-cycling slideshow.
         </div>
       </div>

@@ -10,11 +10,12 @@ import ActiveOrdersTab from './components/ActiveOrdersTab'
 import HistoryTab from './components/HistoryTab'
 import LoginDrawer from './components/LoginDrawer'
 import CartSheet from './components/CartSheet'
-import PincodeGate from './components/PincodeGate'
 import EntryPage from './components/EntryPage'
 import PwaPrompts from './components/PwaPrompts'
 import VisitTracker from './components/VisitTracker'
+import DeliveredFeedbackModal from './components/DeliveredFeedbackModal'
 import { usePushNotifications } from './hooks/usePushNotifications'
+import { useDeliveredFeedback } from './hooks/useDeliveredFeedback'
 
 export type Tab = 'shop' | 'active' | 'history'
 
@@ -29,7 +30,7 @@ export default function OrderApp() {
   const [activeCount,          setActiveCount]          = useState(0)
   const [activeOrdersRefresh,  setActiveOrdersRefresh]  = useState(0)
 
-  // Entry / pincode gate — skip if returning from Cashfree payment
+  // Entry screen — skip if returning from Cashfree payment
   const [entryDone, setEntryDone] = useState(() => {
     if (typeof window === 'undefined') return false
     const p = new URLSearchParams(window.location.search)
@@ -41,18 +42,34 @@ export default function OrderApp() {
     if (typeof window === 'undefined') return null
     return new URLSearchParams(window.location.search).get('feedback')
   })
-  const [pincode,  setPincode]  = useState<string | null>(null)
+  const [pincode,  setPincode]  = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const saved = localStorage.getItem('bf-delivery-address-v2')
+      if (!saved) return null
+      const addr = JSON.parse(saved) as { pincode?: string }
+      return addr.pincode ?? null
+    } catch {
+      return null
+    }
+  })
   const [areaName, setAreaName] = useState('')
 
   // Live settings
   const [storeOpen,    setStoreOpen]    = useState(true)
+  const [outOfStock,   setOutOfStock]   = useState(false)
   const [announcement, setAnnouncement] = useState('')
   const [minOrder,     setMinOrder]     = useState(0)
   const [deliveryFee,  setDeliveryFee]  = useState(0)
   const [bannerImages, setBannerImages] = useState<string[]>([])
+  const [productOrder, setProductOrder] = useState<string[]>([])
+  const [productUnits, setProductUnits] = useState<Record<string, string>>({})
 
   const { status: pushStatus, subscribe: subscribePush } = usePushNotifications(user?.id ?? null)
   const [pushDismissed, setPushDismissed] = useState(false)
+
+  // Delivered-order feedback popup — fires when the driver marks an order delivered
+  const { pendingOrder: feedbackOrder, dismiss: dismissFeedback } = useDeliveredFeedback(user?.id ?? null)
 
   const showPushBanner = (
     user &&
@@ -191,10 +208,13 @@ export default function OrderApp() {
       .then(r => r.json())
       .then(d => {
         setStoreOpen(d.store_open !== false)
+        setOutOfStock(d.out_of_stock === true)
         setAnnouncement(typeof d.announcement === 'string' ? d.announcement : '')
         setMinOrder(typeof d.min_order_amount === 'number' ? d.min_order_amount : 0)
         setDeliveryFee(typeof d.delivery_fee === 'number' ? d.delivery_fee : 0)
         setBannerImages(Array.isArray(d.banner_images) ? d.banner_images : [])
+        setProductOrder(Array.isArray(d.product_order) ? d.product_order : [])
+        setProductUnits(d.product_units && typeof d.product_units === 'object' ? d.product_units : {})
       })
       .catch(() => {})
   }, [])
@@ -225,7 +245,7 @@ export default function OrderApp() {
       const idx = prev.findIndex(c => c.productId === item.productId)
       if (idx >= 0) {
         const next = [...prev]
-        next[idx] = { ...next[idx], quantity: +(next[idx].quantity + item.quantity).toFixed(1) }
+        next[idx] = { ...next[idx], ...item, quantity: +(next[idx].quantity + item.quantity).toFixed(1) }
         return next
       }
       return [...prev, item]
@@ -256,18 +276,8 @@ export default function OrderApp() {
     setActiveTab(tab)
   }, [user, authLoading])
 
-  const handlePincodeVerified = useCallback((pc: string, area: string) => {
-    setPincode(pc)
-    setAreaName(area)
-  }, [])
-
   const handleAreaChange = useCallback(() => {
-    try {
-      localStorage.removeItem('bf-pincode')
-      localStorage.removeItem('bf-area-name')
-    } catch {}
-    setPincode(null)
-    setAreaName('')
+    setCartOpen(true)
   }, [])
 
   const DESKTOP_TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
@@ -282,8 +292,6 @@ export default function OrderApp() {
 
         {!entryDone ? (
           <EntryPage onContinue={() => setEntryDone(true)} />
-        ) : !pincode ? (
-          <PincodeGate onVerified={handlePincodeVerified} />
         ) : (
           <>
             {/* ── Main content column ─────────────────────────── */}
@@ -354,8 +362,11 @@ export default function OrderApp() {
                     areaName={areaName}
                     pincode={pincode ?? undefined}
                     storeOpen={storeOpen}
+                    outOfStock={outOfStock}
                     announcement={announcement}
                     bannerImages={bannerImages}
+                    productOrder={productOrder}
+                    productUnits={productUnits}
                   />
                 )}
                 {activeTab === 'active' && user && (
@@ -562,12 +573,20 @@ export default function OrderApp() {
           savedPincode={pincode ?? undefined}
           minOrderAmount={minOrder}
           deliveryFee={deliveryFee}
+          onDeliveryAddressSaved={(addr) => {
+            setPincode(addr.pincode)
+            setAreaName(addr.streetAddress || 'Saved address')
+          }}
           onOrderPlaced={() => {
             clearCart()
             setCartOpen(false)
             setActiveTab('active')
           }}
         />
+
+        {feedbackOrder && (
+          <DeliveredFeedbackModal order={feedbackOrder} onClose={dismissFeedback} />
+        )}
       </div>
     </div>
   )

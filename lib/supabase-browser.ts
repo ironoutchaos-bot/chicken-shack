@@ -55,6 +55,10 @@ export type DeliveryAddress = {
   lng?: number
   mapsUrl?: string
   customerPhone?: string
+
+  deliveryDistanceKm?: number
+  deliveryRadiusKm?: number
+  deliveryZoneCenter?: { lat: number; lng: number }
   adminDeleted?: boolean
   adminDeletedAt?: string
   adminDeletedFromStatus?: string | null

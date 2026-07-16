@@ -23,6 +23,12 @@ const STATUS_COLOR: Record<OrderRow['order_status'], string> = {
   cancelled:  '#9ca3af',
 }
 
+type OrdersFilter = 'active' | 'delivered' | 'all' | 'deleted'
+
+function isDeletedOrder(order: OrderRow) {
+  return order.delivery_address?.adminDeleted === true || Boolean(order.delivery_address?.adminDeletedAt)
+}
+
 export default function AdminOrdersPage() {
   const [authed,   setAuthed]   = useState(false)
   const [checking, setChecking] = useState(true)
@@ -36,7 +42,7 @@ export default function AdminOrdersPage() {
   const [saving,    setSaving]    = useState<string | null>(null)
   const [orderError, setOrderError] = useState<string | null>(null)
   const [etaInputs, setEtaInputs] = useState<Record<string, string>>({})
-  const [filter,    setFilter]    = useState<'active' | 'delivered' | 'all'>('active')
+  const [filter,    setFilter]    = useState<OrdersFilter>('active')
   const [search,    setSearch]    = useState('')
   const [selected,  setSelected]  = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<OrderRow['order_status']>('placed')
@@ -204,6 +210,50 @@ export default function AdminOrdersPage() {
     } finally { setSaving(null) }
   }
 
+  async function deleteOrder(order: OrderRow) {
+    const label = `#${order.id.slice(0, 8).toUpperCase()}`
+    const ok = window.confirm(`Delete order ${label}? This cannot be undone.`)
+    if (!ok) return
+
+    setSaving(order.id + '-delete')
+    setOrderError(null)
+    try {
+      const res = await fetch(`/api/orders/${order.id}`, { method: 'DELETE' })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setOrderError(data.error ?? `Delete failed (${res.status})`)
+        return
+      }
+
+      const deletedAt = data.deleted_at ?? new Date().toISOString()
+      setOrders(prev => prev.map(o => (
+        o.id === order.id
+          ? {
+              ...o,
+              order_status: 'cancelled',
+              updated_at: deletedAt,
+              delivery_address: {
+                ...(o.delivery_address ?? {}),
+                adminDeleted: true,
+                adminDeletedAt: deletedAt,
+                adminDeletedFromStatus: o.delivery_address?.adminDeletedFromStatus ?? o.order_status,
+              },
+            }
+          : o
+      )))
+      setEtaInputs(prev => {
+        const next = { ...prev }
+        delete next[order.id]
+        return next
+      })
+      setSelected(prev => {
+        const next = new Set(prev)
+        next.delete(order.id)
+        return next
+      })
+    } finally { setSaving(null) }
+  }
+
   if (checking) return null
   if (!authed) {
     return (
@@ -223,11 +273,18 @@ export default function AdminOrdersPage() {
     )
   }
 
+  const deletedOrders = orders.filter(isDeletedOrder)
+  const normalOrders = orders.filter(o => !isDeletedOrder(o))
+  const activeOrders = normalOrders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled')
+  const deliveredOrders = normalOrders.filter(o => o.order_status === 'delivered')
+
   const baseDisplayed = filter === 'active'
-    ? orders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled')
+    ? activeOrders
     : filter === 'delivered'
-    ? orders.filter(o => o.order_status === 'delivered')
-    : orders
+    ? deliveredOrders
+    : filter === 'deleted'
+    ? deletedOrders
+    : normalOrders
 
   const displayed = search.trim()
     ? baseDisplayed.filter(o =>
@@ -246,8 +303,9 @@ export default function AdminOrdersPage() {
     })
   }
 
+  const canBulkSelect = filter !== 'deleted'
   const allDisplayedSelected =
-    displayed.length > 0 && displayed.every(o => selected.has(o.id))
+    canBulkSelect && displayed.length > 0 && displayed.every(o => selected.has(o.id))
 
   function toggleSelectAll() {
     if (allDisplayedSelected) {
@@ -266,13 +324,19 @@ export default function AdminOrdersPage() {
   }
 
   function exportCSV() {
-    const base = filter === 'active' ? orders.filter(o => o.order_status !== 'delivered') : orders
+    const exportBase = filter === 'active'
+      ? activeOrders
+      : filter === 'delivered'
+      ? deliveredOrders
+      : filter === 'deleted'
+      ? deletedOrders
+      : normalOrders
     const toExport = search.trim()
-      ? base.filter(o =>
+      ? exportBase.filter(o =>
           o.customer_phone?.includes(search) ||
           o.id.slice(0, 8).toUpperCase().includes(search.toUpperCase())
         )
-      : base
+      : exportBase
     const rows = [
       ['Order ID', 'Date', 'Customer Name', 'Customer Phone', 'Status', 'Payment', 'Total (₹)', 'Items', 'Address', 'Notes'],
       ...toExport.map(o => {
@@ -333,7 +397,7 @@ export default function AdminOrdersPage() {
         <div>
           <h1 style={S.title}>Orders Dashboard</h1>
           <p style={S.subtitle}>
-            {loading ? '⏳ Loading…' : `${orders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled').length} active · ${orders.filter(o => o.order_status === 'delivered').length} delivered · ${orders.length} total`}
+            {loading ? '⏳ Loading…' : `${activeOrders.length} active · ${deliveredOrders.length} delivered · ${normalOrders.length} total · ${deletedOrders.length} deleted`}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -342,6 +406,7 @@ export default function AdminOrdersPage() {
               { key: 'active',    label: 'Active' },
               { key: 'delivered', label: '✅ Delivered' },
               { key: 'all',       label: 'All' },
+              { key: 'deleted',   label: `Deleted (${deletedOrders.length})` },
             ] as const).map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)}
                 style={{ ...S.filterBtn, ...(filter === f.key ? S.filterActive : {}) }}>
@@ -391,12 +456,12 @@ export default function AdminOrdersPage() {
         <div style={S.empty}>
           <p style={{ fontSize: '2.5rem', margin: 0 }}>📭</p>
           <p style={{ color: '#6b5744', fontWeight: 500, margin: 0 }}>
-            {filter === 'active' ? 'No active orders right now' : 'No orders yet'}
+            {filter === 'active' ? 'No active orders right now' : filter === 'deleted' ? 'No deleted orders' : 'No orders yet'}
           </p>
         </div>
       )}
 
-      {displayed.length > 0 && (
+      {canBulkSelect && displayed.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.5rem', paddingLeft: 4 }}>
           <input
             type="checkbox"
@@ -416,12 +481,15 @@ export default function AdminOrdersPage() {
             drivers={drivers}
             saving={saving === order.id || saving === order.id + '-eta' || saving === order.id + '-driver'}
             confirmPending={saving === order.id + '-confirm'}
+            isDeleted={isDeletedOrder(order)}
             etaValue={etaInputs[order.id] ?? ''}
             onEtaChange={val => setEtaInputs(prev => ({ ...prev, [order.id]: val }))}
             onStatusChange={s => updateStatus(order.id, s)}
             onEtaSave={() => updateEta(order.id)}
             onDriverAssign={dId => assignDriver(order.id, dId)}
             onConfirmPayment={() => confirmPayment(order.id)}
+            onDelete={() => deleteOrder(order)}
+            deletePending={saving === order.id + '-delete'}
             checked={selected.has(order.id)}
             onToggleCheck={() => toggleSelected(order.id)}
           />
@@ -470,35 +538,43 @@ export default function AdminOrdersPage() {
 }
 
 function OrderCard({
-  order, drivers, saving, confirmPending, etaValue, onEtaChange, onStatusChange, onEtaSave, onDriverAssign, onConfirmPayment, checked, onToggleCheck,
+  order, drivers, saving, confirmPending, deletePending, isDeleted, etaValue, onEtaChange, onStatusChange, onEtaSave, onDriverAssign, onConfirmPayment, onDelete, checked, onToggleCheck,
 }: {
   order: OrderRow
   drivers: DriverRow[]
   saving: boolean
   confirmPending: boolean
+  deletePending: boolean
+  isDeleted: boolean
   etaValue: string
   onEtaChange: (v: string) => void
   onStatusChange: (s: OrderRow['order_status']) => void
   onEtaSave: () => void
   onDriverAssign: (driverId: string) => void
   onConfirmPayment: () => void
+  onDelete: () => void
   checked: boolean
   onToggleCheck: () => void
 }) {
   const color = STATUS_COLOR[order.order_status]
   const addr  = order.delivery_address
+  const hasAddressContent = Boolean(addr && (
+    addr.houseNumber || addr.line1 || addr.streetAddress || addr.landmark || addr.pincode || (addr.lat && addr.lng)
+  ))
 
   return (
-    <div style={{ ...S.card, ...(checked ? { borderColor: '#d97706', background: '#fffbf0' } : {}) }}>
+    <div style={{ ...S.card, ...(checked ? { borderColor: '#d97706', background: '#fffbf0' } : {}), ...(isDeleted ? S.deletedCard : {}) }}>
       {/* Header row */}
       <div style={S.cardHead}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={onToggleCheck}
-            style={{ width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }}
-          />
+          {!isDeleted && (
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={onToggleCheck}
+              style={{ width: 16, height: 16, cursor: 'pointer', flexShrink: 0 }}
+            />
+          )}
           <div style={{ ...S.dot, background: color }} />
           <div>
             <p style={S.orderId}>#{order.id.slice(0, 8).toUpperCase()}</p>
@@ -520,6 +596,13 @@ function OrderCard({
           </p>
         </div>
       </div>
+
+      {isDeleted && (
+        <div style={S.deletedNotice}>
+          Deleted {addr?.adminDeletedAt ? new Date(addr.adminDeletedAt).toLocaleString('en-IN') : ''}
+          {addr?.adminDeletedFromStatus ? ` · was ${STATUS_LABELS[addr.adminDeletedFromStatus as OrderRow['order_status']] ?? addr.adminDeletedFromStatus}` : ''}
+        </div>
+      )}
 
       {/* Customer name + phone */}
       {(order.customer_name || order.delivery_address?.customerName || order.customer_phone) && (
@@ -559,7 +642,7 @@ function OrderCard({
       )}
 
       {/* Delivery Address */}
-      {addr && (
+      {hasAddressContent && addr && (
         <div style={S.addrBox}>
           <span style={S.addrIcon}>📍</span>
           <div style={{ flex: 1 }}>
@@ -604,87 +687,101 @@ function OrderCard({
         </div>
       )}
 
-      {/* Controls */}
-      <div style={S.controls}>
-        {/* Status dropdown */}
-        <div style={{ flex: '1 1 160px' }}>
-          <label style={S.label}>Status</label>
-          <select
-            value={order.order_status}
-            onChange={e => onStatusChange(e.target.value as OrderRow['order_status'])}
-            disabled={saving}
-            style={{ ...S.select, borderColor: color, color }}
-          >
-            {STATUS_OPTIONS.map(s => (
-              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-            ))}
-          </select>
-        </div>
+      {!isDeleted && (
+        <>
+          {/* Controls */}
+          <div style={S.controls}>
+            {/* Status dropdown */}
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={S.label}>Status</label>
+              <select
+                value={order.order_status}
+                onChange={e => onStatusChange(e.target.value as OrderRow['order_status'])}
+                disabled={saving}
+                style={{ ...S.select, borderColor: color, color }}
+              >
+                {STATUS_OPTIONS.map(s => (
+                  <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                ))}
+              </select>
+            </div>
 
-        {/* ETA input */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 120px', minWidth: 120 }}>
-          <label style={S.label}>ETA (min)</label>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <input
-              type="number" min={0} max={300} placeholder="e.g. 30"
-              value={etaValue}
-              onChange={e => onEtaChange(e.target.value)}
-              style={S.etaInput}
-              disabled={saving}
-            />
-            <button onClick={onEtaSave} disabled={saving} style={S.etaBtn}>
-              {saving ? '…' : 'Set'}
-            </button>
-          </div>
-        </div>
-
-        {/* Driver assignment */}
-        {drivers.length > 0 && (
-          <div style={{ flex: '1 1 170px' }}>
-            <label style={S.label}>Assign Driver</label>
-            {(order.payment_status !== 'cod' && order.payment_status !== 'paid') ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{
-                  background: '#fef3c7', border: '1.5px solid #fde68a', borderRadius: 8,
-                  padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#92400e', fontWeight: 600,
-                }}>
-                  ⏳ Awaiting payment confirmation
-                </div>
-                <button
-                  onClick={() => onConfirmPayment()}
-                  disabled={confirmPending}
-                  style={{
-                    background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8,
-                    padding: '0.45rem 0.9rem', fontWeight: 700, fontSize: '0.8125rem',
-                    cursor: 'pointer', opacity: confirmPending ? 0.6 : 1,
-                  }}
-                >
-                  {confirmPending ? '⏳ Confirming…' : '✓ Confirm Payment Received'}
+            {/* ETA input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: '1 1 120px', minWidth: 120 }}>
+              <label style={S.label}>ETA (min)</label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input
+                  type="number" min={0} max={300} placeholder="e.g. 30"
+                  value={etaValue}
+                  onChange={e => onEtaChange(e.target.value)}
+                  style={S.etaInput}
+                  disabled={saving}
+                />
+                <button onClick={onEtaSave} disabled={saving} style={S.etaBtn}>
+                  {saving ? '…' : 'Set'}
                 </button>
               </div>
-            ) : (
-              <>
-                <select
-                  value={order.driver_id ?? ''}
-                  onChange={e => onDriverAssign(e.target.value)}
-                  disabled={saving}
-                  style={{ ...S.select, borderColor: order.driver_id ? '#8b5cf6' : '#e5e7eb', color: order.driver_id ? '#8b5cf6' : '#6b7280' }}
-                >
-                  <option value=''>— Unassigned —</option>
-                  {drivers.filter(d => d.is_active).map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
-                {order.driver_name && (
-                  <p style={{ fontSize: '0.7rem', color: '#8b5cf6', marginTop: 3, fontWeight: 600 }}>
-                    🚗 {order.driver_name}
-                  </p>
+            </div>
+
+            {/* Driver assignment */}
+            {drivers.length > 0 && (
+              <div style={{ flex: '1 1 170px' }}>
+                <label style={S.label}>Assign Driver</label>
+                {(order.payment_status !== 'cod' && order.payment_status !== 'paid') ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{
+                      background: '#fef3c7', border: '1.5px solid #fde68a', borderRadius: 8,
+                      padding: '0.5rem 0.75rem', fontSize: '0.8125rem', color: '#92400e', fontWeight: 600,
+                    }}>
+                      ⏳ Awaiting payment confirmation
+                    </div>
+                    <button
+                      onClick={() => onConfirmPayment()}
+                      disabled={confirmPending}
+                      style={{
+                        background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8,
+                        padding: '0.45rem 0.9rem', fontWeight: 700, fontSize: '0.8125rem',
+                        cursor: 'pointer', opacity: confirmPending ? 0.6 : 1,
+                      }}
+                    >
+                      {confirmPending ? '⏳ Confirming…' : '✓ Confirm Payment Received'}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <select
+                      value={order.driver_id ?? ''}
+                      onChange={e => onDriverAssign(e.target.value)}
+                      disabled={saving}
+                      style={{ ...S.select, borderColor: order.driver_id ? '#8b5cf6' : '#e5e7eb', color: order.driver_id ? '#8b5cf6' : '#6b7280' }}
+                    >
+                      <option value=''>— Unassigned —</option>
+                      {drivers.filter(d => d.is_active).map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                    {order.driver_name && (
+                      <p style={{ fontSize: '0.7rem', color: '#8b5cf6', marginTop: 3, fontWeight: 600 }}>
+                        🚗 {order.driver_name}
+                      </p>
+                    )}
+                  </>
                 )}
-              </>
+              </div>
             )}
           </div>
-        )}
-      </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #f3f4f6', paddingTop: '0.75rem' }}>
+            <button
+              onClick={onDelete}
+              disabled={saving || deletePending}
+              style={S.deleteBtn}
+            >
+              {deletePending ? 'Deleting...' : 'Delete Order'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -710,6 +807,7 @@ const S: Record<string, React.CSSProperties> = {
   table:       { display: 'flex', flexDirection: 'column', gap: '0.875rem' },
 
   card:        { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 'clamp(0.875rem, 3vw, 1.25rem) clamp(0.875rem, 3vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '0.875rem' },
+  deletedCard: { borderColor: '#fecaca', background: '#fffafa' },
   cardHead:    { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' },
   dot:         { width: 10, height: 10, borderRadius: '50%', marginTop: 4, flexShrink: 0 },
   orderId:     { fontWeight: 700, color: '#1a1109', fontSize: '0.875rem', margin: 0, fontFamily: 'monospace' },
@@ -718,6 +816,7 @@ const S: Record<string, React.CSSProperties> = {
   itemCount:   { color: '#9ca3af', fontSize: '0.75rem', margin: '2px 0 0' },
 
   codBadge:    { background: '#d97706', color: '#fff', fontSize: '0.65rem', fontWeight: 700, padding: '1px 5px', borderRadius: 4, letterSpacing: '0.05em' },
+  deletedNotice:{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', borderRadius: 8, padding: '0.5rem 0.75rem', fontSize: '0.8125rem', fontWeight: 800 },
 
   phoneBox:    { display: 'flex', alignItems: 'center', gap: 10, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.625rem 0.75rem' },
 
@@ -734,4 +833,5 @@ const S: Record<string, React.CSSProperties> = {
   select:      { width: '100%', border: '2px solid', borderRadius: 8, padding: '0.5rem 0.625rem', fontSize: '0.875rem', fontWeight: 600, outline: 'none', cursor: 'pointer', background: '#fff' },
   etaInput:    { flex: 1, border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '0.5rem 0.625rem', fontSize: '0.875rem', outline: 'none', minWidth: 0 },
   etaBtn:      { background: '#d97706', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 0.75rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem', whiteSpace: 'nowrap' },
+  deleteBtn:   { background: '#fee2e2', color: '#b91c1c', border: '1.5px solid #fecaca', borderRadius: 8, padding: '0.5rem 0.875rem', fontWeight: 800, cursor: 'pointer', fontSize: '0.8125rem', whiteSpace: 'nowrap' },
 }

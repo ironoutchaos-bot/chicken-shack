@@ -20,6 +20,17 @@ type Mode = 'hidden' | 'install-android' | 'install-android-manual' | 'install-i
 const LS_INSTALL_DISMISSED = 'bf-install-dismissed'
 const LS_PERMS_DONE        = 'bf-perms-done'
 
+// How long to wait before showing the install prompt again after a dismissal.
+const DISMISS_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000 // 3 days
+
+/** True if the install prompt was dismissed recently (within the cooldown).
+ *  A legacy permanent '1' value is treated as expired so the prompt returns. */
+function dismissedRecently(): boolean {
+  const v = typeof window !== 'undefined' ? localStorage.getItem(LS_INSTALL_DISMISSED) : null
+  if (!v || !/^\d+$/.test(v)) return false
+  return Date.now() - Number(v) < DISMISS_COOLDOWN_MS
+}
+
 function isStandaloneMode(): boolean {
   if (typeof window === 'undefined') return false
   return (
@@ -34,6 +45,16 @@ function isIOS(): boolean {
   if (typeof window === 'undefined') return false
   const ua = navigator.userAgent
   return /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window)
+}
+
+/** Which browser the user is on within iOS. The "Add to Home Screen" flow and
+ *  the location of the Share button differ between Safari and Chrome/others. */
+function iosBrowser(): 'safari' | 'chrome' | 'other' {
+  if (typeof window === 'undefined') return 'safari'
+  const ua = navigator.userAgent
+  if (/CriOS/.test(ua)) return 'chrome'                       // Chrome on iOS
+  if (/FxiOS|EdgiOS|OPiOS|GSA/.test(ua)) return 'other'       // Firefox / Edge / Opera / Google app
+  return 'safari'
 }
 
 export default function PwaPrompts({
@@ -70,7 +91,7 @@ export default function PwaPrompts({
     }
 
     // NOT installed → maybe show an install prompt
-    if (localStorage.getItem(LS_INSTALL_DISMISSED) === '1') return
+    if (dismissedRecently()) return
 
     if (isIOS()) {
       // iOS Safari has no native install prompt — show manual instructions
@@ -140,7 +161,7 @@ export default function PwaPrompts({
   }, [deferredPrompt])
 
   const dismissInstall = useCallback(() => {
-    localStorage.setItem(LS_INSTALL_DISMISSED, '1')
+    localStorage.setItem(LS_INSTALL_DISMISSED, String(Date.now()))
     setMode('hidden')
   }, [])
 
@@ -175,6 +196,8 @@ export default function PwaPrompts({
 
   if (mode === 'hidden') return null
 
+  const iosBr = iosBrowser()
+
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center pointer-events-none">
       {/* Backdrop only for the permissions modal */}
@@ -198,7 +221,7 @@ export default function PwaPrompts({
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm leading-tight">Install B&apos;luru Fresh</p>
                   <p className="text-stone-400 text-xs mt-0.5 leading-snug">
-                    Get exclusive offers &amp; faster future orders
+                    Install now for better offers &amp; faster orders
                   </p>
                 </div>
                 <button onClick={dismissInstall} className="p-1.5 rounded-full hover:bg-stone-800 transition-colors shrink-0 -mt-0.5">
@@ -231,7 +254,7 @@ export default function PwaPrompts({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm leading-tight">Add B&apos;luru Fresh to your phone</p>
-                  <p className="text-stone-400 text-xs mt-0.5 leading-snug">Get exclusive offers &amp; faster future orders</p>
+                  <p className="text-stone-400 text-xs mt-0.5 leading-snug">Install now for better offers &amp; faster orders</p>
                 </div>
                 <button onClick={dismissInstall} className="p-1.5 rounded-full hover:bg-stone-800 transition-colors shrink-0 -mt-0.5">
                   <X size={15} className="text-stone-400" />
@@ -269,26 +292,49 @@ export default function PwaPrompts({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white text-sm leading-tight">Add B&apos;luru Fresh to your Home Screen</p>
-                  <p className="text-stone-400 text-xs mt-0.5 leading-snug">Install it in 2 quick taps</p>
+                  <p className="text-stone-400 text-xs mt-0.5 leading-snug">
+                    {iosBr === 'other' ? 'Best opened in Safari' : 'Install it in 2 quick taps'}
+                  </p>
                 </div>
                 <button onClick={dismissInstall} className="p-1.5 rounded-full hover:bg-stone-800 transition-colors shrink-0 -mt-0.5">
                   <X size={15} className="text-stone-400" />
                 </button>
               </div>
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center gap-3 bg-stone-800 rounded-2xl px-3 py-2.5">
-                  <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shrink-0">1</span>
-                  <p className="text-xs text-stone-200 leading-snug flex items-center gap-1.5">
-                    Tap the <Share size={15} className="inline text-blue-400" /> <span className="font-semibold text-white">Share</span> button below
-                  </p>
+
+              {/* Browser-specific steps — the Share button is at the BOTTOM in
+                  Safari but at the TOP-RIGHT in Chrome on iOS, which confuses users. */}
+              {iosBr === 'other' ? (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-3 bg-stone-800 rounded-2xl px-3 py-2.5">
+                    <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shrink-0">1</span>
+                    <p className="text-xs text-stone-200 leading-snug">
+                      Open <span className="font-semibold text-white">blurufresh.com</span> in the <span className="font-semibold text-white">Safari</span> browser
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-stone-800 rounded-2xl px-3 py-2.5">
+                    <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shrink-0">2</span>
+                    <p className="text-xs text-stone-200 leading-snug flex items-center gap-1.5">
+                      Tap <Share size={15} className="inline text-blue-400" /> <span className="font-semibold text-white">Share</span> → <Plus size={14} className="inline text-white" /> <span className="font-semibold text-white">Add to Home Screen</span>
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 bg-stone-800 rounded-2xl px-3 py-2.5">
-                  <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shrink-0">2</span>
-                  <p className="text-xs text-stone-200 leading-snug flex items-center gap-1.5">
-                    Choose <Plus size={15} className="inline text-white" /> <span className="font-semibold text-white">Add to Home Screen</span>
-                  </p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-3 bg-stone-800 rounded-2xl px-3 py-2.5">
+                    <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shrink-0">1</span>
+                    <p className="text-xs text-stone-200 leading-snug flex items-center gap-1.5">
+                      Tap the <Share size={15} className="inline text-blue-400" /> <span className="font-semibold text-white">Share</span> button
+                      <span className="text-stone-400">{iosBr === 'chrome' ? '(top-right of Chrome)' : '(bottom of Safari)'}</span>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-stone-800 rounded-2xl px-3 py-2.5">
+                    <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-black flex items-center justify-center shrink-0">2</span>
+                    <p className="text-xs text-stone-200 leading-snug flex items-center gap-1.5">
+                      Choose <Plus size={15} className="inline text-white" /> <span className="font-semibold text-white">Add to Home Screen</span>
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
               <button onClick={dismissInstall} className="w-full mt-3 py-2.5 text-xs font-semibold text-stone-400 hover:text-stone-300 transition-colors">
                 Got it
               </button>

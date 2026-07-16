@@ -45,11 +45,13 @@ export async function PATCH(
   // cold-start latency roughly in half.
   const [driverRes, orderRes] = await Promise.all([
     fetch(
-      `${SUPA_URL()}/rest/v1/drivers?id=eq.${encodeURIComponent(driverId)}&select=id,is_active`,
+      `${SUPA_URL()}/rest/v1/drivers?id=eq.${encodeURIComponent(driverId)}&select=id,is_active,name,phone`,
       { headers: srvHeaders() }
     ),
+    // Look the order up by id only — drivers can act on unassigned orders too
+    // (the dashboard shows the unassigned pool). Ownership is checked below.
     fetch(
-      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&driver_id=eq.${encodeURIComponent(driverId)}&select=id,order_status,user_id`,
+      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,order_status,user_id,driver_id`,
       { headers: srvHeaders() }
     ),
   ])
@@ -66,19 +68,30 @@ export async function PATCH(
 
   const order = Array.isArray(orders) ? orders[0] : null
   if (!order) {
-    return NextResponse.json({ error: 'Order not found or not assigned to you' }, { status: 404 })
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  }
+  // Block only if the order is already claimed by a DIFFERENT driver.
+  if (order.driver_id && order.driver_id !== driverId) {
+    return NextResponse.json({ error: 'This order is already being handled by another driver' }, { status: 409 })
   }
 
-  // ── Update the order ───────────────────────────────────────────────────────
+  // ── Update the order — also claim it if it was unassigned ──────────────────
+  const patch: Record<string, unknown> = {
+    order_status: body.order_status,
+    updated_at:   new Date().toISOString(),
+  }
+  if (!order.driver_id) {
+    patch.driver_id    = driverId
+    patch.driver_name  = driver.name  ?? null
+    patch.driver_phone = driver.phone ?? null
+  }
+
   const patchRes = await fetch(
     `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`,
     {
       method:  'PATCH',
       headers: srvHeaders({ 'Prefer': 'return=minimal' }),
-      body:    JSON.stringify({
-        order_status: body.order_status,
-        updated_at:   new Date().toISOString(),
-      }),
+      body:    JSON.stringify(patch),
     }
   )
 

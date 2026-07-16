@@ -34,6 +34,10 @@ export default function AdminDriversPage() {
   const [editingPwd, setEditingPwd] = useState<string | null>(null)
   const [newPwd, setNewPwd] = useState('')
 
+  // Test driver alarm
+  const [testing,    setTesting]    = useState(false)
+  const [testResult, setTestResult] = useState('')
+
   const loadDrivers = useCallback(async () => {
     setLoading(true)
     try {
@@ -106,6 +110,43 @@ export default function AdminDriversPage() {
     } finally { setDeleting(null) }
   }
 
+  async function testAlarm() {
+    setTesting(true); setTestResult('')
+    try {
+      const res = await fetch('/api/admin/test-driver-alarm', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { setTestResult(data.error ?? 'Failed to send'); return }
+      if (data.total === 0) {
+        setTestResult('No drivers have notifications enabled yet')
+      } else if (data.sent > 0) {
+        setTestResult(`✓ Delivered to ${data.sent} of ${data.total} device${data.total !== 1 ? 's' : ''}`)
+      } else {
+        setTestResult(`⚠ 0 delivered — all ${data.total} failed (check setup)`)
+      }
+    } catch {
+      setTestResult('Network error')
+    } finally {
+      setTesting(false)
+      setTimeout(() => setTestResult(''), 6000)
+    }
+  }
+
+  async function resetSubscriptions() {
+    if (!confirm('Clear all driver notification registrations? Each driver phone will re-register automatically the next time it opens the app. Use this to remove stale/dead devices.')) return
+    setTesting(true); setTestResult('')
+    try {
+      const res = await fetch('/api/admin/reset-driver-subscriptions', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) { setTestResult(data.error ?? 'Failed'); return }
+      setTestResult(`✓ Cleared ${data.cleared} old device${data.cleared !== 1 ? 's' : ''} — now reopen the app on each driver phone`)
+    } catch {
+      setTestResult('Network error')
+    } finally {
+      setTesting(false)
+      setTimeout(() => setTestResult(''), 9000)
+    }
+  }
+
   async function savePassword(id: string) {
     if (!newPwd.trim()) return
     await fetch(`/api/drivers/${id}`, {
@@ -144,9 +185,18 @@ export default function AdminDriversPage() {
           <h1 style={S.title}>Drivers</h1>
           <p style={S.subtitle}>{drivers.length} driver{drivers.length !== 1 ? 's' : ''} registered</p>
         </div>
-        <button onClick={() => setShowForm(v => !v)} style={S.addBtn}>
-          {showForm ? '✕ Cancel' : '+ Add Driver'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {testResult && <span style={{ fontSize: '0.8125rem', color: testResult.startsWith('✓') ? '#16a34a' : '#d97706', fontWeight: 600 }}>{testResult}</span>}
+          <button onClick={resetSubscriptions} disabled={testing} style={S.resetBtn}>
+            ♻ Reset notifications
+          </button>
+          <button onClick={testAlarm} disabled={testing} style={S.testBtn}>
+            {testing ? 'Sending…' : '🔔 Test alarm'}
+          </button>
+          <button onClick={() => setShowForm(v => !v)} style={S.addBtn}>
+            {showForm ? '✕ Cancel' : '+ Add Driver'}
+          </button>
+        </div>
       </div>
 
       {/* Add driver form */}
@@ -295,6 +345,8 @@ const S: Record<string, React.CSSProperties> = {
   title:      { fontSize: 'clamp(1.125rem, 4vw, 1.5rem)', fontWeight: 700, color: '#1a1109', margin: 0 },
   subtitle:   { fontSize: '0.8125rem', color: '#6b5744', marginTop: 4 },
   addBtn:     { background: '#1a1109', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' },
+  testBtn:    { background: '#fff7ed', color: '#d97706', border: '1.5px solid rgba(217,119,6,0.4)', borderRadius: 8, padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' },
+  resetBtn:   { background: 'transparent', color: '#6b7280', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '0.5rem 0.875rem', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' },
 
   formCard:   { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: '1.25rem', marginBottom: '1.25rem' },
   formTitle:  { fontWeight: 700, color: '#1a1109', fontSize: '0.9375rem', margin: '0 0 1rem' },

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   try {
     const res = await fetch(
       `${SUPA_URL()}/rest/v1/products?select=*&order=name.asc`,
-      { headers: { 'apikey': SUPA_SRV(), 'Authorization': `Bearer ${SUPA_SRV()}` } }
+      { headers: { 'apikey': SUPA_SRV(), 'Authorization': `Bearer ${SUPA_SRV()}` }, cache: 'no-store' }
     )
     return NextResponse.json(await res.json())
   } catch {
@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
   let body: {
     id?: string; name?: string; price_per_kg?: number
     stock_quantity?: number; image_url?: string | null
+    discount_percentage?: number; weight_per_unit?: number | null
   }
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -54,12 +55,14 @@ export async function POST(req: NextRequest) {
         method:  'POST',
         headers: { ...srvHeaders(), 'Prefer': 'return=representation' },
         body: JSON.stringify({
-          id:             slug,
-          name:           body.name.trim(),
-          price_per_kg:   body.price_per_kg  ?? 0,
-          stock_quantity: body.stock_quantity ?? 50,
-          category:       'chicken',
-          image_url:      body.image_url ?? null,
+          id:                  slug,
+          name:                body.name.trim(),
+          price_per_kg:        body.price_per_kg  ?? 0,
+          stock_quantity:      body.stock_quantity ?? 50,
+          discount_percentage: body.discount_percentage ?? 0,
+          weight_per_unit:     body.weight_per_unit ?? null,
+          category:            'chicken',
+          image_url:           body.image_url ?? null,
         }),
       }
     )
@@ -80,7 +83,8 @@ export async function PATCH(req: NextRequest) {
 
   let body: {
     id?: string; price_per_kg?: number; stock_quantity?: number
-    name?: string; image_url?: string | null
+    name?: string; image_url?: string | null; discount_percentage?: number
+    weight_per_unit?: number | null
   }
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
@@ -88,19 +92,40 @@ export async function PATCH(req: NextRequest) {
 
   if (!body.id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
 
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
-  if (body.price_per_kg   !== undefined) patch.price_per_kg   = body.price_per_kg
-  if (body.stock_quantity !== undefined) patch.stock_quantity  = body.stock_quantity
-  if (body.name           !== undefined) patch.name            = body.name
-  if (body.image_url      !== undefined) patch.image_url       = body.image_url
+  // Base fields — always safe (exist in original schema)
+  const basePatch: Record<string, unknown> = { updated_at: new Date().toISOString() }
+  if (body.price_per_kg  !== undefined) basePatch.price_per_kg  = body.price_per_kg
+  if (body.stock_quantity !== undefined) basePatch.stock_quantity = body.stock_quantity
+  if (body.name          !== undefined) basePatch.name           = body.name
+  if (body.image_url     !== undefined) basePatch.image_url      = body.image_url
+
+  // Extended fields — only exist after SQL migration
+  const extPatch: Record<string, unknown> = {}
+  if (body.discount_percentage !== undefined) extPatch.discount_percentage = body.discount_percentage
+  if (body.weight_per_unit     !== undefined) extPatch.weight_per_unit     = body.weight_per_unit
+
+  const endpoint = `${SUPA_URL()}/rest/v1/products?id=eq.${encodeURIComponent(body.id)}`
 
   try {
-    const res = await fetch(
-      `${SUPA_URL()}/rest/v1/products?id=eq.${encodeURIComponent(body.id)}`,
-      { method: 'PATCH', headers: srvHeaders(), body: JSON.stringify(patch) }
-    )
-    if (!res.ok) return NextResponse.json({ error: await res.text() }, { status: 500 })
-    return NextResponse.json({ ok: true })
+    // Try full patch (base + extended) first
+    const fullPatch = { ...basePatch, ...extPatch }
+    const res = await fetch(endpoint, {
+      method: 'PATCH', headers: srvHeaders(), body: JSON.stringify(fullPatch)
+    })
+
+    if (res.ok) return NextResponse.json({ ok: true })
+
+    // If full patch failed (likely missing columns), fall back to base fields only
+    const errText = await res.text()
+    if (Object.keys(extPatch).length > 0 && (errText.includes('column') || res.status === 400)) {
+      const res2 = await fetch(endpoint, {
+        method: 'PATCH', headers: srvHeaders(), body: JSON.stringify(basePatch)
+      })
+      if (res2.ok) return NextResponse.json({ ok: true, warning: 'Extended fields not saved — run SQL migration' })
+      return NextResponse.json({ error: await res2.text() }, { status: 500 })
+    }
+
+    return NextResponse.json({ error: errText }, { status: 500 })
   } catch {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }

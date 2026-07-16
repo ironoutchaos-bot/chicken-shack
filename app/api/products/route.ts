@@ -17,53 +17,69 @@ export async function GET() {
 
   const headers = { 'apikey': key, 'Authorization': `Bearer ${key}` }
 
-  // Try full schema first (after running SCHEMA.sql)
+  async function tryFetch(endpoint: string) {
+    const res = await fetch(endpoint, { headers, cache: 'no-store' })
+    if (!res.ok) return null
+    const data = await res.json()
+    return Array.isArray(data) && data.length > 0 ? data : null
+  }
+
   try {
-    const fullEndpoint = `${url}/rest/v1/products?select=id,name,price_per_kg,image_url,stock_quantity,category,discount_percentage,weight_per_unit&order=name.asc`
-    const res = await fetch(fullEndpoint, { headers })
 
-    if (res.ok) {
-      const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) {
-        // Normalise: fill in defaults for any nulls
-        const rows = data.map((p: Record<string, unknown>) => ({
-          id: p.id,
-          name: p.name,
-          price_per_kg: p.price_per_kg ?? 0,
-          image_url: p.image_url ?? null,
-          stock_quantity: p.stock_quantity ?? 50,
-          category: p.category ?? 'chicken',
-          discount_percentage: p.discount_percentage ?? 0,
-          weight_per_unit: p.weight_per_unit ?? null,
-        }))
-        const uniqueRows = rows.filter((product, index, list) => {
-          const nameKey = String(product.name).trim().toLowerCase()
-          return list.findIndex(item => String(item.name).trim().toLowerCase() === nameKey) === index
-        })
-        return NextResponse.json(uniqueRows)
-      }
+    // Tier 1: full schema including new columns (discount + weight)
+    const tier1 = await tryFetch(
+      `${url}/rest/v1/products?select=id,name,price_per_kg,discount_percentage,weight_per_unit,image_url,stock_quantity,category&order=name.asc`
+    )
+    const noCache = { headers: { 'Cache-Control': 'no-store, max-age=0' } }
+
+    if (tier1) {
+      return NextResponse.json(tier1.map((p: Record<string, unknown>) => ({
+        id:                  p.id,
+        name:                p.name,
+        price_per_kg:        p.price_per_kg ?? 0,
+        discount_percentage: p.discount_percentage ?? 0,
+        weight_per_unit:     p.weight_per_unit ?? null,
+        image_url:           p.image_url ?? null,
+        stock_quantity:      p.stock_quantity ?? 50,
+        category:            p.category ?? 'chicken',
+      })), noCache)
     }
 
-    // If full query failed (missing columns), fall back to basic columns
-    const basicEndpoint = `${url}/rest/v1/products?select=id,name,price_per_kg&order=name.asc`
-    const res2 = await fetch(basicEndpoint, { headers })
-
-    if (res2.ok) {
-      const data2 = await res2.json()
-      if (Array.isArray(data2) && data2.length > 0) {
-        const rows = data2.map((p: Record<string, unknown>) => ({
-          id: p.id,
-          name: p.name,
-          price_per_kg: p.price_per_kg ?? 0,
-          image_url: null,
-          stock_quantity: 50,
-          category: 'chicken',
-        }))
-        return NextResponse.json(rows)
-      }
+    // Tier 2: original columns (images + stock, without new columns)
+    const tier2 = await tryFetch(
+      `${url}/rest/v1/products?select=id,name,price_per_kg,image_url,stock_quantity,category&order=name.asc`
+    )
+    if (tier2) {
+      return NextResponse.json(tier2.map((p: Record<string, unknown>) => ({
+        id:                  p.id,
+        name:                p.name,
+        price_per_kg:        p.price_per_kg ?? 0,
+        discount_percentage: 0,
+        weight_per_unit:     null,
+        image_url:           p.image_url ?? null,
+        stock_quantity:      p.stock_quantity ?? 50,
+        category:            p.category ?? 'chicken',
+      })), noCache)
     }
 
-    return NextResponse.json(PRODUCTS)
+    // Tier 3: bare minimum
+    const tier3 = await tryFetch(
+      `${url}/rest/v1/products?select=id,name,price_per_kg&order=name.asc`
+    )
+    if (tier3) {
+      return NextResponse.json(tier3.map((p: Record<string, unknown>) => ({
+        id:                  p.id,
+        name:                p.name,
+        price_per_kg:        p.price_per_kg ?? 0,
+        discount_percentage: 0,
+        weight_per_unit:     null,
+        image_url:           null,
+        stock_quantity:      50,
+        category:            'chicken',
+      })), noCache)
+    }
+
+    return NextResponse.json(PRODUCTS, noCache)
   } catch (err) {
     console.error('[products GET] threw:', err)
     return NextResponse.json(PRODUCTS)

@@ -23,6 +23,7 @@ const PRODUCT_IMAGES: Record<string, string> = {
   'liver': '/assets/packaged_chicken.jpg',
 }
 
+
 // Display a product's pack size using the admin-chosen unit (pc / g / kg).
 // `amount` is the raw number the admin entered; `unit` decides how to label it.
 function formatUnit(amount: number | null | undefined, unit?: string | null): string {
@@ -97,6 +98,7 @@ export default function ShopTab({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+
   const [expandedNameIdx, setExpandedNameIdx] = useState<number | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -145,6 +147,7 @@ export default function ShopTab({
   })()
 
   const heroProduct = orderedProducts[0] ?? null
+
   const gridProducts = orderedProducts.slice(1)
 
   const hasDeliveryAddress = Boolean(areaName || pincode)
@@ -395,6 +398,7 @@ export default function ShopTab({
             {/* ── EDITORIAL HERO (first product) ── */}
             {heroProduct && (() => {
               const heroImg = productImage(heroProduct)
+
               const heroDiscount = heroProduct.discount_percentage ?? 0
               const heroSalePrice = heroDiscount > 0
                 ? Math.round(heroProduct.price_per_kg * (1 - heroDiscount / 100))
@@ -509,10 +513,11 @@ export default function ShopTab({
                 const qty = getCartQty(p.id)
                 const inCart = qty > 0
                 const outOfStock = p.stock_quantity === 0
-                const imgSrc = productImage(p)
-                const cardNum = String(idx + 2).padStart(2, '0')
-                const discount = p.discount_percentage ?? 0
-                const salePrice = discount > 0
+
+                const imgSrc     = productImage(p)
+                const cardNum    = String(idx + 2).padStart(2, '0')
+                const discount   = p.discount_percentage ?? 0
+                const salePrice  = discount > 0
                   ? Math.round(p.price_per_kg * (1 - discount / 100))
                   : p.price_per_kg
 
@@ -683,7 +688,9 @@ export default function ShopTab({
                       style={{ fontSize: 13, fontWeight: 700, color: INK, cursor: 'pointer', ...(expandedNameIdx === i ? {} : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }) }}
                     >{rv.name}</p>
                     <div style={{ display: 'flex', gap: 1, marginTop: 1 }}>
-                      {[0, 1, 2, 3, 4].map(s => <span key={s} style={{ color: '#f5a623', fontSize: 11, lineHeight: 1 }}>★</span>)}
+
+                      {[0,1,2,3,4].map(s => <span key={s} style={{ color: '#f5a623', fontSize: 11, lineHeight: 1 }}>★</span>)}
+
                     </div>
                   </div>
                   <span style={{ fontSize: 8, fontWeight: 700, color: GD, background: 'rgba(106,184,46,.1)', border: '1px solid rgba(106,184,46,.25)', borderRadius: 20, padding: '3px 7px', flexShrink: 0, letterSpacing: '0.04em' }}>✓ Verified</span>
