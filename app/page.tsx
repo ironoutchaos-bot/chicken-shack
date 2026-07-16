@@ -385,7 +385,6 @@ gap:0.75rem;
 .dn{width:5px;height:5px;border-radius:50%;background:rgba(22,20,15,.15);cursor:pointer;transition:all .3s;}
 .dn.on{background:var(--p);transform:scale(1.6);}
 .dn:hover{background:var(--gd);}
-.home-wa-fab,
 .home-cart-fab{
   position:fixed;
   bottom:calc(1.15rem + env(safe-area-inset-bottom, 0px));
@@ -396,16 +395,6 @@ gap:0.75rem;
   align-items:center;
   justify-content:center;
   transition:transform .18s ease, box-shadow .18s ease;
-}
-.home-wa-fab{
-  left:1.1rem;
-  width:56px;
-  height:56px;
-  border-radius:999px;
-  background:#25D366;
-  color:#fff;
-  box-shadow:0 14px 30px rgba(37,211,102,.34),0 0 0 4px rgba(255,255,255,.82);
-  text-decoration:none;
 }
 .home-cart-fab{
   right:1.1rem;
@@ -419,18 +408,12 @@ gap:0.75rem;
   box-shadow:0 16px 34px rgba(123,31,208,.38),0 0 0 4px rgba(255,255,255,.82);
   font-family:'Unbounded',sans-serif;
 }
-.home-wa-fab:hover,
 .home-cart-fab:hover{transform:translateY(-2px);}
 .home-cart-icon{position:relative;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;background:rgba(255,255,255,.14);}
 .home-cart-badge{position:absolute;right:-7px;top:-7px;min-width:22px;height:22px;border-radius:999px;background:var(--pl);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0 5px;font-size:10px;font-weight:900;}
 .home-cart-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1;}
 .home-cart-copy small{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:900;}
 .home-cart-copy strong{font-size:14px;font-weight:900;}
-body.bf-home-page #df-btn-cont{
-  opacity:0 !important;
-  pointer-events:none !important;
-  transform:scale(.1) !important;
-}
 .rv{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease;}
 .rv.in{opacity:1;transform:translateY(0);}
 .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}.d4{transition-delay:.4s}
@@ -871,11 +854,6 @@ export default function Home() {
   const [productsError, setProductsError] = useState("");
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
 
-  useEffect(() => {
-    document.body.classList.add("bf-home-page");
-    return () => document.body.classList.remove("bf-home-page");
-  }, []);
-
   // Hydrate user
   useEffect(() => {
     fetch("/api/auth/me")
@@ -1208,18 +1186,6 @@ export default function Home() {
     document
       .getElementById("scroll-story")
       ?.scrollIntoView({ behavior: "smooth" });
-  };
-  const openWhatsAppChat = () => {
-    const widgetTrigger = document.querySelector<HTMLElement>(
-      '#df-btn-cont button, #df-btn-cont [role="button"], #df-btn-cont a, #df-btn-cont',
-    );
-
-    if (widgetTrigger) {
-      widgetTrigger.click();
-      return;
-    }
-
-    window.open("https://wa.me/917012488951", "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -2023,32 +1989,6 @@ export default function Home() {
           📍 maps
         </a>
       </div>
-
-      {!cartOpen && !loginOpen && (
-        <button
-          type="button"
-          className="home-wa-fab"
-          aria-label="Chat on WhatsApp"
-          onClick={openWhatsAppChat}
-        >
-          <svg
-            width="34"
-            height="34"
-            viewBox="0 0 32 32"
-            aria-hidden="true"
-            fill="none"
-          >
-            <path
-              d="M16.02 3.15C9 3.15 3.3 8.77 3.3 15.68c0 2.28.63 4.49 1.83 6.43L3.2 29l7.1-1.86a12.9 12.9 0 0 0 5.72 1.34c7.02 0 12.72-5.62 12.72-12.53S23.04 3.15 16.02 3.15Zm0 22.97c-1.86 0-3.68-.49-5.27-1.42l-.38-.22-4.2 1.1 1.12-4.06-.25-.42a10.18 10.18 0 0 1-1.57-5.42c0-5.61 4.73-10.18 10.55-10.18 5.82 0 10.55 4.57 10.55 10.18 0 5.61-4.73 10.44-10.55 10.44Z"
-              fill="white"
-            />
-            <path
-              d="M22.1 18.64c-.31.87-1.54 1.6-2.27 1.71-.6.09-1.38.12-2.22-.14-.51-.16-1.17-.38-2.01-.74-3.54-1.54-5.84-5-6.02-5.23-.17-.23-1.44-1.9-1.44-3.62 0-1.72.91-2.56 1.23-2.91.31-.34.68-.42.91-.42h.65c.21.02.49-.07.77.59.3.72 1.02 2.49 1.1 2.67.08.18.14.39.03.62-.12.23-.18.38-.35.58-.18.2-.37.44-.53.59-.18.18-.36.37-.16.72.2.35.89 1.45 1.9 2.35 1.31 1.16 2.41 1.52 2.76 1.69.35.18.55.15.76-.08.2-.23.88-1.02 1.11-1.37.23-.35.47-.29.78-.18.32.12 2.03.95 2.38 1.13.35.18.58.26.67.41.08.15.08.87-.22 1.74Z"
-              fill="white"
-            />
-          </svg>
-        </button>
-      )}
 
       {cartItemCount > 0 && !cartOpen && !loginOpen && (
         <button
