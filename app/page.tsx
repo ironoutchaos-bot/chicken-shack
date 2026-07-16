@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -11,7 +12,6 @@ import {
   Plus,
   Minus,
   ShoppingBag,
-  X,
   Loader2,
   MapPin,
 } from "lucide-react";
@@ -20,7 +20,6 @@ import type { AuthUser } from "@/lib/auth-types";
 import { UNIT_LABEL } from "@/lib/units";
 import LoginDrawer from "@/app/order/components/LoginDrawer";
 import CartSheet from "@/app/order/components/CartSheet";
-import PincodeGate from "@/app/order/components/PincodeGate";
 import BannerCarousel from "@/app/order/components/BannerCarousel";
 
 const css = `
@@ -398,14 +397,14 @@ gap:0.75rem;
   .logo{font-size:.85rem;}
   .nav-btn{padding:.45rem 1rem;font-size:.58rem;}
   #hero{padding:7rem 1.2rem 0;justify-content:flex-start;min-height:auto;}
-  .hero-wave{left:0;right:0;top:48%;bottom:-1px;}
+  .hero-wave{left:0;right:0;top:39%;bottom:-1px;}
   .hero-h1{font-size:clamp(2rem, 12vw, 3.8rem);line-height:1.0;margin-bottom:0;}
   .hero-main-prod-wrap{max-width:94%;margin:0 auto 1.5rem;}
   .float-side-left, .float-side-right, .flying-spice{display:none;}
   .hero-desc-para{font-size:0.85rem;margin-bottom:1.5rem;}
   .hero-ctas{justify-content:center;width:100%;gap:0.8rem;}
   .btn-fill, .btn-line{width:100%;max-width:240px;text-align:center;padding:0.95rem 1.5rem;font-size:0.68rem;}
-  .hero-bg-word{top:47%;font-size:clamp(4rem,22vw,8rem);}
+  .hero-bg-word{top:40%;font-size:clamp(4rem,22vw,8rem);}
   .hero-scroll-hint{display:none;}
   .f-badge,.fb1,.fb2,.fb3{display:none;}
   .float-order{padding:.9rem 1.5rem;bottom:1rem;right:1rem;font-size:.9rem;}
@@ -443,6 +442,9 @@ gap:0.75rem;
 }
 @media(max-width:480px){
   .hero-h1{font-size:clamp(2.4rem,13vw,4.5rem);}
+  .hero-wave{top:30%;}
+  .hero-bg-word{top:30%;}
+  .hero-main-prod-wrap{margin-bottom:0}
   .hs-main{font-size:clamp(.85rem,4vw,1.1rem);}
   .why-hcard{width:240px;}
   .sf-heading{font-size:clamp(1.4rem,8vw,2.8rem);}
@@ -672,10 +674,20 @@ gap:0.75rem;
   color: #fff;
 }
 
-.landing-banner-wrap {
-  width: 100%;
-  max-width: 1020px;
-  margin: 0 auto 2rem;
+.landing-banner-wrap{
+    width:100%;
+    max-width:1020px;
+    margin:0 auto 2rem;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.landing-banner-wrap > *{
+    width:100%;
+    max-width:760px;   /* adjust as needed */
+    margin:0 auto !important;
 }
 .landing-banner-wrap > div {
   margin: 0 !important;
@@ -796,10 +808,9 @@ export default function Home() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loginOpen, setLoginOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [pincodeOpen, setPincodeOpen] = useState(false);
 
   const [pincode, setPincode] = useState<string | null>(null);
-  const [areaName, setAreaName] = useState("");
+  const [, setAreaName] = useState("");
 
   // Live settings
   const [storeOpen, setStoreOpen] = useState(true);
@@ -865,15 +876,17 @@ export default function Home() {
     load();
   }, []);
 
-  // Hydrate pincode from localStorage
+  // Hydrate delivery address from localStorage
   useEffect(() => {
     try {
-      const pc = localStorage.getItem("bf-pincode");
-      const area = localStorage.getItem("bf-area-name");
-      if (pc) {
-        setPincode(pc);
-        if (area) setAreaName(area);
-      }
+      const saved = localStorage.getItem("bf-delivery-address-v2");
+      if (!saved) return;
+      const addr = JSON.parse(saved) as {
+        pincode?: string;
+        streetAddress?: string;
+      };
+      setPincode(addr.pincode ?? null);
+      setAreaName(addr.streetAddress ?? "Saved address");
     } catch {}
   }, []);
 
@@ -901,27 +914,20 @@ export default function Home() {
   }, [cart, user]);
 
   // Cart operations
-  const addToCart = useCallback(
-    (item: CartItem) => {
-      if (!pincode) {
-        setPincodeOpen(true);
-        return;
+  const addToCart = useCallback((item: CartItem) => {
+    setCart((prev) => {
+      const idx = prev.findIndex((c) => c.productId === item.productId);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = {
+          ...next[idx],
+          quantity: +(next[idx].quantity + item.quantity).toFixed(1),
+        };
+        return next;
       }
-      setCart((prev) => {
-        const idx = prev.findIndex((c) => c.productId === item.productId);
-        if (idx >= 0) {
-          const next = [...prev];
-          next[idx] = {
-            ...next[idx],
-            quantity: +(next[idx].quantity + item.quantity).toFixed(1),
-          };
-          return next;
-        }
-        return [...prev, item];
-      });
-    },
-    [pincode],
-  );
+      return [...prev, item];
+    });
+  }, []);
 
   const updateCartQty = useCallback((productId: string, qty: number) => {
     if (qty <= 0) {
@@ -1165,7 +1171,7 @@ export default function Home() {
       <div id="cur" />
       <div id="ring" />
 
-      {!cartOpen && !loginOpen && !pincodeOpen && (
+      {/* {!cartOpen && !loginOpen && (
         <button
           className="float-order"
           onClick={goOrder}
@@ -1203,7 +1209,7 @@ export default function Home() {
             </span>
           </span>
         </button>
-      )}
+      )} */}
 
       <div className="dnav" id="dnav">
         {[0, 1, 2, 3, 4].map((i) => (
@@ -1981,6 +1987,10 @@ export default function Home() {
         savedPincode={pincode ?? undefined}
         minOrderAmount={minOrder}
         deliveryFee={deliveryFee}
+        onDeliveryAddressSaved={(addr) => {
+          setPincode(addr.pincode);
+          setAreaName(addr.streetAddress || "Saved address");
+        }}
         onOrderPlaced={() => {
           clearCart();
           setCartOpen(false);
@@ -1989,32 +1999,6 @@ export default function Home() {
           );
         }}
       />
-
-      {pincodeOpen && (
-        <div
-          className="modal-overlay"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setPincodeOpen(false);
-          }}
-        >
-          <div className="pincode-modal-card">
-            <button
-              onClick={() => setPincodeOpen(false)}
-              className="pincode-close-btn"
-              aria-label="Close delivery area check"
-            >
-              <X size={16} />
-            </button>
-            <PincodeGate
-              onVerified={(pc, area) => {
-                setPincode(pc);
-                setAreaName(area);
-                setPincodeOpen(false);
-              }}
-            />
-          </div>
-        </div>
-      )}
     </>
   );
 }
