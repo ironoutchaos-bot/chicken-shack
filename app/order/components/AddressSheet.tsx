@@ -408,7 +408,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-end justify-center"
+      className="fixed inset-0 z-[2147483000] flex items-end justify-center"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />

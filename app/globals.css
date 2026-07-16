@@ -2927,3 +2927,10 @@ a {
 @tailwind utilities;
 
 
+/* AiSensy WhatsApp widget: keep it below cart/address/login modals. */
+#df-btn-cont,
+#df-btn-cont *,
+iframe[src*="d3mkw6s8thqya7"],
+iframe[src*="aisensy"] {
+  z-index: 40 !important;
+}

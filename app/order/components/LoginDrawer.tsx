@@ -122,7 +122,7 @@ export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
+      className="fixed inset-0 z-[2147483000] flex items-end justify-center"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
