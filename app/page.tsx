@@ -24,7 +24,7 @@ import BannerCarousel from "@/app/order/components/BannerCarousel";
 
 const css = `
 :root{
-  --g:#cef621; --gd:#cef621; --p:#4c0381; --p2:#60079d; --pd:#7308b0; --pl:#cef621; --cart-icon:#fcc13e;
+  --g:#D6FF16; --gd:#D6FF16; --p:#4c0381; --p2:#60079d; --pd:#7308b0; --pl:#D6FF16; --cart-icon:#fcc13e;
   --ink:#1F110B; --ink2:#543C32;
   --cream:#FAF7F0; --cream2:#FAF5EB; --cream3:#F5EFE0;
   --white:#ffffff;
@@ -116,11 +116,33 @@ nav{
 .hero-wave path{fill:var(--cream);}
 .hero-content-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:1000px;margin:0 auto;}
 .hero-statement-text{font-family:'DM Mono',monospace;font-size:clamp(0.85rem, 2.2vw, 1.1rem);color:rgba(255,255,255,0.9);max-width:55ch;margin-bottom:.55rem;font-weight:500;position:relative;z-index:2;}
-.hs-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,0.22);padding:.4rem 1.2rem;width:fit-content;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.18em;color:#ffffff;text-transform:uppercase;margin-bottom:.65rem;border-radius:9999px;position:relative;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.14);margin-top:1rem}
-.hs-pill::before{content:'';width:6px;height:6px;background:var(--pl);border-radius:50%;animation:blink 1.5s ease infinite;box-shadow:0 0 12px rgba(206,246,33,.72);}
+.hs-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,0.22);padding:.4rem 1.2rem;width:fit-content;font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.18em;color:#ffffff;text-transform:uppercase;margin-bottom:.65rem;border-radius:9999px;position:relative;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.14);margin-top:1rem;
+ margin-top:1.75rem;   
+    margin-bottom:.65rem;}
+.hs-pill::before{content:'';width:6px;height:6px;background:var(--pl);border-radius:50%;animation:blink 1.5s ease infinite;box-shadow:0 0 8px rgba(214,255,22,.45);}
 .hero-h1{font-family:'Archivo Black',sans-serif;font-size:clamp(3.25rem, 9.1vw, 7.2rem);line-height:0.9;letter-spacing:-.045em;color:#ffffff;margin-bottom:0;text-shadow:0 8px 28px rgba(35,0,72,0.3);position:relative;z-index:30;text-transform:uppercase;}
-.hero-h1 .line-light{color:var(--pl);text-shadow:0 0 28px rgba(206,246,33,.28);}
-.hero-main-prod-wrap{position:relative;width:100%;max-width:705px;margin:-88px auto .8rem;display:flex;justify-content:center;align-items:center;z-index:3;}
+.hero-h1{
+    font-family:'Archivo Black',sans-serif;
+    font-weight:900;
+
+    font-size:clamp(3.5rem,9.5vw,7.6rem);
+
+    line-height:.84;
+
+    letter-spacing:-0.055em;
+
+    color:#fff;
+
+    text-transform:uppercase;
+
+    text-shadow:
+        0 2px 0 rgba(0,0,0,.08),
+        0 8px 20px rgba(0,0,0,.14);
+}
+.hero-h1 .line-light{color:var(--pl);  text-shadow:
+        0 2px 0 rgba(0,0,0,.08),
+        0 8px 18px rgba(0,0,0,.10);}
+.hero-main-prod-wrap{position:relative;width:100%;max-width:600px;margin:-88px auto .8rem;display:flex;justify-content:center;align-items:center;z-index:3;}
 .hero-main-prod-img{width:100%;height:auto;mix-blend-mode:multiply;filter:contrast(1.12) saturate(1.08);animation:floatBig 6s ease-in-out infinite;}
 @keyframes floatBig{0%,100%{transform:translateY(0) scale(1) rotate(0.5deg);}50%{transform:translateY(-15px) scale(1.02) rotate(-0.5deg);}}
 
@@ -159,7 +181,7 @@ nav{
 .btn-line:hover{border-color:var(--p);color:var(--p);background:rgba(95,7,155,.06);transform:translateY(-1px);}
 .hero-scroll-hint{display:none;}
 .hero-bg-word{position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(8rem,20vw,26rem);color:rgba(255,255,255,.115);white-space:nowrap;letter-spacing:-.04em;line-height:1;pointer-events:none;user-select:none;animation:bgFloat 8s ease-in-out infinite;z-index:0;}
-.ticker{background:linear-gradient(90deg,var(--pd),var(--p),var(--p2));padding:.9rem 0;overflow:hidden;display:flex;border-top:1px solid rgba(199,242,10,0.22);border-bottom:1px solid rgba(199,242,10,0.22);position:relative;z-index:10;}
+.ticker{background:linear-gradient(90deg,var(--pd),var(--p),var(--p2));padding:.9rem 0;overflow:hidden;display:flex;border-top:1px solid rgba(214,255,22,0.22);border-bottom:1px solid rgba(199,242,10,0.22);position:relative;z-index:10;}
 .ticker-track{display:flex;gap:3rem;animation:tick 16s linear infinite;white-space:nowrap;}
 @keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 .ti{font-family:'Unbounded',sans-serif;font-size:.82rem;font-weight:900;letter-spacing:.12em;color:var(--cream);flex-shrink:0;display:flex;align-items:center;gap:2rem;}
@@ -390,7 +412,7 @@ gap:0.75rem;
 
     box-shadow:
         0 16px 38px rgba(95,7,155,.34),
-        0 0 0 8px rgba(206,246,33,.16),
+        0 0 0 8px rgba(214,255,22,.15),
         inset 0 1px 0 rgba(255,255,255,.12);
 
     transition:.25s ease;
@@ -655,7 +677,7 @@ gap:0.75rem;
 .menu-card-unit {
   font-size: 9.5px;
   color: rgba(22, 20, 15, 0.62);
-  font-weight: 500;
+  font-weight:500;
   margin-bottom: 9px;
   letter-spacing: 0.04em;
 }
@@ -952,10 +974,23 @@ gap:0.75rem;
   letter-spacing: -0.02em;
   margin-top: 10px;
 }
-.testimonials-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+.testimonials-grid{
+    display:flex;
+    gap:24px;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    scroll-behavior:smooth;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+    padding-bottom:8px;
+}
+
+.testimonials-grid::-webkit-scrollbar{
+    display:none;
+}
+.testimonial-card{
+    flex:0 0 calc((100% - 48px)/3);
+    scroll-snap-align:start;
 }
 .testimonial-card {
   background: #ffffff;
@@ -973,6 +1008,21 @@ gap:0.75rem;
   transform: translateY(-5px);
   border-color: rgba(123, 31, 208, 0.16);
   box-shadow: 0 20px 45px rgba(123, 31, 208, 0.08);
+}
+  @media(max-width:900px){
+
+.testimonial-card{
+    flex:0 0 80%;
+}
+
+}
+
+@media(max-width:600px){
+
+.testimonial-card{
+    flex:0 0 92%;
+}
+
 }
 .stars {
   display: flex;
@@ -1054,15 +1104,176 @@ gap:0.75rem;
     min-height: auto;
   }
 }
-`;
 
+/* ── Call Us Section ── */
+.call-us-section {
+  background: var(--cream3);
+  padding: 5.5rem 5% 5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid rgba(22, 20, 15, 0.05);
+}
+.call-us-container {
+  max-width: 680px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+.call-us-heading {
+  font-family: 'Unbounded', sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.8rem, 4.2vw, 3rem);
+  color: var(--p);
+  text-transform: uppercase;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+.call-us-subheading {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.9rem;
+  color: var(--ink2);
+  line-height: 1.6;
+  max-width: 54ch;
+  margin: 0 auto 2.5rem;
+}
+.call-us-btn-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 2.2rem;
+}
+.btn-call-now {
+  background: linear-gradient(135deg, var(--p2), var(--p), var(--pd));
+  color: #fff;
+  border: none;
+  padding: 1.1rem 3rem;
+  font-family: 'Unbounded', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 9999px;
+  box-shadow: 0 12px 30px rgba(123, 31, 208, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.25s ease;
+  position: relative;
+  z-index: 2;
+  text-decoration: none;
+}
+.btn-call-now:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px rgba(123, 31, 208, 0.45);
+}
+.call-glow-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: var(--p2);
+  filter: blur(10px);
+  opacity: 0.4;
+  z-index: 1;
+  animation: callGlow 3s ease infinite;
+}
+@keyframes callGlow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(1.05); }
+}
+.call-us-trust-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  border-top: 1px solid rgba(22, 20, 15, 0.08);
+  padding-top: 1.8rem;
+}
+.call-us-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.call-us-trust-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--p2);
+  border-radius: 50%;
+}
+@media(max-width: 600px) {
+  .call-us-trust-row {
+    flex-direction: column;
+    gap: 0.8rem;
+    align-items: center;
+  }
+}
+`;
+const testimonials = [
+  {
+    stars: 5,
+    text: "Honestly fed up of frozen and old stuffs. Ordered from you late evening and it reached chilled and fresh. Made chilli chicken the same night, turned out superb 😊 you guys have got a regular customer now!",
+    author: "Hemanth",
+    avatar: "H",
+    color: "#9333EA",
+  },
+  {
+    stars: 5,
+    text: "The webApp is super-friendly and ordering is very easy within 4 clicks, that's excellent. Also the product is toooo good 😍👍🏻",
+    author: "Prajwal Aiy...",
+    avatar: "P",
+    color: "#7E22CE",
+  },
+  {
+    stars: 5,
+    text: "Really impressed with this order! The chicken arrived on time, was very well packed and had zero smell. Tasted fresh and delicious. Great job on packaging and delivery! 👍🏻",
+    author: "Rakesh Sath...",
+    avatar: "R",
+    color: "#84CC16",
+  },
+  {
+    stars: 5,
+    text: "My wife is very particular about meat and even she had no complaints with what you sent. Properly cleaned, hardly any extra fat and the weight was exactly as mentioned.",
+    author: "Sooraj Kumar",
+    avatar: "S",
+    color: "#F59E0B",
+  },
+  {
+    stars: 5,
+    text: "Ordered from you for our Sunday family lunch. The pieces you sent were nicely cut and very fresh. Even my mother was impressed 😊 well done team!",
+    author: "Roshan Chan...",
+    avatar: "R",
+    color: "#3B82F6",
+  },
+  {
+    stars: 5,
+    text: "Being a working mother I rarely get time to visit the market, so thank you for making this so easy. The chicken you delivered was so clean and fresh — no smell even while cooking.",
+    author: "Dhanya Rama...",
+    avatar: "D",
+    color: "#EC4899",
+  },
+  {
+    stars: 5,
+    text: "No more standing in line at the meat shop. Order in the morning, get it cut fresh and delivered. Quality is consistently great every time.",
+    author: "Harsha",
+    avatar: "H",
+    color: "#14B8A6",
+  },
+];
 export default function Home() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loginOpen, setLoginOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-
+  const testimonialRef = useRef<HTMLDivElement>(null);
   const [pincode, setPincode] = useState<string | null>(null);
   const [, setAreaName] = useState("");
 
@@ -1086,7 +1297,7 @@ export default function Home() {
       .then((data) => {
         if (data.user) setUser(data.user);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setAuthLoading(false));
   }, []);
 
@@ -1105,7 +1316,7 @@ export default function Home() {
         setDeliveryFee(typeof d.delivery_fee === "number" ? d.delivery_fee : 0);
         setBannerImages(Array.isArray(d.banner_images) ? d.banner_images : []);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Hydrate products
@@ -1141,7 +1352,7 @@ export default function Home() {
       };
       setPincode(addr.pincode ?? null);
       setAreaName(addr.streetAddress ?? "Saved address");
-    } catch {}
+    } catch { }
   }, []);
 
   // Hydrate cart from localStorage
@@ -1149,7 +1360,7 @@ export default function Home() {
     try {
       const saved = localStorage.getItem("bf-cart");
       if (saved) setCart(JSON.parse(saved));
-    } catch {}
+    } catch { }
   }, []);
 
   // Sync cart to localStorage and backend
@@ -1163,10 +1374,48 @@ export default function Home() {
           items: cart,
           updatedAt: new Date().toISOString(),
         }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [cart, user]);
+  // Testimonial auto scrolling
+  useEffect(() => {
+    const container = testimonialRef.current;
+    if (!container) return;
 
+    let paused = false;
+
+    const interval = setInterval(() => {
+      if (paused) return;
+
+      const card = container.querySelector(".testimonial-card") as HTMLElement;
+
+      if (!card) return;
+
+      const amount = card.offsetWidth + 24;
+
+      if (
+        container.scrollLeft + container.clientWidth >=
+        container.scrollWidth - 10
+      ) {
+        container.scrollTo({
+          left: 0,
+          behavior: "smooth",
+        });
+      } else {
+        container.scrollBy({
+          left: amount,
+          behavior: "smooth",
+        });
+      }
+    }, 3000);
+
+    container.addEventListener("mouseenter", () => (paused = true));
+    container.addEventListener("mouseleave", () => (paused = false));
+    container.addEventListener("touchstart", () => (paused = true));
+    container.addEventListener("touchend", () => (paused = false));
+
+    return () => clearInterval(interval);
+  }, []);
   // Cart operations
   const addToCart = useCallback((item: CartItem) => {
     setCart((prev) => {
@@ -1366,7 +1615,7 @@ export default function Home() {
 
     // Magnetic buttons
     document
-      .querySelectorAll<HTMLElement>(".btn-fill,.btn-glow,.nav-btn")
+      .querySelectorAll<HTMLElement>(".btn-fill,.btn-glow,.nav-btn,.btn-call-now")
       .forEach((b) => {
         b.addEventListener("mousemove", (e: Event) => {
           const me = e as MouseEvent;
@@ -1498,11 +1747,11 @@ export default function Home() {
             style={
               cartItemCount > 0
                 ? {
-                    background:
-                      "linear-gradient(135deg,var(--p2),var(--p),var(--pd))",
-                    color: "#fff",
-                    borderColor: "var(--p)",
-                  }
+                  background:
+                    "linear-gradient(135deg,var(--p2),var(--p),var(--pd))",
+                  color: "#fff",
+                  borderColor: "var(--p)",
+                }
                 : undefined
             }
           >
@@ -1838,17 +2087,26 @@ export default function Home() {
             <div className="trust-item">
               <span className="trust-icon">📍</span>
               <h4 className="trust-title">Delivery Areas</h4>
-              <p className="trust-desc">Yelahanka & surrounding Bangalore areas (dispatched from Thirumenahalli)</p>
+              <p className="trust-desc">
+                Yelahanka & surrounding Bangalore areas (dispatched from
+                Thirumenahalli)
+              </p>
             </div>
             <div className="trust-item">
               <span className="trust-icon">🛡️</span>
               <h4 className="trust-title">Food Safety</h4>
-              <p className="trust-desc">FSSAI Licensed System. Zero preservatives, sterile vacuum packing.</p>
+              <p className="trust-desc">
+                FSSAI Licensed System. Zero preservatives, sterile vacuum
+                packing.
+              </p>
             </div>
             <div className="trust-item">
               <span className="trust-icon">📜</span>
               <h4 className="trust-title">FSSAI Registration</h4>
-              <p className="trust-desc">FSSAI Lic. 11226331000344. 100% compliant with standard protocols.</p>
+              <p className="trust-desc">
+                FSSAI Lic. 11226331000344. 100% compliant with standard
+                protocols.
+              </p>
             </div>
           </div>
         </div>
@@ -1857,48 +2115,42 @@ export default function Home() {
       <section id="testimonials" className="testimonials-section">
         <div className="testimonials-container">
           <div className="testimonials-header">
-            <span className="eyebrow" style={{ display: "inline-block", background: "rgba(95, 7, 155, 0.05)", padding: "4px 12px", borderRadius: "100px", color: "var(--p)" }}>Testimonials</span>
-            <h2 className="testimonials-title">Loved By <span style={{ color: "var(--p)" }}>Bengaluru</span></h2>
+            <span
+              className="eyebrow"
+              style={{
+                display: "inline-block",
+                background: "rgba(95, 7, 155, 0.05)",
+                padding: "4px 12px",
+                borderRadius: "100px",
+                color: "var(--p)",
+              }}
+            >
+              Testimonials
+            </span>
+            <h2 className="testimonials-title">
+              Loved By <span style={{ color: "var(--p)" }}>Bengaluru</span>
+            </h2>
           </div>
-          <div className="testimonials-grid">
-            {[
-              {
-                stars: 5,
-                text: "Finally a place in Bengaluru that doesn't deliver smelly, stored chicken. You can actually taste the difference when it's cut fresh on order. Delivered in 45 minutes!",
-                author: "Rajesh K.",
-                loc: "Yelahanka, Bangalore",
-                avatar: "RK",
-                color: "var(--p)"
-              },
-              {
-                stars: 5,
-                text: "The skin-off chicken breast fillets are absolutely clean and vacuum-sealed perfectly. Zero slime, zero smell. Highly recommend their ultra-fresh system!",
-                author: "Sneha M.",
-                loc: "Thirumenahalli, Bangalore",
-                avatar: "SM",
-                color: "var(--p2)"
-              },
-              {
-                stars: 5,
-                text: "Zero pre-cuts and zero foul smell. B'LURU Fresh has completely changed how we buy chicken in Yelahanka. Truly Yelahanka's best!",
-                author: "Anirudh S.",
-                loc: "Agrahara Layout, Bangalore",
-                avatar: "AS",
-                color: "var(--pd)"
-              }
-            ].map((item, idx) => (
+          <div ref={testimonialRef} className="testimonials-grid">
+            {testimonials.map((item, idx) => (
               <div key={idx} className="testimonial-card">
                 <div className="stars">
                   {[...Array(item.stars)].map((_, i) => (
-                    <span key={i} className="star-icon">★</span>
+                    <span key={i} className="star-icon">
+                      ★
+                    </span>
                   ))}
                 </div>
                 <p className="testimonial-text">&quot;{item.text}&quot;</p>
                 <div className="testimonial-author">
-                  <div className="author-avatar" style={{ background: item.color }}>{item.avatar}</div>
+                  <div
+                    className="author-avatar"
+                    style={{ background: item.color }}
+                  >
+                    {item.avatar}
+                  </div>
                   <div className="author-meta">
                     <span className="author-name">{item.author}</span>
-                    <span className="author-location">{item.loc}</span>
                   </div>
                 </div>
               </div>
@@ -2237,6 +2489,35 @@ export default function Home() {
               </p>
             </details>
           ))}
+        </div>
+      </section>
+
+      <section className="call-us-section">
+        <div className="call-us-container">
+          <h2 className="call-us-heading">Need Fresh Chicken Right Now?</h2>
+          <p className="call-us-subheading">
+            Have questions, need assistance, or want to place an order over the phone? Our team is ready to help.
+          </p>
+          <div className="call-us-btn-wrap">
+            <div className="call-glow-pulse" />
+            <a href="tel:+917012488951" className="btn-call-now">
+              📞 Call Now
+            </a>
+          </div>
+          <div className="call-us-trust-row">
+            <div className="call-us-trust-item">
+              <span className="call-us-trust-dot" />
+              Available 7 Days a Week
+            </div>
+            <div className="call-us-trust-item">
+              <span className="call-us-trust-dot" />
+              Fast Customer Support
+            </div>
+            <div className="call-us-trust-item">
+              <span className="call-us-trust-dot" />
+              Fresh Chicken Delivered to Your Door
+            </div>
+          </div>
         </div>
       </section>
 
