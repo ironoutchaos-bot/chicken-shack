@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, MapPin, Loader2, Home, Building2, CheckCircle2, AlertTriangle, XCircle, Phone, User, Crosshair } from 'lucide-react'
+import { X, MapPin, Loader2, Home, Building2, CheckCircle2, AlertTriangle, XCircle, Phone, User, Crosshair, Search } from 'lucide-react'
 import { Input } from '@heroui/react'
 import AddressMapPicker from './AddressMapPicker'
 
@@ -269,14 +269,14 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
 
       setLat(best.lat!)
       setLng(best.lng!)
-      setPinTouched(false)
-      setZoneResult(null)
+      setPinTouched(true)
       const source = best.provider === 'google' ? 'Google Maps' : 'map search'
       setMapHint(
         best.confidence === 'high'
-          ? `Found an exact-looking match from ${source}. Check the fixed pin before payment.`
-          : `Found the nearest match from ${source}. Move the map if the pin is not on the exact gate.`
+          ? `Found this location from ${source}. The pin is placed there; adjust the map if needed.`
+          : `Found the closest match from ${source}. The pin is placed there; adjust it if needed.`
       )
+      await checkDeliveryZoneForPin(best.lat!, best.lng!)
     } catch {
       setMapHint('Could not search the map right now. Please move the map manually to the exact delivery point.')
     } finally {
@@ -588,22 +588,38 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                     <p className="text-[11px] font-black text-stone-500 uppercase tracking-[0.1em]">Exact Delivery Pin</p>
                     <span className="text-[10px] font-mono text-stone-400">{lat?.toFixed(5)}, {lng?.toFixed(5)}</span>
                   </div>
-                  <div className="flex gap-2 rounded-2xl border border-stone-200 bg-white p-2 shadow-sm">
-                    <Input
-                      type="text"
-                      value={mapSearch}
-                      onChange={e => setMapSearch(e.target.value)}
-                      placeholder="Search building, road, or landmark"
-                      className="min-w-0 flex-1 rounded-xl bg-stone-50 text-xs text-stone-900 outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={searchMapAddress}
-                      disabled={mapSearching}
-                      className="shrink-0 rounded-xl bg-stone-900 px-3 text-[11px] font-black text-white active:scale-[0.98] disabled:opacity-50"
-                    >
-                      {mapSearching ? 'Finding' : 'Find'}
-                    </button>
+                  <div className="rounded-3xl border-2 border-amber-300 bg-white p-2.5 shadow-md shadow-amber-500/10">
+                    <label className="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] font-black uppercase tracking-[0.1em] text-stone-700">
+                      <Search size={13} className="text-amber-600" />
+                      Find Location On Map
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative min-w-0 flex-1">
+                        <Search size={17} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500" />
+                        <input
+                          type="search"
+                          value={mapSearch}
+                          onChange={e => setMapSearch(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              void searchMapAddress()
+                            }
+                          }}
+                          placeholder="Type apartment, road, shop, or landmark"
+                          className="h-14 w-full rounded-2xl border border-stone-200 bg-stone-50 pl-10 pr-3 text-[14px] font-semibold text-stone-950 outline-none placeholder:text-stone-400 focus:border-amber-500 focus:bg-white"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={searchMapAddress}
+                        disabled={mapSearching}
+                        className="flex h-14 shrink-0 items-center justify-center gap-1.5 rounded-2xl bg-stone-950 px-4 text-[13px] font-black text-white active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {mapSearching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                        {mapSearching ? 'Finding' : 'Find'}
+                      </button>
+                    </div>
                   </div>
                   <AddressMapPicker
                     lat={lat!}
