@@ -386,7 +386,7 @@ gap:0.75rem;
 .dn{width:5px;height:5px;border-radius:50%;background:rgba(22,20,15,.15);cursor:pointer;transition:all .3s;}
 .dn.on{background:var(--p);transform:scale(1.6);}
 .dn:hover{background:var(--gd);}
-#df-btn-cont{left:1.1rem !important;right:auto !important;}
+#df-btn-cont{left:auto !important;right:1.1rem !important;}
 .home-cart-fab{
   position:fixed;
   bottom:calc(1.15rem + env(safe-area-inset-bottom, 0px));
