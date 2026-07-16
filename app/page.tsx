@@ -426,19 +426,17 @@ gap:0.75rem;
 .home-cart-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1;}
 .home-cart-copy small{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:900;}
 .home-cart-copy strong{font-size:14px;font-weight:900;}
-@media(max-width:768px){
-  body.bf-home-page #df-btn-cont,
-  body.bf-home-page #df-btn-cont *,
-  body.bf-home-page iframe[src*="d3mkw6s8thqya7"],
-  body.bf-home-page iframe[src*="aisensy"],
-  body.bf-home-page iframe[src*="whatsapp" i],
-  body.bf-home-page [id*="aisensy" i],
-  body.bf-home-page [class*="aisensy" i]{
-    display:none !important;
-    visibility:hidden !important;
-    opacity:0 !important;
-    pointer-events:none !important;
-  }
+body.bf-home-page #df-btn-cont,
+body.bf-home-page #df-btn-cont *,
+body.bf-home-page iframe[src*="d3mkw6s8thqya7"],
+body.bf-home-page iframe[src*="aisensy"],
+body.bf-home-page iframe[src*="whatsapp" i],
+body.bf-home-page [id*="aisensy" i],
+body.bf-home-page [class*="aisensy" i]{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
 }
 .rv{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease;}
 .rv.in{opacity:1;transform:translateY(0);}
@@ -2030,19 +2028,19 @@ export default function Home() {
           aria-label="Chat on WhatsApp"
         >
           <svg
-            width="31"
-            height="31"
+            width="34"
+            height="34"
             viewBox="0 0 32 32"
             aria-hidden="true"
             fill="none"
           >
             <path
-              d="M16.02 3.2c-6.96 0-12.62 5.58-12.62 12.45 0 2.2.59 4.34 1.7 6.22L3.3 28.8l7.12-1.84a12.75 12.75 0 0 0 5.6 1.3c6.96 0 12.62-5.58 12.62-12.45S22.98 3.2 16.02 3.2Z"
+              d="M16.02 3.15C9 3.15 3.3 8.77 3.3 15.68c0 2.28.63 4.49 1.83 6.43L3.2 29l7.1-1.86a12.9 12.9 0 0 0 5.72 1.34c7.02 0 12.72-5.62 12.72-12.53S23.04 3.15 16.02 3.15Zm0 22.97c-1.86 0-3.68-.49-5.27-1.42l-.38-.22-4.2 1.1 1.12-4.06-.25-.42a10.18 10.18 0 0 1-1.57-5.42c0-5.61 4.73-10.18 10.55-10.18 5.82 0 10.55 4.57 10.55 10.18 0 5.61-4.73 10.44-10.55 10.44Z"
               fill="white"
             />
             <path
-              d="M22.98 19.02c-.37 1.04-1.85 1.92-2.72 2.05-.72.1-1.65.14-2.66-.17-.61-.19-1.4-.45-2.41-.89-4.24-1.84-7-5.99-7.21-6.27-.2-.27-1.72-2.27-1.72-4.33s1.09-3.07 1.48-3.49c.37-.4.81-.5 1.09-.5h.78c.25.02.59-.09.92.7.36.86 1.22 2.98 1.32 3.2.1.21.17.47.03.74-.14.28-.21.45-.42.69-.21.24-.44.53-.63.71-.21.21-.43.44-.19.86.24.42 1.06 1.74 2.28 2.82 1.57 1.39 2.89 1.82 3.31 2.03.42.21.66.18.91-.1.24-.28 1.05-1.22 1.33-1.64.28-.42.56-.35.94-.21.38.14 2.43 1.14 2.85 1.35.42.21.7.31.8.49.1.18.1 1.04-.27 2.08Z"
-              fill="#25D366"
+              d="M22.1 18.64c-.31.87-1.54 1.6-2.27 1.71-.6.09-1.38.12-2.22-.14-.51-.16-1.17-.38-2.01-.74-3.54-1.54-5.84-5-6.02-5.23-.17-.23-1.44-1.9-1.44-3.62 0-1.72.91-2.56 1.23-2.91.31-.34.68-.42.91-.42h.65c.21.02.49-.07.77.59.3.72 1.02 2.49 1.1 2.67.08.18.14.39.03.62-.12.23-.18.38-.35.58-.18.2-.37.44-.53.59-.18.18-.36.37-.16.72.2.35.89 1.45 1.9 2.35 1.31 1.16 2.41 1.52 2.76 1.69.35.18.55.15.76-.08.2-.23.88-1.02 1.11-1.37.23-.35.47-.29.78-.18.32.12 2.03.95 2.38 1.13.35.18.58.26.67.41.08.15.08.87-.22 1.74Z"
+              fill="white"
             />
           </svg>
         </a>
