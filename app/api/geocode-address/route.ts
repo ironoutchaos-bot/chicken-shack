@@ -15,6 +15,9 @@ type NominatimResult = {
   lon: string
   display_name?: string
   importance?: number
+  address?: {
+    postcode?: string
+  }
 }
 
 type GeocodeMatch = {
@@ -24,6 +27,7 @@ type GeocodeMatch = {
   displayName: string
   provider: 'google' | 'openstreetmap'
   confidence: 'high' | 'medium' | 'low'
+  pincodeMatched?: boolean
 }
 
 const GOOGLE_GEOCODE_KEY =
@@ -77,6 +81,16 @@ function specificWords(value: string) {
     'india',
   ])
   return words(value).filter(w => !generic.has(w) && !/^\d+$/.test(w))
+}
+
+function cleanPin(value: string | undefined) {
+  return value?.replace(/\D/g, '').slice(0, 6) ?? ''
+}
+
+function resultMatchesPincode(bodyPin: string | undefined, resultPin: string | undefined, label: string | undefined) {
+  const pin = cleanPin(bodyPin)
+  if (!pin) return true
+  return cleanPin(resultPin) === pin || Boolean(label?.includes(pin))
 }
 
 function buildQueries(body: GeocodeBody) {
@@ -174,24 +188,39 @@ async function tryGoogleGeocode(queries: string[]): Promise<GeocodeMatch | null>
         status?: string
         results?: Array<{
           formatted_address?: string
+          address_components?: Array<{
+            long_name?: string
+            short_name?: string
+            types?: string[]
+          }>
           geometry?: {
             location?: { lat?: number; lng?: number }
             location_type?: string
           }
         }>
       }
-      const best = data.results?.[0]
-      const point = best?.geometry?.location
-      if (!point || typeof point.lat !== 'number' || typeof point.lng !== 'number') continue
+      for (const candidate of data.results ?? []) {
+        const point = candidate.geometry?.location
+        if (!point || typeof point.lat !== 'number' || typeof point.lng !== 'number') continue
+        const postalCode = candidate.address_components?.find(c => c.types?.includes('postal_code'))
+        const formattedAddress = candidate.formatted_address ?? ''
+        const pincodeMatched = resultMatchesPincode(
+          query.match(/\b\d{6}\b/)?.[0],
+          postalCode?.long_name ?? postalCode?.short_name,
+          formattedAddress
+        )
+        if (!pincodeMatched) continue
 
-      const locationType = best.geometry?.location_type
-      return {
-        lat: point.lat,
-        lng: point.lng,
-        query,
-        displayName: best.formatted_address ?? '',
-        provider: 'google',
-        confidence: locationType === 'ROOFTOP' || locationType === 'RANGE_INTERPOLATED' ? 'high' : 'medium',
+        const locationType = candidate.geometry?.location_type
+        return {
+          lat: point.lat,
+          lng: point.lng,
+          query,
+          displayName: formattedAddress,
+          provider: 'google',
+          confidence: locationType === 'ROOFTOP' || locationType === 'RANGE_INTERPOLATED' ? 'high' : 'medium',
+          pincodeMatched,
+        }
       }
     } catch {
       // Try the next query candidate.
@@ -232,6 +261,7 @@ async function tryOpenStreetMapGeocode(queries: string[], body: GeocodeBody): Pr
         const lat = Number(row.lat)
         const lng = Number(row.lon)
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
+        if (!resultMatchesPincode(body.pincode, row.address?.postcode, row.display_name)) continue
 
         const score = scoreOsmResult(row, body)
         if (!bestMatch || score > bestMatch.score) {
@@ -242,6 +272,7 @@ async function tryOpenStreetMapGeocode(queries: string[], body: GeocodeBody): Pr
             displayName: row.display_name ?? '',
             provider: 'openstreetmap',
             confidence: score >= 6 ? 'medium' : 'low',
+            pincodeMatched: true,
             score,
           }
         }

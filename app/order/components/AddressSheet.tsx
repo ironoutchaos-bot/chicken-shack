@@ -25,6 +25,8 @@ type DeliveryZoneResult = {
   distanceKm:  number
   radiusKm:    number
   center:      { lat: number; lng: number }
+  pincodeAllowed?: boolean
+  allowedPincodes?: readonly string[]
 }
 
 interface Props {
@@ -35,7 +37,15 @@ interface Props {
 }
 
 const STORAGE_KEY = 'bf-delivery-address-v2'
-const DEFAULT_MAP_CENTER = { lat: 13.1007, lng: 77.5963 }
+const ALLOWED_PINCODES = ['560064', '560077', '560092']
+
+function cleanPincode(value: string) {
+  return value.replace(/\D/g, '').slice(0, 6)
+}
+
+function isAllowedPincode(value: string) {
+  return ALLOWED_PINCODES.includes(cleanPincode(value))
+}
 
 // ─── Reusable styled field wrapper ────────────────────────────────────────────
 function Field({
@@ -131,13 +141,15 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       const res = await fetch('/api/delivery-zone/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lat: nextLat, lng: nextLng }),
+        body: JSON.stringify({ lat: nextLat, lng: nextLng, pincode: cleanPincode(pincode) }),
       })
       const data = await res.json().catch(() => null) as DeliveryZoneResult | null
       if (!res.ok || !data) throw new Error('zone check failed')
 
       setZoneResult(data)
-      if (data.deliverable) {
+      if (data.pincodeAllowed === false) {
+        setMapHint(`Delivery is available only for ${ALLOWED_PINCODES.join(', ')}.`)
+      } else if (data.deliverable) {
         setMapHint(`Delivery available. This pin is ${data.distanceKm.toFixed(1)} km from our store.`)
       } else {
         setMapHint(`Delivery not available in your area. This pin is ${data.distanceKm.toFixed(1)} km away; our delivery radius is ${data.radiusKm.toFixed(1)} km.`)
@@ -150,7 +162,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     } finally {
       setZoneChecking(false)
     }
-  }, [])
+  }, [pincode])
 
   async function openExactPinMap() {
     const cleanPin = pincode.trim()
@@ -162,8 +174,12 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setLocError('Enter name, phone, house/flat, and street/area before placing the delivery pin.')
       return
     }
-    if (cleanPin.length > 0 && cleanPin.length !== 6) {
+    if (cleanPin.length !== 6) {
       setPincodeError('Enter a valid 6-digit pincode.')
+      return
+    }
+    if (!isAllowedPincode(cleanPin)) {
+      setPincodeError(`Sorry, we deliver only to ${ALLOWED_PINCODES.join(', ')} right now.`)
       return
     }
 
@@ -182,28 +198,37 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           pincode: cleanPin,
         }),
       })
-      const best = await r.json().catch(() => null) as { lat?: number; lng?: number } | null
+      const best = await r.json().catch(() => null) as { lat?: number; lng?: number; provider?: string; confidence?: string; displayName?: string } | null
       const found = r.ok && typeof best?.lat === 'number' && typeof best?.lng === 'number'
-      const nextLat = found ? best.lat! : DEFAULT_MAP_CENTER.lat
-      const nextLng = found ? best.lng! : DEFAULT_MAP_CENTER.lng
+      if (!found) {
+        setLocError('Could not match this exact address in the selected pincode. Add apartment name, road, or nearby landmark, then continue again.')
+        setMapOpen(false)
+        setStep('details')
+        setPinTouched(false)
+        setZoneResult(null)
+        return
+      }
+
+      const nextLat = best.lat!
+      const nextLng = best.lng!
       setLat(nextLat)
       setLng(nextLng)
       setMapOpen(true)
       setStep('map')
       setPinTouched(false)
       setZoneResult(null)
-      setMapHint(found
-        ? 'Move the map until the fixed pin sits on the exact gate or building entrance before payment.'
-        : 'We opened the map near the delivery area. Move the map until the fixed pin sits on the exact home location before payment.'
+      const source = best.provider === 'google' ? 'Google Maps' : 'map search'
+      setMapHint(
+        best.confidence === 'high'
+          ? `Found this address from ${source}. Confirm the fixed pin is on the exact gate or building entrance.`
+          : `Found the closest match from ${source}. Move the map only if the pin is not on the exact gate.`
       )
     } catch {
-      setLat(DEFAULT_MAP_CENTER.lat)
-      setLng(DEFAULT_MAP_CENTER.lng)
-      setMapOpen(true)
-      setStep('map')
+      setLocError('Could not detect this address on the map. Add apartment name, road, or a nearby landmark, then continue again.')
+      setMapOpen(false)
+      setStep('details')
       setPinTouched(false)
       setZoneResult(null)
-      setMapHint('We could not auto-detect the address, so the map opened near the delivery area. Move the map until the fixed pin sits on the exact home location before payment.')
     } finally {
       setResolvingMap(false)
     }
@@ -214,6 +239,10 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     const cleanSearch = mapSearch.trim()
     if (!cleanSearch) {
       setMapHint('Type a building, road, or landmark to search on the map.')
+      return
+    }
+    if (!isAllowedPincode(cleanPin)) {
+      setMapHint(`Delivery is available only for ${ALLOWED_PINCODES.join(', ')}.`)
       return
     }
 
@@ -234,7 +263,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       const best = await r.json().catch(() => null) as { lat?: number; lng?: number; provider?: string; confidence?: string } | null
       const found = r.ok && typeof best?.lat === 'number' && typeof best?.lng === 'number'
       if (!found) {
-        setMapHint('Could not find that place. Try nearby shop, apartment, road, or landmark name.')
+        setMapHint('Could not match that place in this pincode. Try the apartment, road, shop, or nearby landmark name.')
         return
       }
 
@@ -306,7 +335,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   const hasLocation = lat !== null && lng !== null
   const phoneValid  = customerPhone.replace(/\D/g, '').length >= 10
   const nameValid   = customerName.trim().length >= 2
-  const pinValid    = pincode.trim().length === 0 || pincode.trim().length === 6
+  const pinValid    = pincode.trim().length === 6 && isAllowedPincode(pincode)
   const detailsValid = nameValid && houseNumber.trim().length > 0 && streetAddress.trim().length > 0 && phoneValid && pinValid
   const canProceed  = detailsValid && hasLocation && pinTouched && zoneResult?.deliverable === true && !zoneChecking
 
@@ -319,8 +348,13 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     setPincodeError('')
     const cleanPin = pincode.trim()
 
-    if (cleanPin.length > 0 && cleanPin.length !== 6) {
+    if (cleanPin.length !== 6) {
       setPincodeError('Enter a valid 6-digit pincode.')
+      return
+    }
+    if (!isAllowedPincode(cleanPin)) {
+      setPincodeError(`Sorry, we deliver only to ${ALLOWED_PINCODES.join(', ')} right now.`)
+      setStep('details')
       return
     }
 
@@ -499,13 +533,13 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           </Field>
 
           {/* ── Pincode ── */}
-          <Field label="Pincode" hint="Optional - delivery is checked from your exact map pin" error={pincodeError || undefined}>
+          <Field label="Pincode" required hint={`We deliver only to ${ALLOWED_PINCODES.join(', ')}`} error={pincodeError || undefined}>
             <div className="relative">
               <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none z-10" />
               <Input
                 type="text" inputMode="numeric" maxLength={6} placeholder="560064"
                 value={pincode}
-                onChange={e => { setPincode(e.target.value.replace(/\D/g, '')); setPincodeError('') }}
+                onChange={e => { setPincode(cleanPincode(e.target.value)); setPincodeError('') }}
                 onFocus={scrollIntoView}
                 className={`w-full pl-9 pr-4 py-3 rounded-2xl text-sm text-stone-900 outline-none bg-stone-50 border transition-colors placeholder:text-stone-300 ${
                   pincodeError ? 'border-red-400' : 'border-stone-200 focus:border-amber-400'
@@ -615,7 +649,10 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
               <div>
                 <p className="text-xs font-bold text-red-700">Delivery not available here</p>
                 <p className="text-[11px] text-red-600 mt-0.5 leading-relaxed">
-                  This pin is {zoneResult.distanceKm.toFixed(1)} km away. Current delivery radius is {zoneResult.radiusKm.toFixed(1)} km.
+                  {zoneResult.pincodeAllowed === false
+                    ? `We deliver only to ${ALLOWED_PINCODES.join(', ')}.`
+                    : `This pin is ${zoneResult.distanceKm.toFixed(1)} km away. Current delivery radius is ${zoneResult.radiusKm.toFixed(1)} km.`
+                  }
                 </p>
               </div>
             </div>

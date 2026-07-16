@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdminRequest } from '@/app/api/admin/login/route'
-import { checkDeliveryZone } from '@/lib/delivery-zone'
+import { ALLOWED_DELIVERY_PINCODES, checkDeliveryZone, isAllowedDeliveryPincode, normalizePincode } from '@/lib/delivery-zone'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -27,7 +27,18 @@ function validateDeliveryAddressForZone(value: unknown):
   }
 
   const address = value as Record<string, unknown>
-  const zone = checkDeliveryZone(address.lat, address.lng)
+  const pincode = normalizePincode(address.pincode)
+  if (pincode.length !== 6 || !isAllowedDeliveryPincode(pincode)) {
+    return {
+      ok: false,
+      response: NextResponse.json({
+        error: `Delivery is available only for ${ALLOWED_DELIVERY_PINCODES.join(', ')}`,
+        allowedPincodes: ALLOWED_DELIVERY_PINCODES,
+      }, { status: 400 }),
+    }
+  }
+
+  const zone = checkDeliveryZone(address.lat, address.lng, pincode)
   if (!zone) {
     return {
       ok: false,
@@ -49,6 +60,7 @@ function validateDeliveryAddressForZone(value: unknown):
     ok: true,
     address: {
       ...address,
+      pincode,
       deliveryDistanceKm: zone.distanceKm,
       deliveryRadiusKm:   zone.radiusKm,
       deliveryZoneCenter: zone.center,
