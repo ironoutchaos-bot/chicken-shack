@@ -559,6 +559,20 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                 </p>
               </div>
 
+              <button
+                onClick={useCurrentLocation}
+                disabled={locating}
+                className="w-full flex items-center justify-center gap-3 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 px-4 py-4 text-[15px] font-black text-white shadow-lg shadow-amber-500/25 active:scale-[0.98] transition-all disabled:opacity-60"
+              >
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20">
+                  {locating ? <Loader2 size={22} className="animate-spin" /> : <Crosshair size={22} strokeWidth={2.6} />}
+                </span>
+                <span className="flex min-w-0 flex-col items-start text-left leading-tight">
+                  <span>{locating ? 'Detecting Your Location...' : 'Use My Current Location'}</span>
+                  <span className="text-[11px] font-bold text-white/85">Best when you are at the delivery address</span>
+                </span>
+              </button>
+
               {locDenied && (
                 <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-3">
                   <AlertTriangle size={17} className="text-red-500 shrink-0 mt-0.5" strokeWidth={2} />
@@ -603,15 +617,6 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                   />
                 </div>
               )}
-
-              <button
-                onClick={useCurrentLocation}
-                disabled={locating}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl border border-stone-200 bg-white px-3 py-2.5 text-[11px] font-bold text-stone-600 active:scale-[0.98] transition-all disabled:opacity-50"
-              >
-                {locating ? <Loader2 size={14} className="animate-spin" /> : <Crosshair size={14} />}
-                {locating ? 'Checking current location...' : 'Use my current location instead'}
-              </button>
 
               <button
                 onClick={() => setStep('details')}
