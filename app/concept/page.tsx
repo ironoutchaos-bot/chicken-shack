@@ -18,7 +18,7 @@ type Product = {
    B'LURU FRESH — 2026 concept landing (/concept)
    Brand: purple #9318cc + white, warm accents retained.
    Type:  Playfair Display (editorial serif) × Outfit (grotesque).
-   Live shop → hands the cart to the real /order checkout.
+   Live shop → hands the cart to the homepage checkout.
 ============================================================ */
 
 const css = `
@@ -292,7 +292,7 @@ export default function ConceptPage() {
   const [cart, setCart]         = useState<CartItem[]>([])
   const [cartOpen, setCartOpen] = useState(false)
 
-  // live products from the same API the real order page uses
+  // live products from the same API the homepage shop uses
   useEffect(() => {
     let alive = true
     fetch('/api/products').then(r => r.json())
@@ -302,7 +302,7 @@ export default function ConceptPage() {
     return () => { alive = false }
   }, [])
 
-  // shared cart (bf-cart) — hydrate + persist so /order picks it up
+  // shared cart (bf-cart) — hydrate + persist so the homepage picks it up
   useEffect(() => {
     try { const s = localStorage.getItem('bf-cart'); if (s) setCart(JSON.parse(s)) } catch {}
   }, [])
@@ -324,7 +324,7 @@ export default function ConceptPage() {
   const qtyOf     = (id: string) => cart.find(c => c.productId === id)?.quantity ?? 0
   const cartTotal = cart.reduce((s, c) => s + c.pricePerKg * c.quantity, 0)
   const cartCount = cart.reduce((s, c) => s + c.quantity, 0)
-  const checkout  = () => { window.location.href = '/order' }
+  const checkout  = () => { window.location.href = '/#menu' }
 
   // video autoplay + nav frost + scroll reveal
   useEffect(() => {
@@ -358,7 +358,7 @@ export default function ConceptPage() {
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div className="grain" />
 
-      <div className="banner">🎨 Concept preview <b>/concept</b> — 2026 redesign · live shop · skin-off hero video · checkout on the secure order page</div>
+      <div className="banner">🎨 Concept preview <b>/concept</b> — 2026 redesign · live shop · skin-off hero video · checkout on the homepage</div>
 
       <nav className="top" ref={navRef}>
         <div className="wrap">
@@ -450,7 +450,7 @@ export default function ConceptPage() {
           <div>
             <span className="eyebrow">Order Now</span>
             <h2>Today&apos;s <span className="serif-it">fresh</span> cuts</h2>
-            <p>Live prices from today&apos;s kitchen. Add to cart here — delivery &amp; secure payment happen on the order page.</p>
+            <p>Live prices from today&apos;s kitchen. Add to cart here — delivery &amp; secure payment happen on the homepage.</p>
           </div>
           <button className="btn btn-ghost" onClick={() => setCartOpen(true)}>View Cart · {cartCount}</button>
         </div>
@@ -458,7 +458,7 @@ export default function ConceptPage() {
         {loadingP ? (
           <div className="pgrid">{[0,1,2,3].map(i => <div className="shop-skel" key={i} />)}</div>
         ) : products.length === 0 ? (
-          <p className="shop-note">Menu is updating — visit the <a href="/order" style={{ color: 'var(--purple)', fontWeight: 700 }}>order page</a>.</p>
+          <p className="shop-note">Menu is updating — visit the <a href="/#menu" style={{ color: 'var(--purple)', fontWeight: 700 }}>homepage shop</a>.</p>
         ) : (
           <div className="pgrid">
             {products.map((p, i) => {
@@ -577,7 +577,7 @@ export default function ConceptPage() {
         </div>
         <div><h5>Shop</h5>
           <p><a href="#shop">Today&apos;s Cuts</a></p><p><a href="#menu">Menu &amp; Prices</a></p>
-          <p><a href="#offers">Offers</a></p><p><a href="/order">Order Page</a></p>
+          <p><a href="#offers">Offers</a></p><p><a href="/#menu">Homepage Shop</a></p>
         </div>
         <div><h5>Reach Us</h5>
           <p>Thirumenahalli Main Rd,<br />Agrahara Layout, Yelahanka,<br />Bengaluru — 560064</p>
@@ -626,7 +626,7 @@ export default function ConceptPage() {
         <div className="df">
           <div className="tl"><span className="lab">Subtotal</span><span className="amt">₹{cartTotal.toFixed(0)}</span></div>
           <button className="btn btn-p btn-lg" onClick={checkout} disabled={cart.length === 0} style={cart.length === 0 ? { opacity: .5 } : undefined}>Checkout →</button>
-          <small>Delivery, address &amp; payment are completed securely on the order page.</small>
+          <small>Delivery, address &amp; payment are completed securely on the homepage.</small>
         </div>
       </aside>
     </div>

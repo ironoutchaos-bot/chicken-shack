@@ -10,13 +10,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       images: ['https://www.blurufresh.com/assets/raw_chicken_breast.jpg'],
     },
     {
-      url: 'https://www.blurufresh.com/order',
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 0.9,
-      images: ['https://www.blurufresh.com/assets/raw_chicken_breast.jpg'],
-    },
-    {
       url: 'https://www.blurufresh.com/legal/privacy',
       lastModified: new Date(),
       changeFrequency: 'monthly',

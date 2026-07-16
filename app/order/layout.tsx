@@ -21,14 +21,14 @@ export const metadata: Metadata = {
   ],
 
   alternates: {
-    canonical: 'https://www.blurufresh.com/order',
+    canonical: 'https://www.blurufresh.com',
   },
 
   openGraph: {
     title: "Order Fresh Chicken Online | B'LURU Fresh Bengaluru",
     description:
       "Curry cut, boneless, drumstick & wings — cut fresh after your order, delivered in 60 minutes across Yelahanka & Bangalore. Zero preservatives.",
-    url: 'https://www.blurufresh.com/order',
+    url: 'https://www.blurufresh.com',
     siteName: "B'LURU Fresh",
     type: 'website',
     locale: 'en_IN',
@@ -50,9 +50,9 @@ export const metadata: Metadata = {
   },
 
   robots: {
-    index: true,
+    index: false,
     follow: true,
-    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+    googleBot: { index: false, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
   },
 }
 

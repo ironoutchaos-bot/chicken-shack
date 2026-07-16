@@ -1,8 +1,22 @@
-import OrderApp from './OrderApp'
+import { redirect } from 'next/navigation'
 
-// Force dynamic — auth and realtime need server per request
 export const dynamic = 'force-dynamic'
 
-export default function OrderPage() {
-  return <OrderApp />
+export default async function OrderPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const params = searchParams ? await searchParams : {}
+  const query = new URLSearchParams()
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach(v => query.append(key, v))
+    } else if (value !== undefined) {
+      query.set(key, value)
+    }
+  })
+
+  redirect(query.size > 0 ? `/?${query.toString()}` : '/')
 }

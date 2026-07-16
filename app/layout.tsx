@@ -307,7 +307,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               "url": "https://www.blurufresh.com",
               "potentialAction": {
                 "@type": "OrderAction",
-                "target": "https://www.blurufresh.com/order",
+                "target": "https://www.blurufresh.com/#menu",
                 "name": "Order Fresh Chicken"
               }
             }

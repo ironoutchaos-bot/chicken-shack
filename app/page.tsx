@@ -849,6 +849,8 @@ export default function Home() {
   const [minOrder, setMinOrder] = useState(0);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [bannerImages, setBannerImages] = useState<string[]>([]);
+  const [productOrder, setProductOrder] = useState<string[]>([]);
+  const [productUnits, setProductUnits] = useState<Record<string, string>>({});
 
   // Products
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -881,6 +883,12 @@ export default function Home() {
         );
         setDeliveryFee(typeof d.delivery_fee === "number" ? d.delivery_fee : 0);
         setBannerImages(Array.isArray(d.banner_images) ? d.banner_images : []);
+        setProductOrder(Array.isArray(d.product_order) ? d.product_order : []);
+        setProductUnits(
+          d.product_units && typeof d.product_units === "object"
+            ? d.product_units
+            : {},
+        );
       })
       .catch(() => {});
   }, []);
@@ -976,12 +984,20 @@ export default function Home() {
 
   const cartTotal = cart.reduce((s, c) => s + c.pricePerKg * c.quantity, 0);
   const cartItemCount = cart.reduce((s, c) => s + c.quantity, 0);
-  const visibleProducts = products.filter((product, index, list) => {
+  const dedupedProducts = products.filter((product, index, list) => {
     const nameKey = product.name.trim().toLowerCase();
     return (
       list.findIndex((item) => item.name.trim().toLowerCase() === nameKey) ===
       index
     );
+  });
+  const visibleProducts = [...dedupedProducts].sort((a, b) => {
+    const ai = productOrder.indexOf(a.id);
+    const bi = productOrder.indexOf(b.id);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
   });
 
   useEffect(() => {
@@ -1175,6 +1191,59 @@ export default function Home() {
       window.removeEventListener("scroll", onScroll);
       cancelAnimationFrame(raf);
     };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cfOrderId = params.get("cashfree_order_id");
+    if (!cfOrderId) return;
+
+    window.history.replaceState({}, "", window.location.pathname);
+
+    const pendingStr = localStorage.getItem("bf-pending-payment");
+    if (!pendingStr) {
+      setCart([]);
+      return;
+    }
+    localStorage.removeItem("bf-pending-payment");
+
+    async function completePayment() {
+      setCart([]);
+
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          if (attempt > 1) {
+            await new Promise((r) => setTimeout(r, 3000 * attempt));
+          }
+
+          const vRes = await fetch("/api/cashfree/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: cfOrderId }),
+          });
+
+          if (!vRes.ok) {
+            if (attempt < 3) continue;
+            return;
+          }
+
+          const patchRes = await fetch("/api/orders/cod", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cashfree_order_id: cfOrderId,
+              payment_status: "paid",
+            }),
+          });
+
+          if (patchRes.ok) return;
+        } catch {
+          // Retry a couple of times because Cashfree can take a moment.
+        }
+      }
+    }
+
+    completePayment().catch(() => {});
   }, []);
 
   const goOrder = () => {
@@ -1492,11 +1561,14 @@ export default function Home() {
                   discount > 0
                     ? Math.round(oldPrice * (1 - discount / 100))
                     : oldPrice;
-                const weightLabel = p.id.includes("drumstick")
-                  ? "4 pcs"
-                  : p.weight_per_unit
-                    ? `${p.weight_per_unit}g`
-                    : UNIT_LABEL;
+                const unit = productUnits[p.id] ?? "g";
+                const weightLabel = p.weight_per_unit
+                  ? unit === "pc"
+                    ? `${p.weight_per_unit} pc${Number(p.weight_per_unit) > 1 ? "s" : ""}`
+                    : unit === "kg"
+                      ? `${p.weight_per_unit} kg`
+                      : `${p.weight_per_unit}g`
+                  : UNIT_LABEL;
 
                 return (
                   <div
@@ -1953,7 +2025,7 @@ export default function Home() {
           <div className="fc-t">Navigate</div>
           <ul className="fc-l">
             <li>
-              <a href="https://www.blurufresh.com/order">Shop</a>
+              <a href="#menu">Shop</a>
             </li>
             <li>
               <a href="#why">Why Us</a>
