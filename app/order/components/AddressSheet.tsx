@@ -96,9 +96,9 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
 
   useEffect(() => {
     if (!open) return
-    document.body.classList.add('bf-address-sheet-open', 'bf-hide-wa-widget')
+    document.body.classList.add('bf-address-sheet-open')
     return () => {
-      document.body.classList.remove('bf-address-sheet-open', 'bf-hide-wa-widget')
+      document.body.classList.remove('bf-address-sheet-open')
     }
   }, [open])
 

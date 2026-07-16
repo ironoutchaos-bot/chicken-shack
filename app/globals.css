@@ -2926,31 +2926,3 @@ a {
 @tailwind components;
 @tailwind utilities;
 
-
-/* AiSensy WhatsApp widget: keep it below cart/address/login modals. */
-#df-btn-cont,
-#df-btn-cont *,
-iframe[src*="d3mkw6s8thqya7"],
-iframe[src*="aisensy"] {
-  z-index: 40 !important;
-}
-
-/* Hide the WhatsApp widget completely while address/map selection is active. */
-body.bf-hide-wa-widget #df-btn-cont,
-body.bf-hide-wa-widget #df-btn-cont *,
-body.bf-hide-wa-widget iframe[src*="d3mkw6s8thqya7"],
-body.bf-hide-wa-widget iframe[src*="aisensy"],
-body.bf-hide-wa-widget iframe[src*="whatsapp" i],
-body.bf-hide-wa-widget [id*="aisensy" i],
-body.bf-hide-wa-widget [class*="aisensy" i],
-body.bf-hide-wa-widget [id*="whatsapp" i],
-body.bf-hide-wa-widget [class*="whatsapp" i],
-body.bf-hide-wa-widget [id*="wa-widget" i],
-body.bf-hide-wa-widget [class*="wa-widget" i],
-body.bf-hide-wa-widget [aria-label*="WhatsApp" i],
-body.bf-hide-wa-widget [title*="WhatsApp" i] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
