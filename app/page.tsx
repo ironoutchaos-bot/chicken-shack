@@ -426,17 +426,10 @@ gap:0.75rem;
 .home-cart-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1;}
 .home-cart-copy small{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:900;}
 .home-cart-copy strong{font-size:14px;font-weight:900;}
-body.bf-home-page #df-btn-cont,
-body.bf-home-page #df-btn-cont *,
-body.bf-home-page iframe[src*="d3mkw6s8thqya7"],
-body.bf-home-page iframe[src*="aisensy"],
-body.bf-home-page iframe[src*="whatsapp" i],
-body.bf-home-page [id*="aisensy" i],
-body.bf-home-page [class*="aisensy" i]{
-  display:none !important;
-  visibility:hidden !important;
+body.bf-home-page #df-btn-cont{
   opacity:0 !important;
   pointer-events:none !important;
+  transform:scale(.1) !important;
 }
 .rv{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease;}
 .rv.in{opacity:1;transform:translateY(0);}
@@ -1215,6 +1208,18 @@ export default function Home() {
     document
       .getElementById("scroll-story")
       ?.scrollIntoView({ behavior: "smooth" });
+  };
+  const openWhatsAppChat = () => {
+    const widgetTrigger = document.querySelector<HTMLElement>(
+      '#df-btn-cont button, #df-btn-cont [role="button"], #df-btn-cont a, #df-btn-cont',
+    );
+
+    if (widgetTrigger) {
+      widgetTrigger.click();
+      return;
+    }
+
+    window.open("https://wa.me/917012488951", "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -2020,12 +2025,11 @@ export default function Home() {
       </div>
 
       {!cartOpen && !loginOpen && (
-        <a
+        <button
+          type="button"
           className="home-wa-fab"
-          href="https://wa.me/917012488951"
-          target="_blank"
-          rel="noopener noreferrer"
           aria-label="Chat on WhatsApp"
+          onClick={openWhatsAppChat}
         >
           <svg
             width="34"
@@ -2043,7 +2047,7 @@ export default function Home() {
               fill="white"
             />
           </svg>
-        </a>
+        </button>
       )}
 
       {cartItemCount > 0 && !cartOpen && !loginOpen && (

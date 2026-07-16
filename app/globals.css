@@ -2961,9 +2961,7 @@ iframe[src*="aisensy"] {
 
 @media (max-width: 768px) {
   /* Keep the external WhatsApp launcher as a small icon-only button on mobile. */
-  #df-btn-cont,
-  iframe[src*="d3mkw6s8thqya7"],
-  iframe[src*="aisensy"] {
+  #df-btn-cont {
     left: 16px !important;
     right: auto !important;
     bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
