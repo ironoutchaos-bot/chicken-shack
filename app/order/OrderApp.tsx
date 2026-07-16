@@ -428,6 +428,42 @@ export default function OrderApp() {
                   onOpenCart={() => setCartOpen(true)}
                 />
               </div>
+
+              {cartItemCount > 0 && !cartOpen && (
+                <button
+                  type="button"
+                  onClick={() => setCartOpen(true)}
+                  className="fixed right-4 lg:hidden active:scale-95 transition-all"
+                  style={{
+                    bottom: 'calc(5.75rem + env(safe-area-inset-bottom, 0px))',
+                    zIndex: 90,
+                    minWidth: 72,
+                    height: 58,
+                    borderRadius: 999,
+                    border: '2px solid rgba(255,255,255,0.9)',
+                    background: 'linear-gradient(135deg, #9318cc 0%, #7c16b0 58%, #5d0f86 100%)',
+                    boxShadow: '0 18px 36px rgba(147,24,204,0.36)',
+                    color: '#fff',
+                  }}
+                  aria-label={`Open cart with ${Math.round(cartItemCount)} items`}
+                >
+                  <span className="flex items-center justify-center gap-2 px-4">
+                    <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
+                      <ShoppingBag size={20} strokeWidth={2.6} />
+                      <span
+                        className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-black"
+                        style={{ background: '#91d852', color: '#16140f' }}
+                      >
+                        {cartItemCount > 9 ? '9+' : Math.round(cartItemCount)}
+                      </span>
+                    </span>
+                    <span className="text-left leading-none">
+                      <span className="block text-[9px] font-black uppercase tracking-[0.12em] text-white/70">Cart</span>
+                      <span className="block text-sm font-black">₹{cartTotal.toFixed(0)}</span>
+                    </span>
+                  </span>
+                </button>
+              )}
             </div>
 
             {/* ── Desktop cart sidebar ─────────────────────────── */}

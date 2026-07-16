@@ -206,6 +206,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           id="aisensy-wa-widget"
           widget-id="aab3zn"
         />
+
         {/* JSON-LD: Rich structured data for Google Local + Food delivery */}
         <script
           type="application/ld+json"
@@ -298,7 +299,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               "url": "https://www.blurufresh.com",
               "potentialAction": {
                 "@type": "OrderAction",
-                "target": "https://www.blurufresh.com/order",
+                "target": "https://www.blurufresh.com/#menu",
                 "name": "Order Fresh Chicken"
               }
             }

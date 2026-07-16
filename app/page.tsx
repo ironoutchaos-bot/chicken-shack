@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 import {
   BadgeCheck,
   Clock,
@@ -472,6 +473,36 @@ gap:0.75rem;
 .dn{width:5px;height:5px;border-radius:50%;background:rgba(22,20,15,.15);cursor:pointer;transition:all .3s;}
 .dn.on{background:var(--p);transform:scale(1.6);}
 .dn:hover{background:var(--gd);}
+#df-btn-cont{left:auto !important;right:1.1rem !important;}
+.home-cart-fab{
+  position:fixed;
+  bottom:calc(1.15rem + env(safe-area-inset-bottom, 0px));
+  z-index:720;
+  border:none;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.home-cart-fab{
+  right:1.1rem;
+  min-width:92px;
+  height:58px;
+  gap:.5rem;
+  padding:0 1rem;
+  border-radius:999px;
+  background:linear-gradient(135deg,var(--p2),var(--p),var(--pd));
+  color:#fff;
+  box-shadow:0 16px 34px rgba(123,31,208,.38),0 0 0 4px rgba(255,255,255,.82);
+  font-family:'Unbounded',sans-serif;
+}
+.home-cart-fab:hover{transform:translateY(-2px);}
+.home-cart-icon{position:relative;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;background:rgba(255,255,255,.14);}
+.home-cart-badge{position:absolute;right:-7px;top:-7px;min-width:22px;height:22px;border-radius:999px;background:var(--pl);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0 5px;font-size:10px;font-weight:900;}
+.home-cart-copy{display:flex;flex-direction:column;align-items:flex-start;gap:2px;line-height:1;}
+.home-cart-copy small{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.7);font-weight:900;}
+.home-cart-copy strong{font-size:14px;font-weight:900;}
 .rv{opacity:0;transform:translateY(32px);transition:opacity .7s ease,transform .7s ease;}
 .rv.in{opacity:1;transform:translateY(0);}
 .d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}.d4{transition-delay:.4s}
@@ -1369,6 +1400,8 @@ export default function Home() {
   const [minOrder, setMinOrder] = useState(0);
   const [deliveryFee, setDeliveryFee] = useState(0);
   const [bannerImages, setBannerImages] = useState<string[]>([]);
+  const [productOrder, setProductOrder] = useState<string[]>([]);
+  const [productUnits, setProductUnits] = useState<Record<string, string>>({});
 
   // Products
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -1401,6 +1434,12 @@ export default function Home() {
         );
         setDeliveryFee(typeof d.delivery_fee === "number" ? d.delivery_fee : 0);
         setBannerImages(Array.isArray(d.banner_images) ? d.banner_images : []);
+        setProductOrder(Array.isArray(d.product_order) ? d.product_order : []);
+        setProductUnits(
+          d.product_units && typeof d.product_units === "object"
+            ? d.product_units
+            : {},
+        );
       })
       .catch(() => {});
   }, []);
@@ -1534,12 +1573,20 @@ export default function Home() {
 
   const cartTotal = cart.reduce((s, c) => s + c.pricePerKg * c.quantity, 0);
   const cartItemCount = cart.reduce((s, c) => s + c.quantity, 0);
-  const visibleProducts = products.filter((product, index, list) => {
+  const dedupedProducts = products.filter((product, index, list) => {
     const nameKey = product.name.trim().toLowerCase();
     return (
       list.findIndex((item) => item.name.trim().toLowerCase() === nameKey) ===
       index
     );
+  });
+  const visibleProducts = [...dedupedProducts].sort((a, b) => {
+    const ai = productOrder.indexOf(a.id);
+    const bi = productOrder.indexOf(b.id);
+    if (ai === -1 && bi === -1) return 0;
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
   });
 
   useEffect(() => {
@@ -1740,6 +1787,59 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cfOrderId = params.get("cashfree_order_id");
+    if (!cfOrderId) return;
+
+    window.history.replaceState({}, "", window.location.pathname);
+
+    const pendingStr = localStorage.getItem("bf-pending-payment");
+    if (!pendingStr) {
+      setCart([]);
+      return;
+    }
+    localStorage.removeItem("bf-pending-payment");
+
+    async function completePayment() {
+      setCart([]);
+
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          if (attempt > 1) {
+            await new Promise((r) => setTimeout(r, 3000 * attempt));
+          }
+
+          const vRes = await fetch("/api/cashfree/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: cfOrderId }),
+          });
+
+          if (!vRes.ok) {
+            if (attempt < 3) continue;
+            return;
+          }
+
+          const patchRes = await fetch("/api/orders/cod", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              cashfree_order_id: cfOrderId,
+              payment_status: "paid",
+            }),
+          });
+
+          if (patchRes.ok) return;
+        } catch {
+          // Retry a couple of times because Cashfree can take a moment.
+        }
+      }
+    }
+
+    completePayment().catch(() => {});
+  }, []);
+
   const goOrder = () => {
     if (cartItemCount > 0) {
       setCartOpen(true);
@@ -1758,6 +1858,13 @@ export default function Home() {
       <link
         href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Unbounded:wght@400;700;900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
         rel="stylesheet"
+      />
+      <Script
+        type="text/javascript"
+        src="https://d3mkw6s8thqya7.cloudfront.net/integration-plugin.js"
+        id="aisensy-wa-widget"
+        widget-id="aabjcg"
+        strategy="afterInteractive"
       />
       <style dangerouslySetInnerHTML={{ __html: css }} />
 
@@ -2054,11 +2161,14 @@ export default function Home() {
                   discount > 0
                     ? Math.round(oldPrice * (1 - discount / 100))
                     : oldPrice;
-                const weightLabel = p.id.includes("drumstick")
-                  ? "4 pcs"
-                  : p.weight_per_unit
-                    ? `${p.weight_per_unit}g`
-                    : UNIT_LABEL;
+                const unit = productUnits[p.id] ?? "g";
+                const weightLabel = p.weight_per_unit
+                  ? unit === "pc"
+                    ? `${p.weight_per_unit} pc${Number(p.weight_per_unit) > 1 ? "s" : ""}`
+                    : unit === "kg"
+                      ? `${p.weight_per_unit} kg`
+                      : `${p.weight_per_unit}g`
+                  : UNIT_LABEL;
 
                 return (
                   <div
@@ -2628,7 +2738,7 @@ export default function Home() {
           <div className="fc-t">Navigate</div>
           <ul className="fc-l">
             <li>
-              <a href="https://www.blurufresh.com/order">Shop</a>
+              <a href="#menu">Shop</a>
             </li>
             <li>
               <a href="#why">Why Us</a>
@@ -2673,6 +2783,26 @@ export default function Home() {
           📍 maps
         </a>
       </div>
+
+      {cartItemCount > 0 && !cartOpen && !loginOpen && (
+        <button
+          type="button"
+          className="home-cart-fab"
+          onClick={() => setCartOpen(true)}
+          aria-label={`Open cart with ${Math.round(cartItemCount)} items`}
+        >
+          <span className="home-cart-icon">
+            <ShoppingBag size={19} strokeWidth={2.7} />
+            <span className="home-cart-badge">
+              {cartItemCount > 9 ? "9+" : Math.round(cartItemCount)}
+            </span>
+          </span>
+          <span className="home-cart-copy">
+            <small>Cart</small>
+            <strong>₹{cartTotal.toFixed(0)}</strong>
+          </span>
+        </button>
+      )}
 
       <LoginDrawer
         open={loginOpen}
