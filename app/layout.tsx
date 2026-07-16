@@ -35,12 +35,12 @@ const montserrat = Montserrat({
 })
 
 export const viewport: Viewport = {
-  themeColor: '#16140f',
-  width: 'device-width',
+  themeColor: "#16140f",
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-}
+};
 
 export const metadata: Metadata = {
   icons: {

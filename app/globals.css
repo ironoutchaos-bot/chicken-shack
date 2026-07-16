@@ -2492,7 +2492,7 @@ a {
   inset: 0;
   background: rgba(26, 17, 9, 0.55);
   backdrop-filter: blur(4px);
-  z-index: 200;
+  z-index: 2147483000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2905,7 +2905,7 @@ a {
 
 @keyframes sticky-pulse {
   0%, 100% { opacity: 0.6; transform: scale(1); }
-  50%       { opacity: 0;   transform: scale(1.1); }
+  50%      { opacity: 0; transform: scale(1.1); }
 }
 
 .sticky-order-badge {

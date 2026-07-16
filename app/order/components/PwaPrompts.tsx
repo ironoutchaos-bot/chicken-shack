@@ -199,7 +199,7 @@ export default function PwaPrompts({
   const iosBr = iosBrowser()
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center pointer-events-none">
+    <div className="fixed inset-0 z-[2147483000] flex items-end justify-center pointer-events-none">
       {/* Backdrop only for the permissions modal */}
       {mode === 'permissions' && (
         <div className="absolute inset-0 bg-black/40 pointer-events-auto" onClick={finishPermissions} />

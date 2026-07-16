@@ -70,7 +70,7 @@ export default function DeliveredFeedbackModal({
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 300,
+        position: 'fixed', inset: 0, zIndex: 2147483000,
         background: 'rgba(22,20,15,.55)', backdropFilter: 'blur(3px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 20, animation: 'bfFeedbackFade .2s ease',

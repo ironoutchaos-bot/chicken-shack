@@ -48,7 +48,7 @@ export default function InstallPrompt() {
   if (!show) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[70] flex justify-center pointer-events-none">
+    <div className="fixed bottom-0 left-0 right-0 z-[2147483000] flex justify-center pointer-events-none">
       <div
         className="w-full max-w-[430px] pointer-events-auto animate-slide-up"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
