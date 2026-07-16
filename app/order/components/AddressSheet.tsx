@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, MapPin, Loader2, Home, Building2, CheckCircle2, AlertTriangle, XCircle, Phone, User, Crosshair } from 'lucide-react'
 import { Input } from '@heroui/react'
 import AddressMapPicker from './AddressMapPicker'
@@ -15,6 +15,16 @@ export interface DeliveryAddress {
   lng:           number
   mapsUrl:       string
   customerPhone: string
+  deliveryDistanceKm?: number
+  deliveryRadiusKm?:   number
+  deliveryZoneCenter?: { lat: number; lng: number }
+}
+
+type DeliveryZoneResult = {
+  deliverable: boolean
+  distanceKm:  number
+  radiusKm:    number
+  center:      { lat: number; lng: number }
 }
 
 interface Props {
@@ -71,8 +81,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   const [mapHint,       setMapHint]       = useState('')
   const [mapSearch,     setMapSearch]     = useState('')
   const [mapSearching,  setMapSearching]  = useState(false)
-
-  const validPincodesRef = useRef<{ pincode: string; area_name: string }[] | null>(null)
+  const [zoneChecking,  setZoneChecking]  = useState(false)
+  const [zoneResult,    setZoneResult]    = useState<DeliveryZoneResult | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -90,6 +100,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         setLng(typeof addr.lng === 'number' ? addr.lng : null)
         setMapOpen(typeof addr.lat === 'number' && typeof addr.lng === 'number')
         setPinTouched(typeof addr.lat === 'number' && typeof addr.lng === 'number')
+        setZoneResult(null)
         setMapSearch([addr.houseNumber, addr.streetAddress, addr.landmark, addr.pincode].filter(Boolean).join(', '))
       } else if (savedPincode) {
         setPincode(savedPincode)
@@ -97,11 +108,13 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         setLng(null)
         setMapOpen(false)
         setPinTouched(false)
+        setZoneResult(null)
       } else {
         setLat(null)
         setLng(null)
         setMapOpen(false)
         setPinTouched(false)
+        setZoneResult(null)
       }
     } catch {}
     setStep('details')
@@ -109,42 +122,35 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     setPincodeError('')
     setLocError('')       // always clear previous error on open
     setLocDenied(false)   // always clear denied state on open
-
-    if (!validPincodesRef.current) {
-      fetch('/api/pincodes')
-        .then(r => r.json())
-        .then((list: { pincode: string; area_name: string }[]) => {
-          validPincodesRef.current = Array.isArray(list) ? list : []
-        })
-        .catch(() => {})
-    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  async function validatePincodeForDelivery(cleanPin: string) {
-    if (cleanPin.length !== 6) {
-      setPincodeError('Enter a valid 6-digit pincode.')
-      return false
-    }
-
+  const checkDeliveryZoneForPin = useCallback(async (nextLat: number, nextLng: number) => {
+    setZoneChecking(true)
     try {
-      let list = validPincodesRef.current
-      if (!list) {
-        const res = await fetch('/api/pincodes')
-        list = await res.json()
-        validPincodesRef.current = Array.isArray(list) ? list : []
+      const res = await fetch('/api/delivery-zone/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: nextLat, lng: nextLng }),
+      })
+      const data = await res.json().catch(() => null) as DeliveryZoneResult | null
+      if (!res.ok || !data) throw new Error('zone check failed')
+
+      setZoneResult(data)
+      if (data.deliverable) {
+        setMapHint(`Delivery available. This pin is ${data.distanceKm.toFixed(1)} km from our store.`)
+      } else {
+        setMapHint(`Delivery not available in your area. This pin is ${data.distanceKm.toFixed(1)} km away; our delivery radius is ${data.radiusKm.toFixed(1)} km.`)
       }
-      const match = (list ?? []).find(p => p.pincode === cleanPin)
-      if (!match) {
-        setPincodeError(`Sorry, we don't deliver to ${cleanPin} yet.`)
-        return false
-      }
-      return true
+      return data
     } catch {
-      setPincodeError('Could not check this pincode. Please try again.')
-      return false
+      setZoneResult(null)
+      setMapHint('Could not check the delivery radius. Please try moving the map pin again.')
+      return null
+    } finally {
+      setZoneChecking(false)
     }
-  }
+  }, [])
 
   async function openExactPinMap() {
     const cleanPin = pincode.trim()
@@ -156,11 +162,10 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setLocError('Enter name, phone, house/flat, and street/area before placing the delivery pin.')
       return
     }
-
-    setValidating(true)
-    const pinOk = await validatePincodeForDelivery(cleanPin)
-    setValidating(false)
-    if (!pinOk) return
+    if (cleanPin.length > 0 && cleanPin.length !== 6) {
+      setPincodeError('Enter a valid 6-digit pincode.')
+      return
+    }
 
     setResolvingMap(true)
     setLocDenied(false)
@@ -186,6 +191,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setMapOpen(true)
       setStep('map')
       setPinTouched(false)
+      setZoneResult(null)
       setMapHint(found
         ? 'Move the map until the fixed pin sits on the exact gate or building entrance before payment.'
         : 'We opened the map near the delivery area. Move the map until the fixed pin sits on the exact home location before payment.'
@@ -196,6 +202,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setMapOpen(true)
       setStep('map')
       setPinTouched(false)
+      setZoneResult(null)
       setMapHint('We could not auto-detect the address, so the map opened near the delivery area. Move the map until the fixed pin sits on the exact home location before payment.')
     } finally {
       setResolvingMap(false)
@@ -234,6 +241,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setLat(best.lat!)
       setLng(best.lng!)
       setPinTouched(false)
+      setZoneResult(null)
       const source = best.provider === 'google' ? 'Google Maps' : 'map search'
       setMapHint(
         best.confidence === 'high'
@@ -265,7 +273,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setMapOpen(true)
       setStep('map')
       setPinTouched(true)
-      setMapHint('Current location selected. Adjust the pin if the delivery address is somewhere else.')
+      await checkDeliveryZoneForPin(latitude, longitude)
 
       try {
         const r = await fetch(
@@ -298,9 +306,9 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   const hasLocation = lat !== null && lng !== null
   const phoneValid  = customerPhone.replace(/\D/g, '').length >= 10
   const nameValid   = customerName.trim().length >= 2
-  const pinValid    = pincode.trim().length === 6
+  const pinValid    = pincode.trim().length === 0 || pincode.trim().length === 6
   const detailsValid = nameValid && houseNumber.trim().length > 0 && streetAddress.trim().length > 0 && phoneValid && pinValid
-  const canProceed  = detailsValid && hasLocation && pinTouched
+  const canProceed  = detailsValid && hasLocation && pinTouched && zoneResult?.deliverable === true && !zoneChecking
 
   function scrollIntoView(e: React.FocusEvent<HTMLInputElement>) {
     setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350)
@@ -311,21 +319,21 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     setPincodeError('')
     const cleanPin = pincode.trim()
 
-    if (cleanPin.length !== 6) {
+    if (cleanPin.length > 0 && cleanPin.length !== 6) {
       setPincodeError('Enter a valid 6-digit pincode.')
-      return
-    }
-
-    setValidating(true)
-    const pinOk = await validatePincodeForDelivery(cleanPin)
-    setValidating(false)
-    if (!pinOk) {
-      setStep('details')
       return
     }
 
     if (!pinTouched || lat === null || lng === null) {
       setMapHint('Move the map until the fixed pin is on the exact delivery location before payment.')
+      setStep('map')
+      return
+    }
+
+    setValidating(true)
+    const zone = await checkDeliveryZoneForPin(lat, lng)
+    setValidating(false)
+    if (!zone?.deliverable) {
       setStep('map')
       return
     }
@@ -340,6 +348,9 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       lng:           lng!,
       mapsUrl:       `https://maps.google.com/?q=${lat},${lng}`,
       customerPhone: customerPhone.replace(/\D/g, ''),
+      deliveryDistanceKm: zone.distanceKm,
+      deliveryRadiusKm:   zone.radiusKm,
+      deliveryZoneCenter: zone.center,
     }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -351,10 +362,13 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         lat:           addr.lat,
         lng:           addr.lng,
         customerPhone: addr.customerPhone,
+        deliveryDistanceKm: addr.deliveryDistanceKm,
+        deliveryRadiusKm:   addr.deliveryRadiusKm,
+        deliveryZoneCenter: addr.deliveryZoneCenter,
       }))
     } catch {}
     onConfirm(addr)
-  }, [canProceed, customerName, pincode, houseNumber, streetAddress, landmark, lat, lng, customerPhone, onConfirm, pinTouched])
+  }, [canProceed, customerName, pincode, houseNumber, streetAddress, landmark, lat, lng, customerPhone, onConfirm, pinTouched, checkDeliveryZoneForPin])
 
   if (!open) return null
 
@@ -485,7 +499,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           </Field>
 
           {/* ── Pincode ── */}
-          <Field label="Pincode" required error={pincodeError || undefined}>
+          <Field label="Pincode" hint="Optional - delivery is checked from your exact map pin" error={pincodeError || undefined}>
             <div className="relative">
               <MapPin size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none z-10" />
               <Input
@@ -550,7 +564,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                       setLat(nextLat)
                       setLng(nextLng)
                       setPinTouched(true)
-                      setMapHint('Exact delivery pin selected. You can proceed to payment.')
+                      void checkDeliveryZoneForPin(nextLat, nextLng)
                     }}
                   />
                 </div>
@@ -587,6 +601,23 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
               <MapPin size={13} className="text-amber-500 shrink-0" />
               <p className="text-xs text-amber-700 font-medium">Tap anywhere or move the map until the fixed pin is on the exact delivery point to continue</p>
+            </div>
+          )}
+          {step === 'map' && pinTouched && zoneChecking && (
+            <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5">
+              <Loader2 size={13} className="text-stone-500 shrink-0 animate-spin" />
+              <p className="text-xs text-stone-600 font-medium">Checking 5.5 km delivery radius...</p>
+            </div>
+          )}
+          {step === 'map' && pinTouched && zoneResult && !zoneResult.deliverable && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3.5 py-3">
+              <XCircle size={14} className="text-red-500 shrink-0 mt-0.5" strokeWidth={2} />
+              <div>
+                <p className="text-xs font-bold text-red-700">Delivery not available here</p>
+                <p className="text-[11px] text-red-600 mt-0.5 leading-relaxed">
+                  This pin is {zoneResult.distanceKm.toFixed(1)} km away. Current delivery radius is {zoneResult.radiusKm.toFixed(1)} km.
+                </p>
+              </div>
             </div>
           )}
           {pincodeError && (

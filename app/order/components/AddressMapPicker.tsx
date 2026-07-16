@@ -83,6 +83,7 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
       if (cancelled || !containerRef.current) return
 
       if (googleMaps) {
+        ignoreNextMoveRef.current = true
         const map = new googleMaps.Map(containerRef.current, {
           center: { lat, lng },
           zoom: 18,

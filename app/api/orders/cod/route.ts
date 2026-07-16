@@ -23,6 +23,7 @@ import { cookies } from 'next/headers'
 import { sessionOptions, type SessionData } from '@/lib/session'
 import { type Coupon } from '@/app/api/coupons/route'
 import { notifyDriverAssignment, notifyAllDrivers } from '@/lib/push-notify'
+import { checkDeliveryZone } from '@/lib/delivery-zone'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -33,6 +34,46 @@ function srvHeaders(extra?: Record<string, string>) {
     'Authorization': `Bearer ${SUPA_SRV()}`,
     'Content-Type':  'application/json',
     ...extra,
+  }
+}
+
+function validateDeliveryAddressForZone(value: unknown):
+  | { ok: true; address: Record<string, unknown> }
+  | { ok: false; response: NextResponse } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Exact delivery location is required' }, { status: 400 }),
+    }
+  }
+
+  const address = value as Record<string, unknown>
+  const zone = checkDeliveryZone(address.lat, address.lng)
+  if (!zone) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Exact delivery pin is required' }, { status: 400 }),
+    }
+  }
+  if (!zone.deliverable) {
+    return {
+      ok: false,
+      response: NextResponse.json({
+        error: 'Delivery not available in your area',
+        distanceKm: zone.distanceKm,
+        radiusKm: zone.radiusKm,
+      }, { status: 400 }),
+    }
+  }
+
+  return {
+    ok: true,
+    address: {
+      ...address,
+      deliveryDistanceKm: zone.distanceKm,
+      deliveryRadiusKm:   zone.radiusKm,
+      deliveryZoneCenter: zone.center,
+    },
   }
 }
 
@@ -79,6 +120,9 @@ export async function POST(req: NextRequest) {
   if (!items || !payment_status) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
+
+  const deliveryAddressCheck = validateDeliveryAddressForZone(body.delivery_address)
+  if (!deliveryAddressCheck.ok) return deliveryAddressCheck.response
 
   // ── Fetch live settings for coupon validation + delivery fee ──────────────
   let settings: Record<string, unknown> = {}
@@ -189,7 +233,7 @@ export async function POST(req: NextRequest) {
     total_amount:     verifiedTotal,
     payment_status:   payment_status ?? 'cod',
     order_status:     order_status   ?? 'placed',
-    delivery_address: body.delivery_address ?? null,
+    delivery_address: deliveryAddressCheck.address,
     notes:            body.notes            ?? null,
     customer_phone:   body.customer_phone   ?? null,
     customer_name:    body.customer_name    ?? null,

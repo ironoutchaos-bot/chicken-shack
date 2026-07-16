@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdminRequest } from '@/app/api/admin/login/route'
+import { checkDeliveryZone } from '@/lib/delivery-zone'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -12,6 +13,46 @@ function srvHeaders() {
     'apikey':        SUPA_SRV(),
     'Authorization': `Bearer ${SUPA_SRV()}`,
     'Content-Type':  'application/json',
+  }
+}
+
+function validateDeliveryAddressForZone(value: unknown):
+  | { ok: true; address: Record<string, unknown> }
+  | { ok: false; response: NextResponse } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Exact delivery location is required' }, { status: 400 }),
+    }
+  }
+
+  const address = value as Record<string, unknown>
+  const zone = checkDeliveryZone(address.lat, address.lng)
+  if (!zone) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Exact delivery pin is required' }, { status: 400 }),
+    }
+  }
+  if (!zone.deliverable) {
+    return {
+      ok: false,
+      response: NextResponse.json({
+        error: 'Delivery not available in your area',
+        distanceKm: zone.distanceKm,
+        radiusKm: zone.radiusKm,
+      }, { status: 400 }),
+    }
+  }
+
+  return {
+    ok: true,
+    address: {
+      ...address,
+      deliveryDistanceKm: zone.distanceKm,
+      deliveryRadiusKm:   zone.radiusKm,
+      deliveryZoneCenter: zone.center,
+    },
   }
 }
 
@@ -69,6 +110,9 @@ export async function POST(req: NextRequest) {
     if (!body[k]) return NextResponse.json({ error: `Missing: ${k}` }, { status: 400 })
   }
 
+  const deliveryAddressCheck = validateDeliveryAddressForZone(body.delivery_address)
+  if (!deliveryAddressCheck.ok) return deliveryAddressCheck.response
+
   try {
     const res = await fetch(
       `${SUPA_URL()}/rest/v1/orders`,
@@ -84,7 +128,7 @@ export async function POST(req: NextRequest) {
           razorpay_order_id:   body.razorpay_order_id,
           razorpay_payment_id: body.razorpay_payment_id,
           notes:               body.notes ?? null,
-          delivery_address:    body.delivery_address ?? null,
+          delivery_address:    deliveryAddressCheck.address,
         }),
       }
     )
