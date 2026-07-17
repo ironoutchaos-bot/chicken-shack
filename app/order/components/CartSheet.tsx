@@ -68,6 +68,7 @@ export default function CartSheet({
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponLabel,    setCouponLabel]    = useState('')
   const couponInputRef    = useRef<HTMLInputElement>(null)
+  const checkoutOpenedRef = useRef(false)
 
   const subtotal   = cart.reduce((s, c) => s + c.pricePerKg * c.quantity, 0)
   const discount   = couponApplied ? couponDiscount : 0
@@ -125,10 +126,55 @@ export default function CartSheet({
     }
   }, [open, cart])
 
+  useEffect(() => {
+    if (open) {
+      if (!checkoutOpenedRef.current) {
+        checkoutOpenedRef.current = true
+        window.dataLayer = window.dataLayer || []
+        window.dataLayer.push({ ecommerce: null })
+        window.dataLayer.push({
+          event: 'begin_checkout',
+          ecommerce: {
+            value: total,
+            coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
+            currency: 'INR',
+            items: cart.map(c => ({
+              item_id: c.productId,
+              item_name: c.name,
+              price: c.pricePerKg,
+              quantity: c.quantity
+            }))
+          }
+        })
+      }
+    } else {
+      checkoutOpenedRef.current = false
+    }
+  }, [open])
+
   const showCOD = codEnabled
   const showCF  = cfEnabled
 
   function handleCheckout(mode: CheckoutMode) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: null });
+    window.dataLayer.push({
+      event: 'add_payment_info',
+      payment_type: mode === 'cod' ? 'COD' : 'Online',
+      ecommerce: {
+        payment_type: mode === 'cod' ? 'COD' : 'Online',
+        value: total,
+        coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
+        currency: 'INR',
+        items: cart.map(c => ({
+          item_id: c.productId,
+          item_name: c.name,
+          price: c.pricePerKg,
+          quantity: c.quantity
+        }))
+      }
+    });
+
     if (!user && !authLoading) { onClose(); onLoginRequired(); return }
     if (!user && authLoading) return  // still loading — ignore tap, spinner shows
     if (cart.length === 0) return
@@ -260,14 +306,16 @@ export default function CartSheet({
         20_000,
         'Server took too long — please try again.'
       )
+      const dbData = await dbRes.json().catch(() => ({}))
       if (!dbRes.ok) {
-        const errJson = await dbRes.json().catch(() => ({}))
-        throw new Error(errJson.error ?? `Failed to save order (${dbRes.status})`)
+        throw new Error(dbData.error ?? `Failed to save order (${dbRes.status})`)
       }
+      const realOrderId = dbData.id
 
       // Store cashfree order ID and supporting tracking data
       localStorage.setItem('bf-pending-payment', JSON.stringify({
         cashfreeOrderId: order_id,
+        realOrderId,
         total,
         coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
         cart,
@@ -324,11 +372,33 @@ export default function CartSheet({
         25_000,
         'The server took too long to respond. Supabase may be waking up — please try again in a moment.'
       )
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
         throw new Error(data.error ?? `Server error ${res.status}`)
       }
       stopSlowTimer(slowTimer)
+
+      // Fire GTM purchase event for COD
+      const realOrderId = data.id
+      window.dataLayer = window.dataLayer || []
+      window.dataLayer.push({ ecommerce: null })
+      window.dataLayer.push({
+        event: 'purchase',
+        payment_type: 'COD',
+        ecommerce: {
+          transaction_id: realOrderId,
+          value: total,
+          coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
+          currency: 'INR',
+          items: cart.map(c => ({
+            item_id: c.productId,
+            item_name: c.name,
+            price: c.pricePerKg,
+            quantity: c.quantity
+          }))
+        }
+      })
+
       // Update user's full_name in profiles (fire-and-forget)
       if (deliveryAddress.customerName && user) {
         fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`, {
@@ -352,6 +422,23 @@ export default function CartSheet({
   }
 
   function onAddressConfirmed(addr: DeliveryAddress) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({ ecommerce: null });
+    window.dataLayer.push({
+      event: 'add_shipping_info',
+      ecommerce: {
+        value: total,
+        coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
+        currency: 'INR',
+        items: cart.map(c => ({
+          item_id: c.productId,
+          item_name: c.name,
+          price: c.pricePerKg,
+          quantity: c.quantity
+        }))
+      }
+    });
+
     onDeliveryAddressSaved?.(addr)
     if (checkoutMode === 'cod') proceedCOD(addr)
     else proceedCashfree(addr)

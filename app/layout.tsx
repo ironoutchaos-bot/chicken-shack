@@ -4,6 +4,12 @@ import { AuthProvider } from '@/context/AuthContext'
 import 'leaflet/dist/leaflet.css'
 import './globals.css'
 
+declare global {
+  interface Window {
+    dataLayer?: any[];
+  }
+}
+
 const outfit = Outfit({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700', '800', '900'],

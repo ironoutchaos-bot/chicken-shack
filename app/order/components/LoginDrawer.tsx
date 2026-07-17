@@ -97,6 +97,11 @@ export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Sign in failed'); return }
       if (timerRef.current) clearInterval(timerRef.current)
+      window.dataLayer = window.dataLayer || []
+      window.dataLayer.push({
+        event: 'login',
+        method: 'OTP'
+      })
       onSuccess(data.user as AuthUser)
     } catch { setError('Network error — please try again') }
     finally { setLoading(false) }

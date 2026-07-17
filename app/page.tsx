@@ -1837,7 +1837,32 @@ export default function Home() {
             }),
           });
 
-          if (patchRes.ok) return;
+          if (patchRes.ok) {
+            try {
+              const parsed = JSON.parse(pendingRaw);
+              window.dataLayer = window.dataLayer || [];
+              window.dataLayer.push({ ecommerce: null });
+              window.dataLayer.push({
+                event: 'purchase',
+                payment_type: 'Online',
+                ecommerce: {
+                  transaction_id: parsed.realOrderId || parsed.cashfreeOrderId,
+                  value: parsed.total,
+                  coupon: parsed.coupon,
+                  currency: parsed.currency || 'INR',
+                  items: parsed.cart.map((c: any) => ({
+                    item_id: c.id,
+                    item_name: c.name,
+                    price: c.pricePerKg,
+                    quantity: c.quantity
+                  }))
+                }
+              });
+            } catch (e) {
+              console.error('[Verification] failed to push GTM purchase event:', e);
+            }
+            return;
+          }
         } catch {
           // Retry a couple of times because Cashfree can take a moment.
         }
