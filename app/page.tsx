@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import Script from "next/script";
 import {
   BadgeCheck,
   Clock,
@@ -473,7 +472,6 @@ gap:0.75rem;
 .dn{width:5px;height:5px;border-radius:50%;background:rgba(22,20,15,.15);cursor:pointer;transition:all .3s;}
 .dn.on{background:var(--p);transform:scale(1.6);}
 .dn:hover{background:var(--gd);}
-#df-btn-cont{left:auto !important;right:1.1rem !important;}
 .home-cart-fab{
   position:fixed;
   bottom:calc(1.15rem + env(safe-area-inset-bottom, 0px));
@@ -1858,13 +1856,6 @@ export default function Home() {
       <link
         href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Unbounded:wght@400;700;900&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
         rel="stylesheet"
-      />
-      <Script
-        type="text/javascript"
-        src="https://d3mkw6s8thqya7.cloudfront.net/integration-plugin.js"
-        id="aisensy-wa-widget"
-        widget-id="aabjcg"
-        strategy="afterInteractive"
       />
       <style dangerouslySetInnerHTML={{ __html: css }} />
 
