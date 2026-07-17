@@ -429,7 +429,6 @@ footer > *{position:relative;z-index:1;}
 .dn{width:5px;height:5px;border-radius:50%;background:rgba(22,20,15,.15);cursor:pointer;transition:all .3s;}
 .dn.on{background:var(--p);transform:scale(1.6);}
 .dn:hover{background:var(--gd);}
-#df-btn-cont{left:auto !important;right:1.1rem !important;}
 .home-cart-fab{
   position:fixed;
   bottom:calc(1.15rem + env(safe-area-inset-bottom, 0px));
@@ -1813,14 +1812,14 @@ export default function Home() {
         href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;800&family=Manrope:wght@400;500;600&family=IBM+Plex+Sans:wght@500;600&display=swap"
         rel="stylesheet"
       />
+      <style dangerouslySetInnerHTML={{ __html: css }} />
       <Script
         type="text/javascript"
         src="https://d3mkw6s8thqya7.cloudfront.net/integration-plugin.js"
         id="aisensy-wa-widget"
-        widget-id="aabjcg"
+        widget-id="aabjd8"
         strategy="afterInteractive"
       />
-      <style dangerouslySetInnerHTML={{ __html: css }} />
 
       <div id="prog" />
 
