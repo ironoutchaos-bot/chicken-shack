@@ -15,6 +15,8 @@ import {
   ShoppingBag,
   Loader2,
   MapPin,
+  Smartphone,
+  Bike,
 } from "lucide-react";
 import type { CartItem, ProductRow } from "@/lib/supabase-browser";
 import type { AuthUser } from "@/lib/auth-types";
@@ -63,8 +65,8 @@ nav{
     0 18px 46px -18px rgba(95,7,155,.35),
     inset 0 1px 0 rgba(255,255,255,.7);
 }
-.logo{font-family:'League Spartan',sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:-.02em;color:var(--ink);}
-.logo em{color:var(--p);font-style:normal;}
+.logo{font-family:'League Spartan',sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:-.02em;color:var(--p);}
+.logo span{color:var(--g);}
 .nav-r{display:flex;align-items:center;gap:2.65rem;}
 .nav-r a{font-size:.8rem;letter-spacing:.04em;color:var(--p);text-decoration:none;text-transform:uppercase;transition:color .2s;font-weight:600;font-family:'Manrope',sans-serif;}
 .lightning {
@@ -74,7 +76,7 @@ nav{
   vertical-align: middle;
 }
 .nav-r a:hover{color:var(--p);}
-.nav-btn{background:linear-gradient(135deg,var(--p2),var(--p),var(--pd));color:#fff;border:none;padding:.92rem 1.8rem 0.92rem 2.45rem;font-family:'Manrope',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:9999px;box-shadow:0 14px 36px rgba(95,7,155,.55),0 8px 22px rgba(115,8,176,.26);}
+.nav-btn{background:linear-gradient(135deg,var(--p2),var(--p),var(--pd));color:#fff;border:none;padding:.92rem 2.15rem;font-family:'Manrope',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:9999px;box-shadow:0 14px 36px rgba(95,7,155,.55),0 8px 22px rgba(115,8,176,.26);}
 .nav-btn:hover{background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;box-shadow:0 10px 34px rgba(206,246,33,.28),0 16px 36px rgba(95,7,155,.44);}
 #prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--g),var(--p));z-index:600;transition:width .05s linear;width:0%;}
 #hero{min-height:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:5.9rem 2rem 1rem;background:radial-gradient(circle at 50% 43%,rgba(132,19,190,.38) 0%,rgba(115,8,176,.28) 32%,rgba(96,7,157,0) 68%),linear-gradient(180deg,#60079d 0%,#6908a7 48%,#7308b0 100%);position:relative;overflow:hidden;text-align:center;}
@@ -84,7 +86,7 @@ nav{
 .hero-wave path{fill:var(--cream);}
 .hero-content-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;width:100%;max-width:1000px;margin:0 auto;}
 .hero-statement-text{font-family:'Manrope',sans-serif;font-size:clamp(0.85rem, 2.2vw, 1.15rem);color:rgba(255,255,255,0.9);max-width:55ch;margin-bottom:.55rem;font-weight:500;position:relative;z-index:2;}
-.hs-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,0.22);padding:.4rem 1.2rem;width:fit-content;font-family:'IBM Plex Sans',sans-serif;font-size:.65rem;letter-spacing:.08em;color:#ffffff;text-transform:uppercase;margin-bottom:.65rem;border-radius:9999px;position:relative;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.14);margin-top:1.75rem;margin-bottom:.65rem;font-weight:600;}
+.hs-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,0.22);padding:.4rem 1.2rem;width:fit-content;font-family:'Unbounded',sans-serif;font-size:.65rem;letter-spacing:.08em;color:#ffffff;text-transform:uppercase;margin-bottom:.65rem;border-radius:9999px;position:relative;z-index:2;box-shadow:inset 0 1px 0 rgba(255,255,255,.14);margin-top:1.75rem;margin-bottom:.65rem;font-weight:800;}
 .hs-pill::before{content:'';width:6px;height:6px;background:var(--pl);border-radius:50%;animation:blink 1.5s ease infinite;box-shadow:0 0 8px rgba(214,255,22,.45);}
 .hero-h1{
     font-family:'League Spartan',sans-serif;
@@ -120,7 +122,7 @@ nav{
 .fs-5{left:48%;top:55%;animation-delay:1.6s;font-size:1.1rem;}
 @keyframes flyAround{0%,100%{transform:translate(0, 0) rotate(0deg);}50%{transform:translate(8px, -12px) rotate(15deg);}}
 
-.float-badge{position:absolute;min-width:172px;background:var(--white);border:1px solid rgba(95,7,155,0.14);box-shadow:0 18px 42px rgba(95,7,155,0.18),0 8px 22px rgba(31,17,11,.08);padding:0.68rem 1.18rem;border-radius:9999px;display:flex;align-items:center;gap:0.5rem;font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink);z-index:8;animation:floatBadgeUpDown 5s ease-in-out infinite;font-family:'IBM Plex Sans',sans-serif;}
+.float-badge{position:absolute;min-width:172px;background:var(--white);border:1px solid rgba(95,7,155,0.14);box-shadow:0 18px 42px rgba(95,7,155,0.18),0 8px 22px rgba(31,17,11,.08);padding:0.68rem 1.18rem;border-radius:9999px;display:flex;align-items:center;gap:0.5rem;font-size:0.62rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:var(--ink);z-index:8;animation:floatBadgeUpDown 5s ease-in-out infinite;font-family:'Space Mono',monospace;}
 .fb-left-pkg{left:-8%;top:32%;animation-delay:0.5s;}
 .fb-left-pkg img{width:22px;height:22px;border-radius:50%;object-fit:cover;}
 .fb-right-fresh{right:-8%;top:42%;animation-delay:1.5s;}
@@ -171,7 +173,7 @@ nav{
 .img-left{left:-45px;bottom:75px;transform:rotate(-12deg);}
 .story-card:hover{transform:translateY(-8px);}
 .sc-wide{grid-column:span 2;}
-.sf-label{font-family:'IBM Plex Sans',sans-serif;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--p);border:1px solid rgba(123,31,208,0.18);padding:.35rem 1rem;border-radius:9999px;margin-bottom:1.5rem;background:rgba(123,31,208,0.04);display:inline-block;font-weight:600;}
+.sf-label{font-family:'Space Mono',monospace;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:var(--p);border:1px solid rgba(123,31,208,0.18);padding:.35rem 1rem;border-radius:9999px;margin-bottom:1.5rem;background:rgba(123,31,208,0.04);display:inline-block;font-weight:700;}
 .sf-heading{font-family:'League Spartan',sans-serif;font-weight:700;font-size:1.75rem;line-height:1.2;letter-spacing:-.015em;color:var(--ink);text-align:left;margin-bottom:1rem;}
 .sf-heading .hl{color:var(--p);}
 .sf-heading .hp{color:var(--pl);}
@@ -283,7 +285,7 @@ nav{
   color: var(--ink);
   text-transform: uppercase;
 }
-.wtl-kicker{font-size:.65rem;letter-spacing:.08em;color:var(--p);text-transform:uppercase;margin-bottom:1.2rem;font-family:'IBM Plex Sans',sans-serif;font-weight:600;}
+.wtl-kicker{font-size:.65rem;letter-spacing:.08em;color:var(--p);text-transform:uppercase;margin-bottom:1.2rem;font-family:'Space Mono',monospace;font-weight:700;}
 .wtl-h{font-family:'League Spartan',sans-serif;font-weight:700;font-size:clamp(2.4rem,4.8vw,5.2rem);line-height:0.9;letter-spacing:-.015em;color:var(--ink);margin-bottom:1rem;}
 .wtl-h .it{font-family:'League Spartan',sans-serif;font-weight:700;color:var(--gd);font-style:italic;}
 .wtl-h .pp{color:var(--p);}
@@ -292,29 +294,28 @@ nav{
 .proc-bg-txt{position:absolute;bottom:-2rem;right:-1rem;font-family:'League Spartan',sans-serif;font-weight:800;font-size:clamp(6rem,15vw,18rem);color:rgba(22,20,15,.03);letter-spacing:-.04em;pointer-events:none;line-height:1;z-index:0;}
 .proc-container{max-width:1100px;margin:0 auto;position:relative;z-index:2;}
 .proc-header{margin-bottom:5rem;}
-.proc-kicker{font-size:.65rem;letter-spacing:.08em;color:var(--p);text-transform:uppercase;margin-bottom:1rem;font-family:'IBM Plex Sans',sans-serif;font-weight:600;}
+.proc-kicker{font-size:.65rem;letter-spacing:.08em;color:var(--p);text-transform:uppercase;margin-bottom:1rem;font-family:'Space Mono',monospace;font-weight:700;}
 .proc-h{font-family:'League Spartan',sans-serif;font-weight:700;font-size:clamp(2.5rem,5vw,5.2rem);letter-spacing:-.015em;line-height:.9;color:var(--ink);}
 .proc-h span{color:var(--p);}
-.proc-line-track{position:absolute;top:90px;left:80px;right:80px;height:4px;background:rgba(123,31,208,0.08);z-index:1;border-radius:2px;}
-.proc-line-progress{position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg, var(--p), var(--pl));box-shadow:0 0 12px var(--pl);transition:width 1.5s cubic-bezier(0.165, 0.84, 0.44, 1);}
+
 .proc-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:2rem;position:relative;z-index:2;}
 .proc-card{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;}
 .proc-card-content{display:flex;flex-direction:column;align-items:center;}
 .proc-node-circle{width:76px;height:76px;border-radius:50%;background:var(--white);border:3px solid rgba(123,31,208,0.1);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin-bottom:2rem;transition:all 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);box-shadow:0 8px 25px rgba(31,17,11,0.04);position:relative;z-index:3;}
 .proc-card:hover .proc-node-circle{transform:scale(1.15) translateY(-5px);border-color:var(--p);box-shadow:0 15px 35px rgba(123,31,208,0.14);background:rgba(199,242,10,.18);}
-.proc-step-num{font-family:'IBM Plex Sans',sans-serif;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--p);margin-bottom:0.5rem;font-weight:600;}
+.proc-step-num{font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--p);margin-bottom:0.5rem;font-weight:700;}
 .proc-step-title{font-family:'League Spartan',sans-serif;font-size:0.95rem;font-weight:700;color:var(--ink);margin-bottom:0.75rem;line-height:1.3;}
 .proc-step-desc{font-family:'Manrope',sans-serif;font-size:0.85rem;color:var(--ink2);line-height:1.55;padding:0 0.5rem;}
-.proc-step-badge{display:inline-block;margin-top:1rem;font-family:'IBM Plex Sans',sans-serif;font-size:0.58rem;letter-spacing:0.04em;text-transform:uppercase;color:var(--p);background:rgba(199,242,10,0.2);border:1px solid rgba(199,242,10,0.4);padding:0.25rem 0.75rem;border-radius:9999px;font-weight:600;}
+.proc-step-badge{display:inline-block;margin-top:1rem;font-family:'Space Mono',monospace;font-size:0.58rem;letter-spacing:0.04em;text-transform:uppercase;color:var(--p);background:rgba(199,242,10,0.2);border:1px solid rgba(199,242,10,0.4);padding:0.25rem 0.75rem;border-radius:9999px;font-weight:700;}
 #cta{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 38%,rgba(199,242,10,.12) 0%,rgba(138,43,226,.28) 28%,transparent 58%),linear-gradient(180deg,#6500A3 0%,#7B1FD0 48%,#4B0D91 100%);position:relative;overflow:hidden;text-align:center;padding:4rem 3rem;}
 #cta::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(44,0,84,.32),transparent 28%,transparent 72%,rgba(44,0,84,.34));pointer-events:none;}
 .cta-bg-circle{position:absolute;width:70vw;height:70vw;max-width:800px;max-height:800px;border-radius:50%;border:1px solid rgba(199,242,10,.14);top:50%;left:50%;transform:translate(-50%,-50%);}
 .cta-bg-circle:nth-child(2){width:50vw;height:50vw;border-color:rgba(255,255,255,.12);}
 .cta-bg-circle:nth-child(3){width:30vw;height:30vw;border-color:rgba(199,242,10,.2);background:rgba(199,242,10,.035);}
-.cta-kicker{font-size:.65rem;letter-spacing:.08em;color:var(--pl);text-transform:uppercase;margin-bottom:1.5rem;position:relative;z-index:1;text-shadow:0 0 18px rgba(199,242,10,.26);font-family:'IBM Plex Sans',sans-serif;font-weight:600;}
+.cta-kicker{font-size:.65rem;letter-spacing:.08em;color:var(--pl);text-transform:uppercase;margin-bottom:1.5rem;position:relative;z-index:1;text-shadow:0 0 18px rgba(199,242,10,.26);font-family:'Space Mono',monospace;font-weight:700;}
 .cta-h{font-family:'League Spartan',sans-serif;font-weight:800;font-size:clamp(3rem,9vw,9.5rem);letter-spacing:-.02em;line-height:.85;color:#fff;position:relative;z-index:1;}
 .cta-h .cg{color:var(--pl);}
-.cta-h .cp{color:var(--pl);}
+.cta-h .cp{color:#fff;}
 .cta-quote{font-family:'Manrope',sans-serif;font-style:italic;font-size:1.25rem;color:rgba(255,255,255,.78);margin:2rem 0;max-width:600px;position:relative;z-index:1;line-height:1.6;}
 .cta-btns{display:flex;gap:1rem;justify-content:center;position:relative;z-index:1;}
 .btn-glow{background:var(--pl);color:var(--ink);border:none;padding:1.1rem 3.5rem;font-family:'Manrope',sans-serif;font-size:.82rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:all .25s;box-shadow:0 0 0 0 rgba(199,242,10,.4);animation:glowPulse 3s ease infinite;}
@@ -322,14 +323,14 @@ nav{
 .btn-glow:hover{background:#fff;transform:scale(1.05);}
 .btn-ghost-white{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.26);color:#fff;padding:1.1rem 2rem;font-family:'Manrope',sans-serif;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
 .btn-ghost-white:hover{border-color:var(--pl);color:var(--ink);background:var(--pl);}
-.cta-meta{margin-top:2rem;font-size:.58rem;letter-spacing:.04em;color:rgba(255,255,255,.64);position:relative;z-index:1;font-family:'IBM Plex Sans',sans-serif;font-weight:500;}
+.cta-meta{margin-top:2rem;font-size:.58rem;letter-spacing:.04em;color:rgba(255,255,255,.64);position:relative;z-index:1;font-family:'Space Mono',monospace;font-weight:700;}
 footer{background:linear-gradient(180deg,#4B0D91 0%,#31065F 100%);border-top:1px solid rgba(199,242,10,.16);padding:3.5rem 3rem 2rem;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;position:relative;overflow:hidden;}
 footer::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 16% 10%,rgba(199,242,10,.09),transparent 22rem);pointer-events:none;}
 footer > *{position:relative;z-index:1;}
 .fl{font-family:'League Spartan',sans-serif;font-weight:800;font-size:2rem;letter-spacing:-.02em;color:#fff;line-height:1;}
 .fl em{color:var(--pl);font-style:normal;}
 .ft{margin-top:.8rem;font-size:.8rem;color:rgba(255,255,255,.72);line-height:1.65;max-width:240px;font-family:'Manrope',sans-serif;}
-.fc-t{font-size:.65rem;letter-spacing:.08em;color:var(--pl);text-transform:uppercase;margin-bottom:1rem;font-family:'IBM Plex Sans',sans-serif;font-weight:600;}
+.fc-t{font-size:.65rem;letter-spacing:.08em;color:var(--pl);text-transform:uppercase;margin-bottom:1rem;font-family:'Space Mono',monospace;font-weight:700;}
 .fc-l{list-style:none;display:flex;flex-direction:column;gap:.6rem;font-family:'Manrope',sans-serif;}
 .fc-l a{font-size:.8rem;color:rgba(255,255,255,.7);text-decoration:none;transition:color .2s;}
 .fc-l a:hover{color:var(--pl);}
@@ -418,9 +419,9 @@ footer > *{position:relative;z-index:1;}
 }
 
 .fo-sub{
-    font-family:'IBM Plex Sans',sans-serif;
+    font-family:'Space Mono',monospace;
     font-size:.58rem;
-    font-weight:600;
+    font-weight:700;
     letter-spacing:.08em;
     text-transform:uppercase;
     color:#C2B05E;
@@ -499,7 +500,6 @@ footer > *{position:relative;z-index:1;}
   .hmi-circle svg{width:14px;height:14px;stroke-width:1.8px;}
   .hmi-label{font-size:0.42rem;letter-spacing:0;line-height:1.1;}
   #process{padding:4rem 1.2rem;}
-  .proc-line-track{display:none;}
   .proc-grid{grid-template-columns:1fr;gap:2.2rem;}
   .proc-card{flex-direction:row;text-align:left;gap:1.2rem;align-items:flex-start;background:rgba(255,255,255,0.4);border:1px solid rgba(123,31,208,0.06);padding:1.4rem 1.2rem;border-radius:24px;box-shadow:0 6px 20px rgba(31,17,11,0.02);}
   .proc-card-content{align-items:flex-start;text-align:left;}
@@ -560,13 +560,13 @@ footer > *{position:relative;z-index:1;}
   text-align: center;
 }
 .menu-kicker {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Space Mono', monospace;
   font-size: .65rem;
   letter-spacing: .08em;
   color: var(--p);
   text-transform: uppercase;
   margin-bottom: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
 }
 .menu-h {
   font-family: 'League Spartan', sans-serif;
@@ -625,8 +625,8 @@ footer > *{position:relative;z-index:1;}
   top: 8px;
   left: 8px;
   z-index: 2;
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-weight: 600;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.9);
   background: rgba(22, 20, 15, 0.55);
@@ -647,11 +647,11 @@ footer > *{position:relative;z-index:1;}
   background: var(--pl);
   color: var(--ink);
   font-size: 8px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 3px 7px;
   border-radius: 20px;
   letter-spacing: 0.02em;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Space Mono', monospace;
 }
 .menu-card-qty-badge {
   position: absolute;
@@ -661,10 +661,10 @@ footer > *{position:relative;z-index:1;}
   background: linear-gradient(135deg, var(--p2), var(--p), var(--pd));
   color: #fff;
   font-size: 8.5px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 3px 7px;
   border-radius: 20px;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Space Mono', monospace;
 }
 .menu-card-body {
   padding: 14px;
@@ -919,8 +919,8 @@ footer > *{position:relative;z-index:1;}
   padding: 8px 18px;
   border-radius: 999px;
   margin-bottom: 2rem;
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-weight: 600;
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
   font-size: 0.78rem;
   color: var(--p);
 }
@@ -997,6 +997,39 @@ footer > *{position:relative;z-index:1;}
 
 .testimonials-grid::-webkit-scrollbar{
     display:none;
+}
+.testimonials-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.test-nav-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid rgba(123, 31, 208, 0.14);
+  color: var(--p);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(123, 31, 208, 0.05);
+  transition: all 0.25s ease;
+  user-select: none;
+}
+.test-nav-btn:hover {
+  background: var(--p);
+  color: #ffffff;
+  border-color: var(--p);
+  transform: scale(1.08);
+  box-shadow: 0 8px 20px rgba(123, 31, 208, 0.2);
+}
+.test-nav-btn:active {
+  transform: scale(0.95);
 }
 .testimonial-card{
     flex:0 0 calc((100% - 48px)/3);
@@ -1095,21 +1128,13 @@ footer > *{position:relative;z-index:1;}
     grid-template-columns: 1fr;
     gap: 1.6rem;
   }
-  .testimonials-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .testimonial-card:last-child {
-    grid-column: span 2;
+  .testimonial-card {
+    flex: 0 0 calc((100% - 24px)/2);
   }
 }
 @media(max-width: 600px) {
-  .testimonials-grid {
-    grid-template-columns: 1fr;
-  }
-  .testimonial-card:last-child {
-    grid-column: span 1;
-  }
   .testimonial-card {
+    flex: 0 0 100%;
     padding: 1.8rem;
     min-height: auto;
   }
@@ -1205,9 +1230,9 @@ footer > *{position:relative;z-index:1;}
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: 'Space Mono', monospace;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--ink2);
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -1299,51 +1324,51 @@ nav button,
 const testimonials = [
   {
     stars: 5,
-    text: "Honestly fed up of frozen and old stuffs. Ordered from you late evening and it reached chilled and fresh. Made chilli chicken the same night, turned out superb 😊 you guys have got a regular customer now!",
-    author: "Hemanth",
+    text: "Was a bit skeptical about ordering fresh chicken online, but B'Luru Fresh really delivered. Literally got it within 45 minutes here in Yelahanka. The pieces were chilled, clean, and zero leakage in the vacuum pack. Made pepper chicken, and it was so tender. Finally a reliable place!",
+    author: "Hemanth Kumar",
     avatar: "H",
     color: "#9333EA",
   },
   {
     stars: 5,
-    text: "The webApp is super-friendly and ordering is very easy within 4 clicks, that's excellent. Also the product is toooo good 😍👍🏻",
-    author: "Prajwal Aiy...",
-    avatar: "P",
+    text: "Honestly, I'm done with supermarket frozen meat. This was completely different. The pieces actually looked pink and fresh, not white and water-logged. My mother-in-law is very picky about cleaning the chicken, but even she was satisfied with how clean this was. Definitely ordering again next Sunday.",
+    author: "Sneha Hegde",
+    avatar: "S",
     color: "#7E22CE",
   },
   {
     stars: 5,
-    text: "Really impressed with this order! The chicken arrived on time, was very well packed and had zero smell. Tasted fresh and delicious. Great job on packaging and delivery! 👍🏻",
-    author: "Rakesh Sath...",
-    avatar: "R",
+    text: "Super fast delivery to Thirumenahalli. The packaging is top class – double sealed so no smell in the fridge. Highly recommend the curry cut.",
+    author: "Karthik R.",
+    avatar: "K",
     color: "#84CC16",
   },
   {
     stars: 5,
-    text: "My wife is very particular about meat and even she had no complaints with what you sent. Properly cleaned, hardly any extra fat and the weight was exactly as mentioned.",
-    author: "Sooraj Kumar",
-    avatar: "S",
+    text: "Usually, local shops give rough cuts with too much bone and skin, but B'Luru Fresh does a really professional job. The boneless breast pieces were perfectly cleaned and trimmed. Made butter chicken for guests, and they loved how juicy it was.",
+    author: "Anjali Menon",
+    avatar: "A",
     color: "#F59E0B",
   },
   {
     stars: 5,
-    text: "Ordered from you for our Sunday family lunch. The pieces you sent were nicely cut and very fresh. Even my mother was impressed 😊 well done team!",
-    author: "Roshan Chan...",
+    text: "Ordered late evening for a barbecue at our place in Judicial Layout. Reached in 50 mins flat, packed in a sterile cold box. The drumsticks were huge and fresh. Very convenient if you don't want to stand in dirty wet-markets on weekends.",
+    author: "Rohan D'Souza",
     avatar: "R",
     color: "#3B82F6",
   },
   {
     stars: 5,
-    text: "Being a working mother I rarely get time to visit the market, so thank you for making this so easy. The chicken you delivered was so clean and fresh — no smell even while cooking.",
-    author: "Dhanya Rama...",
-    avatar: "D",
+    text: "Working late in Bangalore means wet markets are closed. Tried this on a Wednesday night. Delivery driver was polite and called once he reached the gate. Clean cuts, exact weight, and very fresh chicken. Lifesaver!",
+    author: "Preeti N.",
+    avatar: "P",
     color: "#EC4899",
   },
   {
     stars: 5,
-    text: "No more standing in line at the meat shop. Order in the morning, get it cut fresh and delivered. Quality is consistently great every time.",
-    author: "Harsha",
-    avatar: "H",
+    text: "Consistently good quality. Have ordered 4 times now and the freshness is always top-notch. Cuts are clean and no extra fat left on the pieces.",
+    author: "Vikram Gowda",
+    avatar: "V",
     color: "#14B8A6",
   },
 ];
@@ -1600,20 +1625,7 @@ export default function Home() {
     document.querySelectorAll(".split-word").forEach((el) => swIO.observe(el));
 
     // Process progress line animation
-    const procEl = document.getElementById("process");
-    const progressLine = document.getElementById("procProgress");
-    if (procEl && progressLine) {
-      new IntersectionObserver(
-        (en) => {
-          en.forEach((e) => {
-            if (e.isIntersecting) {
-              progressLine.style.width = "100%";
-            }
-          });
-        },
-        { threshold: 0.3 },
-      ).observe(procEl);
-    }
+
 
     // Counter
     function animC(el: Element, target: number, dur = 1400) {
@@ -1805,11 +1817,33 @@ export default function Home() {
       .getElementById("scroll-story")
       ?.scrollIntoView({ behavior: "smooth" });
   };
+  const scrollPrev = () => {
+    const container = testimonialRef.current;
+    if (!container) return;
+    const card = container.querySelector(".testimonial-card") as HTMLElement;
+    if (!card) return;
+    const amount = card.offsetWidth + 24;
+    container.scrollBy({
+      left: -amount,
+      behavior: "smooth",
+    });
+  };
+  const scrollNext = () => {
+    const container = testimonialRef.current;
+    if (!container) return;
+    const card = container.querySelector(".testimonial-card") as HTMLElement;
+    if (!card) return;
+    const amount = card.offsetWidth + 24;
+    container.scrollBy({
+      left: amount,
+      behavior: "smooth",
+    });
+  };
 
   return (
     <>
       <link
-        href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;800&family=Manrope:wght@400;500;600&family=IBM+Plex+Sans:wght@500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;800&family=Manrope:wght@400;500;600&family=Space+Mono:ital,wght@0,700;1,700&family=Unbounded:wght@800;900&display=swap"
         rel="stylesheet"
       />
       <style dangerouslySetInnerHTML={{ __html: css }} />
@@ -1880,7 +1914,7 @@ export default function Home() {
 
       <nav>
         <div className="logo">
-          B&apos;<em>LURU</em> FRESH
+          B&apos;LURU <span>FRESH</span>
         </div>
         <div className="nav-r">
           <a href="#why">Why</a>
@@ -1904,9 +1938,7 @@ export default function Home() {
             {cartItemCount > 0 ? (
               `Cart (${cartItemCount}) 🛒`
             ) : (
-              <>
-                Order <span className="lightning">⚡</span>
-              </>
+              "Order Now"
             )}
           </button>
         </div>
@@ -1978,7 +2010,7 @@ export default function Home() {
                 <span>
                   {cartItemCount > 0
                     ? "Proceed to Checkout 🛒"
-                    : "Order Now ⚡"}
+                    : "Order Now"}
                 </span>
               </button>
               <button className="btn-line" onClick={goStory}>
@@ -2305,6 +2337,22 @@ export default function Home() {
               </div>
             ))}
           </div>
+          <div className="testimonials-nav">
+            <button
+              onClick={scrollPrev}
+              className="test-nav-btn"
+              aria-label="Previous testimonial"
+            >
+              ←
+            </button>
+            <button
+              onClick={scrollNext}
+              className="test-nav-btn"
+              aria-label="Next testimonial"
+            >
+              →
+            </button>
+          </div>
         </div>
       </section>
 
@@ -2425,7 +2473,7 @@ export default function Home() {
             </div>
             <div style={{ marginTop: "2rem" }}>
               <button className="btn-glow" onClick={goOrder}>
-                Order Fresh Now ⚡
+                Order Fresh Now
               </button>
             </div>
           </div>
@@ -2467,32 +2515,28 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="proc-line-track">
-            <div className="proc-line-progress" id="procProgress" />
-          </div>
-
           <div className="proc-grid">
             {[
               {
-                icon: "📲",
+                icon: <Smartphone size={28} strokeWidth={1.8} style={{ color: "var(--p)" }} />,
                 title: "Order Placed",
                 desc: "Tap. Done. Your order hits our system instantly. The clock starts the moment you confirm.",
                 tag: "Trigger Point",
               },
               {
-                icon: "🔪",
+                icon: <Scissors size={28} strokeWidth={1.8} style={{ color: "var(--p)" }} />,
                 title: "We Cut",
                 desc: "Only after your order does the cutting begin. Not this morning. Your order triggers the knife.",
                 tag: "Zero Pre-Cuts",
               },
               {
-                icon: "📦",
+                icon: <PackageCheck size={28} strokeWidth={1.8} style={{ color: "var(--p)" }} />,
                 title: "Packed Fresh",
                 desc: "Cut fresh, packed under sterile conditions, vacuum-sealed. Straight to you.",
                 tag: "Sterile Sealed",
               },
               {
-                icon: "🏍️",
+                icon: <Bike size={28} strokeWidth={1.8} style={{ color: "var(--p)" }} />,
                 title: "Delivered",
                 desc: "At your door in under 60 minutes, guaranteed. No smell. No slime. Just clean, fresh chicken.",
                 tag: "Under 60 Mins",
@@ -2537,7 +2581,7 @@ export default function Home() {
         </div>
         <div className="cta-btns rv d3">
           <button className="btn-glow" onClick={goOrder}>
-            {cartItemCount > 0 ? "Proceed to Checkout 🛒" : "Order Now ⚡"}
+            {cartItemCount > 0 ? "Proceed to Checkout 🛒" : "Order Now"}
           </button>
           <button
             className="btn-ghost-white"
@@ -2562,7 +2606,7 @@ export default function Home() {
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <p
             style={{
-              fontFamily: "'IBM Plex Sans',sans-serif",
+              fontFamily: "'Space Mono',monospace",
               fontSize: ".62rem",
               letterSpacing: ".08em",
               color: "var(--p)",
