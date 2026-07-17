@@ -1769,7 +1769,7 @@ export default function Home() {
                   coupon: parsed.coupon,
                   currency: parsed.currency || "INR",
                   items: parsed.cart.map((c: any) => ({
-                    item_id: c.id,
+                    item_id: c.productId,
                     item_name: c.name,
                     price: c.pricePerKg,
                     quantity: c.quantity,

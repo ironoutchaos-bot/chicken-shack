@@ -200,21 +200,21 @@ export default function OrderApp() {
               window.dataLayer = window.dataLayer || []
               window.dataLayer.push({ ecommerce: null })
               window.dataLayer.push({
-                event: 'purchase',
-                payment_type: 'Online',
+                event: "purchase",
+                payment_type: "Online",
                 ecommerce: {
                   transaction_id: parsed.realOrderId || parsed.cashfreeOrderId,
                   value: parsed.total,
                   coupon: parsed.coupon,
-                  currency: parsed.currency || 'INR',
+                  currency: parsed.currency || "INR",
                   items: parsed.cart.map((c: any) => ({
-                    item_id: c.id,
+                    item_id: c.productId,
                     item_name: c.name,
                     price: c.pricePerKg,
-                    quantity: c.quantity
-                  }))
-                }
-              })
+                    quantity: c.quantity,
+                  })),
+                },
+              });
             } catch (e) {
               console.error('[Verification] failed to push GTM purchase event:', e)
             }
