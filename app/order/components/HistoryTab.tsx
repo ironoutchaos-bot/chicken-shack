@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { RefreshCw, Loader2, RotateCcw, ChevronDown, Archive, Scissors, CheckCircle2, XCircle, Download } from 'lucide-react'
 import { type OrderRow, type CartItem } from '@/lib/supabase-browser'
 import type { AuthUser } from '@/lib/auth-types'
+import type { Tab } from '../OrderApp'
 
 const PAGE_SIZE = 10
 
@@ -673,10 +674,14 @@ export default function HistoryTab({
   user,
   onReorder,
   feedbackTargetId,
+  activeTab,
+  onTabChange,
 }: {
   user: AuthUser
   onReorder: (items: CartItem[]) => void
   feedbackTargetId?: string | null
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
 }) {
   const [orders,      setOrders]      = useState<OrderRow[]>([])
   const [loading,     setLoading]     = useState(true)
@@ -774,8 +779,33 @@ export default function HistoryTab({
             </button>
           </div>
         </div>
-        {/* Subtle bottom glow */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)' }} />
+        {/* Sub-navigation tabs */}
+        <div className="px-4 pb-3.5 flex items-center gap-2">
+          <button
+            onClick={() => onTabChange('active')}
+            className="flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all text-center"
+            style={{
+              background: activeTab === 'active' ? '#FEF9EE' : 'rgba(255,255,255,0.08)',
+              color: activeTab === 'active' ? '#92400E' : 'rgba(255,255,255,0.75)',
+              border: activeTab === 'active' ? '1px solid #FEF3C7' : '1px solid rgba(255,255,255,0.1)',
+              boxShadow: activeTab === 'active' ? '0 4px 12px rgba(0,0,0,0.12)' : 'none',
+            }}
+          >
+            Orders Placed
+          </button>
+          <button
+            onClick={() => onTabChange('history')}
+            className="flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all text-center"
+            style={{
+              background: activeTab === 'history' ? '#FEF9EE' : 'rgba(255,255,255,0.08)',
+              color: activeTab === 'history' ? '#92400E' : 'rgba(255,255,255,0.75)',
+              border: activeTab === 'history' ? '1px solid #FEF3C7' : '1px solid rgba(255,255,255,0.1)',
+              boxShadow: activeTab === 'history' ? '0 4px 12px rgba(0,0,0,0.12)' : 'none',
+            }}
+          >
+            Order History
+          </button>
+        </div>
       </div>
 
       {/* ── Content ── */}

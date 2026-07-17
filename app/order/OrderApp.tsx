@@ -404,6 +404,8 @@ export default function OrderApp() {
                     user={user}
                     onTabCountChange={setActiveCount}
                     refreshTrigger={activeOrdersRefresh}
+                    activeTab={activeTab}
+                    onTabChange={goToTab}
                   />
                 )}
                 {activeTab === 'history' && user && (
@@ -415,6 +417,8 @@ export default function OrderApp() {
                       setActiveTab('shop')
                       setCartOpen(true)
                     }}
+                    activeTab={activeTab}
+                    onTabChange={goToTab}
                   />
                 )}
               </main>

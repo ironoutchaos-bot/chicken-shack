@@ -299,6 +299,7 @@ nav{
 .proc-line-progress{position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg, var(--p), var(--pl));box-shadow:0 0 12px var(--pl);transition:width 1.5s cubic-bezier(0.165, 0.84, 0.44, 1);}
 .proc-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:2rem;position:relative;z-index:2;}
 .proc-card{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;}
+.proc-card-content{display:flex;flex-direction:column;align-items:center;}
 .proc-node-circle{width:76px;height:76px;border-radius:50%;background:var(--white);border:3px solid rgba(123,31,208,0.1);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin-bottom:2rem;transition:all 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);box-shadow:0 8px 25px rgba(31,17,11,0.04);position:relative;z-index:3;}
 .proc-card:hover .proc-node-circle{transform:scale(1.15) translateY(-5px);border-color:var(--p);box-shadow:0 15px 35px rgba(123,31,208,0.14);background:rgba(199,242,10,.18);}
 .proc-step-num{font-family:'IBM Plex Sans',sans-serif;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--p);margin-bottom:0.5rem;font-weight:600;}
@@ -499,9 +500,10 @@ footer > *{position:relative;z-index:1;}
   .hmi-label{font-size:0.42rem;letter-spacing:0;line-height:1.1;}
   #process{padding:4rem 1.2rem;}
   .proc-line-track{display:none;}
-  .proc-grid{grid-template-columns:1fr;gap:3rem;}
-  .proc-card{flex-direction:row;text-align:left;gap:1.2rem;align-items:flex-start;}
-  .proc-node-circle{margin-bottom:0;flex-shrink:0;width:60px;height:60px;font-size:1.7rem;}
+  .proc-grid{grid-template-columns:1fr;gap:2.2rem;}
+  .proc-card{flex-direction:row;text-align:left;gap:1.2rem;align-items:flex-start;background:rgba(255,255,255,0.4);border:1px solid rgba(123,31,208,0.06);padding:1.4rem 1.2rem;border-radius:24px;box-shadow:0 6px 20px rgba(31,17,11,0.02);}
+  .proc-card-content{align-items:flex-start;text-align:left;}
+  .proc-node-circle{margin-bottom:0;flex-shrink:0;width:56px;height:56px;font-size:1.6rem;box-shadow:0 4px 15px rgba(31,17,11,0.03);}
   #cta{padding:4rem 1.2rem;}
   .cta-h{font-size:clamp(3rem,13vw,5.5rem);}
   .cta-btns{flex-direction:column;align-items:center;gap:.8rem;}
@@ -1551,8 +1553,6 @@ export default function Home() {
   });
 
   useEffect(() => {
-
-
     // Progress bar
     const prog = document.getElementById("prog");
     const onScroll = () => {
@@ -1951,7 +1951,7 @@ export default function Home() {
 
         <div className="hero-content-wrap">
           <div className="hs-pill">
-            🐔 Bengaluru&apos;s first ultra-fresh system
+            Bengaluru&apos;s first ultra-fresh system
           </div>
 
           <div className="hero-h1 rv d2">
@@ -1997,7 +1997,7 @@ export default function Home() {
                 From Now — <strong>Not frozen. Not stored overnight.</strong>{" "}
                 Cut only after you order. Delivered in 60 minutes.
               </p>
-              <div className="hero-manifesto-grid">
+              {/* <div className="hero-manifesto-grid">
                 {[
                   { Icon: BadgeCheck, label: "FSSAI Licensed" },
                   { Icon: Clock, label: "60 Min Delivery" },
@@ -2011,7 +2011,7 @@ export default function Home() {
                     <div className="hmi-label">{item.label}</div>
                   </div>
                 ))}
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -2504,10 +2504,14 @@ export default function Home() {
                 style={{ transitionDelay: `${i * 0.15}s` }}
               >
                 <div className="proc-node-circle">{s.icon}</div>
-                <div className="proc-step-num">Step 0{i + 1}</div>
-                <div className="proc-step-title">{s.title}</div>
-                <div className="proc-step-desc">{s.desc}</div>
-                <div className="proc-step-badge">{s.tag}</div>
+                <div className="proc-card-content">
+                  <div className="proc-step-num">Step 0{i + 1}</div>
+                  <div className="proc-step-title">{s.title}</div>
+                  <div className="proc-step-desc">{s.desc}</div>
+                  <div>
+                    <div className="proc-step-badge">{s.tag}</div>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -2786,7 +2790,7 @@ export default function Home() {
           setPincode(addr.pincode);
           setAreaName(addr.streetAddress || "Saved address");
         }}
-        onOrderPlaced={() => {
+        onOrderPlaced = {() => {
           clearCart();
           setCartOpen(false);
           alert(
