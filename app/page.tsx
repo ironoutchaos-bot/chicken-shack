@@ -145,6 +145,11 @@ nav{
 .btn-fill:hover span{color:var(--ink);}
 .btn-line{background:transparent;border:1.5px solid rgba(31,17,11,.16);color:var(--ink);padding:0.95rem 2rem;font-family:'Manrope',sans-serif;font-size:.75rem;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:9999px;}
 .btn-line:hover{border-color:var(--p);color:var(--p);background:rgba(95,7,155,.06);transform:translateY(-1px);}
+.desktop-watch-cta{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;}
+.mobile-orders-cta,.mobile-watch-cta{display:none;align-items:center;justify-content:center;text-decoration:none;}
+.mobile-orders-cta{gap:.48rem;line-height:1;}
+.mobile-orders-cta svg{position:relative;z-index:1;width:16px;height:16px;color:gray;stroke-width:2.5;flex:0 0 auto;}
+.mobile-orders-cta span{display:inline-flex;align-items:center;line-height:1;color:gray;}
 .hero-scroll-hint{display:none;}
 .hero-bg-word{position:absolute;top:35%;left:50%;transform:translate(-50%,-50%);font-family:'League Spartan',sans-serif;font-weight:800;font-size:clamp(8rem,20vw,26rem);color:rgba(255,255,255,.115);white-space:nowrap;letter-spacing:-.04em;line-height:1;pointer-events:none;user-select:none;animation:bgFloat 8s ease-in-out infinite;z-index:0;}
 .ticker{background:linear-gradient(90deg,var(--pd),var(--p),var(--p2));padding:.9rem 0;overflow:hidden;display:flex;border-top:1px solid rgba(214,255,22,0.22);border-bottom:1px solid rgba(199,242,10,0.22);position:relative;z-index:10;}
@@ -485,6 +490,9 @@ footer > *{position:relative;z-index:1;}
   .hero-desc-para{font-size:0.85rem;margin-bottom:1.5rem;}
   .hero-ctas{justify-content:center;width:100%;gap:0.8rem;}
   .btn-fill, .btn-line{width:100%;max-width:240px;text-align:center;padding:0.95rem 1.5rem;font-size:0.68rem;}
+  .desktop-watch-cta{display:none;}
+  .mobile-orders-cta,.mobile-watch-cta{display:inline-flex;}
+  .mobile-orders-cta{height:46px;padding:0 1.5rem;font-size:.76rem;font-weight:700;letter-spacing:.04em;background:none;color:black}
   .hero-bg-word{top:40%;font-size:clamp(4rem,22vw,8rem);}
   .hero-scroll-hint{display:none;}
   .f-badge,.fb1,.fb2,.fb3{display:none;}
@@ -1928,7 +1936,7 @@ export default function Home() {
           <a href="#process">Process</a>
           <a href="#menu">Menu</a>
           <a href="tel:+917012488951">Call</a>
-          {true && (
+          {user && (
             <Link
               href="/order-history"
               className={`nav-orders-btn ${isOrderPage ? "active" : ""}`}
@@ -2024,9 +2032,30 @@ export default function Home() {
                   {cartItemCount > 0 ? "Proceed to Checkout 🛒" : "Order Now"}
                 </span>
               </button>
-              <button className="btn-line" onClick={goStory}>
+              <button
+                type="button"
+                className="btn-line desktop-watch-cta"
+                onClick={goStory}
+              >
                 Watch ↓
               </button>
+              {user ? (
+                <Link
+                  href="/order-history"
+                  className="btn-fill mobile-orders-cta"
+                >
+                  <History size={16} aria-hidden="true" />
+                  <span>Orders</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-line mobile-watch-cta"
+                  onClick={goStory}
+                >
+                  Watch ↓
+                </button>
+              )}
             </div>
 
             {/* Redesigned highlighted manifesto & 4 circular items grid */}
