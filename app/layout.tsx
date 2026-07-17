@@ -205,7 +205,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         {/* Order page editorial fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Unbounded:wght@400;700;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;800&family=Manrope:wght@400;500;600&family=IBM+Plex+Sans:wght@500;600&display=swap" rel="stylesheet" />
         <script
           type="text/javascript"
           src="https://d3mkw6s8thqya7.cloudfront.net/integration-plugin.js"
