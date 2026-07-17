@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 import {
   BadgeCheck,
   Clock,
@@ -17,6 +18,7 @@ import {
   MapPin,
   Smartphone,
   Bike,
+  History,
 } from "lucide-react";
 import type { CartItem, ProductRow } from "@/lib/supabase-browser";
 import type { AuthUser } from "@/lib/auth-types";
@@ -78,6 +80,10 @@ nav{
 .nav-r a:hover{color:var(--p);}
 .nav-btn{background:linear-gradient(135deg,var(--p2),var(--p),var(--pd));color:#fff;border:none;padding:.92rem 2.15rem;font-family:'Manrope',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:9999px;box-shadow:0 14px 36px rgba(95,7,155,.55),0 8px 22px rgba(115,8,176,.26);}
 .nav-btn:hover{background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;box-shadow:0 10px 34px rgba(206,246,33,.28),0 16px 36px rgba(95,7,155,.44);}
+.nav-orders-btn{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;letter-spacing:.04em;color:var(--p);text-decoration:none;text-transform:uppercase;transition:color .2s;font-weight:600;font-family:'Manrope',sans-serif;cursor:pointer;}
+.nav-orders-btn:hover{color:var(--pl);}
+.nav-orders-btn.active{color:var(--g);}
+@media(max-width:900px){.nav-orders-btn{display:none !important;}}
 #prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--g),var(--p));z-index:600;transition:width .05s linear;width:0%;}
 #hero{min-height:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:5.9rem 2rem 1rem;background:radial-gradient(circle at 50% 43%,rgba(132,19,190,.38) 0%,rgba(115,8,176,.28) 32%,rgba(96,7,157,0) 68%),linear-gradient(180deg,#60079d 0%,#6908a7 48%,#7308b0 100%);position:relative;overflow:hidden;text-align:center;}
 #hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 47%,rgba(255,255,255,.07) 0%,rgba(255,255,255,.03) 28%,transparent 62%),linear-gradient(90deg,rgba(38,0,78,.38),transparent 30%,transparent 70%,rgba(38,0,78,.42));pointer-events:none;z-index:0;}
@@ -1373,6 +1379,8 @@ const testimonials = [
   },
 ];
 export default function Home() {
+  const pathname = usePathname();
+  const isOrderPage = pathname === "/order";
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -1625,7 +1633,6 @@ export default function Home() {
     document.querySelectorAll(".split-word").forEach((el) => swIO.observe(el));
 
     // Process progress line animation
-
 
     // Counter
     function animC(el: Element, target: number, dur = 1400) {
@@ -1921,6 +1928,16 @@ export default function Home() {
           <a href="#process">Process</a>
           <a href="#menu">Menu</a>
           <a href="tel:+917012488951">Call</a>
+          {true && (
+            <Link
+              href="/order-history"
+              className={`nav-orders-btn ${isOrderPage ? "active" : ""}`}
+              title="Your Orders"
+            >
+              <History size={16} />
+              <span>Orders</span>
+            </Link>
+          )}
           <button
             className="nav-btn"
             onClick={goOrder}
@@ -1935,11 +1952,7 @@ export default function Home() {
                 : undefined
             }
           >
-            {cartItemCount > 0 ? (
-              `Cart (${cartItemCount}) 🛒`
-            ) : (
-              "Order Now"
-            )}
+            {cartItemCount > 0 ? `Cart (${cartItemCount}) 🛒` : "Order Now"}
           </button>
         </div>
       </nav>
@@ -2008,9 +2021,7 @@ export default function Home() {
             <div className="hero-ctas">
               <button className="btn-fill" onClick={goOrder}>
                 <span>
-                  {cartItemCount > 0
-                    ? "Proceed to Checkout 🛒"
-                    : "Order Now"}
+                  {cartItemCount > 0 ? "Proceed to Checkout 🛒" : "Order Now"}
                 </span>
               </button>
               <button className="btn-line" onClick={goStory}>
@@ -2518,25 +2529,49 @@ export default function Home() {
           <div className="proc-grid">
             {[
               {
-                icon: <Smartphone size={28} strokeWidth={1.8} style={{ color: "var(--p)" }} />,
+                icon: (
+                  <Smartphone
+                    size={28}
+                    strokeWidth={1.8}
+                    style={{ color: "var(--p)" }}
+                  />
+                ),
                 title: "Order Placed",
                 desc: "Tap. Done. Your order hits our system instantly. The clock starts the moment you confirm.",
                 tag: "Trigger Point",
               },
               {
-                icon: <Scissors size={28} strokeWidth={1.8} style={{ color: "var(--p)" }} />,
+                icon: (
+                  <Scissors
+                    size={28}
+                    strokeWidth={1.8}
+                    style={{ color: "var(--p)" }}
+                  />
+                ),
                 title: "We Cut",
                 desc: "Only after your order does the cutting begin. Not this morning. Your order triggers the knife.",
                 tag: "Zero Pre-Cuts",
               },
               {
-                icon: <PackageCheck size={28} strokeWidth={1.8} style={{ color: "var(--p)" }} />,
+                icon: (
+                  <PackageCheck
+                    size={28}
+                    strokeWidth={1.8}
+                    style={{ color: "var(--p)" }}
+                  />
+                ),
                 title: "Packed Fresh",
                 desc: "Cut fresh, packed under sterile conditions, vacuum-sealed. Straight to you.",
                 tag: "Sterile Sealed",
               },
               {
-                icon: <Bike size={28} strokeWidth={1.8} style={{ color: "var(--p)" }} />,
+                icon: (
+                  <Bike
+                    size={28}
+                    strokeWidth={1.8}
+                    style={{ color: "var(--p)" }}
+                  />
+                ),
                 title: "Delivered",
                 desc: "At your door in under 60 minutes, guaranteed. No smell. No slime. Just clean, fresh chicken.",
                 tag: "Under 60 Mins",
@@ -2834,7 +2869,7 @@ export default function Home() {
           setPincode(addr.pincode);
           setAreaName(addr.streetAddress || "Saved address");
         }}
-        onOrderPlaced = {() => {
+        onOrderPlaced={() => {
           clearCart();
           setCartOpen(false);
           alert(

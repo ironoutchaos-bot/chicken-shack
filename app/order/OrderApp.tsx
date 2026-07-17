@@ -22,7 +22,14 @@ export type Tab = 'shop' | 'active' | 'history'
 export default function OrderApp() {
   const [user,       setUser]       = useState<AuthUser | null>(null)
   const [authLoading, setAuthLoading] = useState(true)  // true until /api/auth/me resolves
-  const [activeTab,  setActiveTab]  = useState<Tab>('shop')
+  const [activeTab,  setActiveTab]  = useState<Tab>(() => {
+    if (typeof window === 'undefined') return 'shop'
+    const tabParam = new URLSearchParams(window.location.search).get('tab')
+    if (tabParam === 'active' || tabParam === 'history' || tabParam === 'shop') {
+      return tabParam as Tab
+    }
+    return 'shop'
+  })
   const [cart,       setCart]       = useState<CartItem[]>([])
   const [loginOpen,  setLoginOpen]  = useState(false)
   const [pendingTab, setPendingTab] = useState<Tab | null>(null)
@@ -30,11 +37,11 @@ export default function OrderApp() {
   const [activeCount,          setActiveCount]          = useState(0)
   const [activeOrdersRefresh,  setActiveOrdersRefresh]  = useState(0)
 
-  // Entry screen — skip if returning from Cashfree payment
+  // Entry screen — skip if returning from Cashfree payment or deep-linking to a tab
   const [entryDone, setEntryDone] = useState(() => {
     if (typeof window === 'undefined') return false
     const p = new URLSearchParams(window.location.search)
-    return p.has('cashfree_order_id') || p.has('feedback')
+    return p.has('cashfree_order_id') || p.has('feedback') || p.has('tab')
   })
 
   // Feedback deep-link: /order?feedback=ORDER_ID
@@ -89,6 +96,18 @@ export default function OrderApp() {
       .catch(() => {})
       .finally(() => setAuthLoading(false))
   }, [])
+
+  // ── Tab deep-link auth handler ───────────────────────────────
+  // If activeTab on mount requires authentication and user is not logged in,
+  // pop the login drawer.
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user && (activeTab === 'active' || activeTab === 'history')) {
+        setPendingTab(activeTab)
+        setLoginOpen(true)
+      }
+    }
+  }, [authLoading, user, activeTab])
 
   // ── Feedback deep-link handler ────────────────────────────────
   // When user arrives via /order?feedback=ORDER_ID (from push notification),
@@ -622,7 +641,13 @@ export default function OrderApp() {
 
         <LoginDrawer
           open={loginOpen}
-          onClose={() => { setLoginOpen(false); setPendingTab(null) }}
+          onClose={() => {
+            setLoginOpen(false)
+            if (pendingTab) {
+              setActiveTab('shop')
+              setPendingTab(null)
+            }
+          }}
           onSuccess={(u) => {
             setUser(u)
             setLoginOpen(false)
