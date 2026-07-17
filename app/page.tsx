@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import Script from "next/script";
 import {
   BadgeCheck,
   Clock,
@@ -1858,6 +1859,13 @@ export default function Home() {
         rel="stylesheet"
       />
       <style dangerouslySetInnerHTML={{ __html: css }} />
+      <Script
+        type="text/javascript"
+        src="https://d3mkw6s8thqya7.cloudfront.net/integration-plugin.js"
+        id="aisensy-wa-widget"
+        widget-id="aabjd8"
+        strategy="afterInteractive"
+      />
 
       <div id="prog" />
       <div id="cur" />
