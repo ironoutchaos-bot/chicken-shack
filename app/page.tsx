@@ -1799,10 +1799,17 @@ export default function Home() {
       setCart([]);
       return;
     }
+    const pendingRaw = pendingStr;
     localStorage.removeItem("bf-pending-payment");
 
     async function completePayment() {
       setCart([]);
+
+      // Use that captured value later during verification.
+      try {
+        const parsed = JSON.parse(pendingRaw);
+        console.log("[completePayment] Verification metadata for order:", parsed.cashfreeOrderId);
+      } catch {}
 
       for (let attempt = 1; attempt <= 3; attempt++) {
         try {

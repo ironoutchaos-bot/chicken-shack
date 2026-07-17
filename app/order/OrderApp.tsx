@@ -150,11 +150,18 @@ export default function OrderApp() {
       setActiveTab('active')
       return
     }
+    const pendingRaw = pendingStr
     localStorage.removeItem('bf-pending-payment')
 
     async function completePayment() {
       setCart([])
       setActiveTab('active')
+
+      // Use that captured value later during verification.
+      try {
+        const parsed = JSON.parse(pendingRaw)
+        console.log('[completePayment] Verification metadata for order:', parsed.cashfreeOrderId)
+      } catch {}
 
       // Retry verify + patch up to 3 times with 3s gaps
       // (handles cases where Cashfree is slow to mark the payment as PAID)

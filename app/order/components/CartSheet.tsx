@@ -265,8 +265,14 @@ export default function CartSheet({
         throw new Error(errJson.error ?? `Failed to save order (${dbRes.status})`)
       }
 
-      // Only store the cashfree order ID — the DB record already has everything
-      localStorage.setItem('bf-pending-payment', JSON.stringify({ cashfreeOrderId: order_id }))
+      // Store cashfree order ID and supporting tracking data
+      localStorage.setItem('bf-pending-payment', JSON.stringify({
+        cashfreeOrderId: order_id,
+        total,
+        coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
+        cart,
+        currency: 'INR'
+      }))
 
       // Clear cart now — order is safely in DB, no need to keep it locally
       onClear()

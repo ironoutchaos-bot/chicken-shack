@@ -283,7 +283,8 @@ export async function POST(req: NextRequest) {
         })
         if (retry.ok) {
           const d2 = await retry.json()
-          return NextResponse.json(Array.isArray(d2) ? d2[0] : d2, { status: 201 })
+          const order2 = Array.isArray(d2) ? d2[0] : d2
+          return NextResponse.json({ id: order2.id }, { status: 201 })
         }
       }
       console.error('[orders/cod POST] Supabase error:', errText)
@@ -302,7 +303,7 @@ export async function POST(req: NextRequest) {
       notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
     }
 
-    return NextResponse.json(order, { status: 201 })
+    return NextResponse.json({ id: order.id }, { status: 201 })
   } catch (err) {
     console.error('[orders/cod POST] Unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
