@@ -69,7 +69,7 @@ nav{
     0 18px 46px -18px rgba(95,7,155,.35),
     inset 0 1px 0 rgba(255,255,255,.7);
 }
-.logo{font-family:var(--font-space-grotesk),sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:-.02em;color:var(--p);}
+.logo{font-family:'League Spartan',sans-serif;font-size:1.4rem;font-weight:800;letter-spacing:-.02em;color:var(--p);}
 .logo span{color:var(--g);}
 .nav-r{display:flex;align-items:center;gap:2.65rem;}
 .nav-r a{font-size:.8rem;letter-spacing:.04em;color:var(--p);text-decoration:none;text-transform:uppercase;transition:color .2s;font-weight:600;font-family:'Fraunces', serif !important;}
@@ -1335,7 +1335,7 @@ nav button,
   font-family: var(--font-space-grotesk), sans-serif !important;
 }
 .logo {
-  font-family: 'Fraunces', serif !important;
+  font-family: 'League Spartan', serif !important;
 }
 `;
 const testimonials = [
