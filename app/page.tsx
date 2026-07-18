@@ -246,6 +246,15 @@ nav{
 .hero-manifesto-desc strong {
   color: var(--p);
   font-weight: 600;
+  font-size: 1.12em;
+}
+.hero-manifesto-proof {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--p);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .hero-manifesto-grid {
   display: grid;
@@ -1388,6 +1397,55 @@ const testimonials = [
     avatar: "V",
     color: "#14B8A6",
   },
+  {
+    stars: 5,
+    text: "Honestly fed up of frozen and old stuffs. Ordered from you late evening and it reached chilled and fresh. Made chilli chicken the same night, turned out superb 😊 you guys have got a regular customer now!",
+    author: "Hemanth",
+    avatar: "H",
+    color: "#9333EA",
+  },
+  {
+    stars: 5,
+    text: "The webApp is super-friendly and ordering is very easy within 4 clicks, that's excellent. Also the product is toooo good 😍👍🏻",
+    author: "Prajwal Aiy...",
+    avatar: "P",
+    color: "#7E22CE",
+  },
+  {
+    stars: 5,
+    text: "Really impressed with this order! The chicken arrived on time, was very well packed and had zero smell. Tasted fresh and delicious. Great job on packaging and delivery! 👍🏻",
+    author: "Rakesh Sath...",
+    avatar: "R",
+    color: "#84CC16",
+  },
+  {
+    stars: 5,
+    text: "My wife is very particular about meat and even she had no complaints with what you sent. Properly cleaned, hardly any extra fat and the weight was exactly as mentioned.",
+    author: "Sooraj Kumar",
+    avatar: "S",
+    color: "#F59E0B",
+  },
+  {
+    stars: 5,
+    text: "Ordered from you for our Sunday family lunch. The pieces you sent were nicely cut and very fresh. Even my mother was impressed 😊 well done team!",
+    author: "Roshan Chan...",
+    avatar: "R",
+    color: "#3B82F6",
+  },
+  {
+    stars: 5,
+    text: "Being a working mother I rarely get time to visit the market, so thank you for making this so easy. The chicken you delivered was so clean and fresh — no smell even while cooking.",
+    author: "Dhanya Rama...",
+    avatar: "D",
+    color: "#EC4899",
+  },
+  {
+    stars: 5,
+    text: "No more standing in line at the meat shop. Order in the morning, get it cut fresh and delivered. Quality is consistently great every time.",
+    author: "Harsha",
+    avatar: "H",
+    color: "#14B8A6",
+  },
 ];
 export default function Home() {
   const pathname = usePathname();
@@ -1833,6 +1891,7 @@ export default function Home() {
     }
   };
 
+
   const goOrder = () => {
     if (cartItemCount > 0) {
       setCartOpen(true);
@@ -2081,6 +2140,9 @@ export default function Home() {
               <p className="hero-manifesto-desc">
                 From Now — <strong>Not frozen. Not stored overnight.</strong>{" "}
                 Cut only after you order. Delivered in 60 minutes.
+                <span className="hero-manifesto-proof">
+                  NO FOUL SMELL . NO SLIMINESS
+                </span>
               </p>
               {/* <div className="hero-manifesto-grid">
                 {[
@@ -2511,7 +2573,7 @@ export default function Home() {
           </div>
 
           {/* Card 5: Order (Wide, spans 2 columns) */}
-          <div className="story-card sc-wide rv d1">
+          <div className="story-card sc-wide rv d1" style={{ order: 5 }}>
             <div className="card-bg-panel" />
             <div>
               <div className="sf-label">05 — Taste The Difference</div>
@@ -2532,7 +2594,7 @@ export default function Home() {
           </div>
 
           {/* Card 4: Standard */}
-          <div className="story-card rv d2">
+          <div className="story-card rv d2" style={{ order: 4 }}>
             <div className="card-bg-panel" />
             <div className="card-bg-img img-left">
               <img

@@ -366,15 +366,25 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Update failed', detail: err }, { status: 500 })
     }
 
+    let confirmedOrder: {
+      id?: string
+      driver_id?: string | null
+      total_amount?: number | null
+      items?: unknown
+      coupon_code?: string | null
+      razorpay_order_id?: string | null
+    } | null = null
+
     // Fetch the updated order to check if DB trigger auto-assigned a driver
     try {
       const updated = await fetch(
-        `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,driver_id`,
+        `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,driver_id,total_amount,items,coupon_code,razorpay_order_id`,
         { headers: srvHeaders() }
       )
       if (updated.ok) {
         const rows = await updated.json()
         const order = rows?.[0]
+        confirmedOrder = order ?? null
         // Online payment just confirmed → the order is now live. Alert all drivers.
         if (order?.id) {
           notifyAllDrivers(order.id).catch(() => {})
@@ -382,7 +392,7 @@ export async function PATCH(req: NextRequest) {
       }
     } catch { /* notification is best-effort */ }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, order: confirmedOrder })
   } catch (err) {
     console.error('[orders/cod PATCH] Unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

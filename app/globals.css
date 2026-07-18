@@ -4,6 +4,485 @@
   to   { transform: rotate(360deg); }
 }
 
+.thank-preview-page {
+  --typ:#4c0381;
+  --typ2:#60079d;
+  --typ3:#7308b0;
+  --tyg:#8EEA2F;
+  --tycream:#FAF7F0;
+  --tyink:#1F110B;
+  --tymuted:#6e5c54;
+  --tyborder:rgba(95,7,155,.14);
+  --tywa:#25d366;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--tycream);
+  color: var(--tyink);
+  font-family: 'Manrope', var(--font-outfit), sans-serif;
+  overflow-x: hidden;
+}
+
+.thank-preview-page a { color: inherit; }
+
+.thank-preview-nav-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  padding: 1.4rem 1.25rem 0;
+}
+
+.thank-preview-nav {
+  width: 100%;
+  max-width: 1120px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 2.2rem;
+  border: 1px solid var(--tyborder);
+  border-radius: 999px;
+  background: rgba(250,247,240,.95);
+  box-shadow: 0 18px 46px -18px rgba(95,7,155,.35), inset 0 1px 0 rgba(255,255,255,.7);
+  backdrop-filter: saturate(1.4) blur(6px);
+}
+
+.thank-preview-logo {
+  color: var(--tyink);
+  font-family: 'League Spartan', var(--font-outfit), sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.thank-preview-logo em {
+  color: var(--typ);
+  font-style: normal;
+}
+
+.thank-preview-nav-r {
+  display: flex;
+  align-items: center;
+  gap: 2.2rem;
+}
+
+.thank-preview-nav-r a {
+  color: var(--typ);
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.thank-preview-nav-btn {
+  padding: .85rem 1.7rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg,var(--typ2),var(--typ),var(--typ3));
+  color: #fff !important;
+  box-shadow: 0 14px 36px rgba(95,7,155,.55), 0 8px 22px rgba(115,8,176,.26);
+}
+
+.thank-preview-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 9.5rem 1.25rem 8rem;
+  text-align: center;
+  color: #fff;
+  background:
+    radial-gradient(1100px 560px at 72% 8%, rgba(115,8,176,.65), transparent 60%),
+    radial-gradient(800px 400px at 12% 30%, rgba(96,7,157,.5), transparent 55%),
+    linear-gradient(162deg,#4c0381 0%, #60079d 46%, #7308b0 100%);
+}
+
+.thank-preview-hero.is-failed {
+  background:
+    radial-gradient(900px 520px at 72% 8%, rgba(180,35,24,.45), transparent 60%),
+    linear-gradient(162deg,#2b130f 0%, #4c0381 55%, #7308b0 100%);
+}
+
+.thank-preview-bg-word {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  z-index: 0;
+  color: rgba(255,255,255,.09);
+  font-family: 'League Spartan', var(--font-outfit), sans-serif;
+  font-size: clamp(6rem,26vw,20rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: .8;
+  pointer-events: none;
+  transform: translate(-50%,-50%);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.thank-preview-spice {
+  position: absolute;
+  z-index: 1;
+  padding: .38rem .72rem;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 999px;
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.9);
+  font: 800 .72rem/1 'IBM Plex Sans', var(--font-outfit), sans-serif;
+  text-transform: uppercase;
+  animation: thank-preview-float 7s ease-in-out infinite;
+}
+
+.thank-preview-spice.s1 { top: 20%; left: 9%; }
+.thank-preview-spice.s2 { top: 16%; right: 11%; animation-delay: 1.2s; }
+.thank-preview-spice.s3 { bottom: 30%; left: 13%; animation-delay: .6s; }
+.thank-preview-spice.s4 { bottom: 26%; right: 12%; animation-delay: 1.8s; }
+
+.thank-preview-hero-inner {
+  position: relative;
+  z-index: 3;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.thank-preview-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  margin-bottom: 1.6rem;
+  padding: .45rem 1.2rem;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 999px;
+  background: rgba(255,255,255,.13);
+  color: #fff;
+  font: 700 .66rem/1 'IBM Plex Sans', var(--font-outfit), sans-serif;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.thank-preview-pill .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tyg);
+  box-shadow: 0 0 10px var(--tyg);
+}
+
+.thank-preview-check {
+  width: 104px;
+  height: 104px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.6rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg,var(--tyg) 0%, #b6f95a 100%);
+  box-shadow: 0 0 0 10px rgba(142,234,47,.16), 0 16px 40px rgba(142,234,47,.4);
+  animation: thank-preview-pop .55s cubic-bezier(.18,.89,.32,1.28) both;
+}
+
+.thank-preview-check.is-waiting {
+  background: rgba(255,255,255,.16);
+  box-shadow: 0 0 0 10px rgba(255,255,255,.08), 0 16px 40px rgba(0,0,0,.18);
+}
+
+.thank-preview-check svg {
+  width: 52px;
+  height: 52px;
+}
+
+.thank-preview-check svg path {
+  fill: none;
+  stroke: #1b3d06;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+}
+
+.thank-preview-check.is-active svg path {
+  animation: thank-preview-draw .5s .4s ease forwards;
+}
+
+.thank-preview-check.is-waiting svg path {
+  stroke: rgba(255,255,255,.75);
+  stroke-dashoffset: 0;
+}
+
+.thank-preview-title {
+  margin: 0 0 1.15rem;
+  color: #fff;
+  font-family: 'League Spartan', var(--font-outfit), sans-serif;
+  font-size: clamp(2.8rem,9vw,5.2rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: .92;
+  text-transform: uppercase;
+}
+
+.thank-preview-title span { color: var(--tyg); }
+
+.thank-preview-sub {
+  max-width: 44ch;
+  margin: 0 auto;
+  color: rgba(255,255,255,.9);
+  font-size: clamp(1rem,2.4vw,1.18rem);
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.thank-preview-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  z-index: 2;
+  line-height: 0;
+}
+
+.thank-preview-wave svg {
+  display: block;
+  width: 100%;
+  height: 70px;
+}
+
+.thank-preview-body {
+  flex: 1;
+  padding: 3rem 1.25rem 3.5rem;
+  background: var(--tycream);
+}
+
+.thank-preview-panel {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.thank-preview-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin: 0 auto 2.4rem;
+}
+
+.thank-preview-step {
+  position: relative;
+  flex: 1 1 180px;
+  min-width: 160px;
+  padding: 1.5rem 1.1rem;
+  border: 1px solid rgba(95,7,155,.1);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 10px 30px -18px rgba(95,7,155,.4);
+}
+
+.thank-preview-step .num {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  padding: .2rem .7rem;
+  border-radius: 999px;
+  background: var(--typ);
+  color: #fff;
+  font: 800 .72rem/1 'League Spartan', var(--font-outfit), sans-serif;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.thank-preview-step .ic {
+  margin: .4rem 0 .6rem;
+  color: var(--typ);
+}
+
+.thank-preview-step .t {
+  margin-bottom: .25rem;
+  font: 800 1.05rem/1 'League Spartan', var(--font-outfit), sans-serif;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.thank-preview-step .d {
+  color: var(--tymuted);
+  font-size: .82rem;
+  line-height: 1.45;
+}
+
+.thank-preview-wa {
+  width: 100%;
+  max-width: 440px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  padding: 1.1rem 1.5rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg,var(--typ2),var(--typ),var(--typ3));
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 14px 36px rgba(95,7,155,.5), 0 8px 22px rgba(115,8,176,.24);
+}
+
+.thank-preview-wa svg {
+  width: 23px;
+  height: 23px;
+  fill: #fff;
+  flex-shrink: 0;
+}
+
+.thank-preview-secondary {
+  display: inline-block;
+  margin-top: 1.05rem;
+  color: var(--typ);
+  font-size: .9rem;
+  font-weight: 800;
+  letter-spacing: .03em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.thank-preview-divider {
+  max-width: 560px;
+  height: 1px;
+  margin: 2.2rem auto 1.6rem;
+  background: rgba(95,7,155,.12);
+}
+
+.thank-preview-trust {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+}
+
+.thank-preview-trust span {
+  display: inline-flex;
+  align-items: center;
+  padding: .4rem .8rem;
+  border: 1px solid rgba(95,7,155,.14);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--typ);
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+.thank-preview-callline {
+  margin-top: 1.35rem;
+  color: var(--tymuted);
+  font-size: .88rem;
+}
+
+.thank-preview-callline a {
+  color: var(--typ);
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.thank-preview-footer {
+  padding: 1.6rem 1.25rem;
+  background: var(--tyink);
+  color: rgba(255,255,255,.6);
+  text-align: center;
+  font-size: .8125rem;
+}
+
+.thank-preview-footer span {
+  color: #fff;
+  font-family: 'League Spartan', var(--font-outfit), sans-serif;
+  font-weight: 800;
+}
+
+.thank-preview-footer a {
+  color: var(--tyg);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.thank-preview-wa-float {
+  position: fixed;
+  left: 22px;
+  bottom: 22px;
+  z-index: 60;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--tywa);
+  box-shadow: 0 10px 26px rgba(37,211,102,.5);
+  animation: thank-preview-pulse 2.4s ease-in-out infinite;
+}
+
+.thank-preview-wa-float svg {
+  width: 32px;
+  height: 32px;
+  fill: #fff;
+}
+
+.thank-preview-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+@keyframes thank-preview-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-16px); }
+}
+
+@keyframes thank-preview-pop {
+  0% { opacity: 0; transform: scale(.4); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes thank-preview-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes thank-preview-pulse {
+  0%, 100% { box-shadow: 0 10px 26px rgba(37,211,102,.5); }
+  50% { box-shadow: 0 10px 30px rgba(37,211,102,.75); }
+}
+
+@media (max-width: 720px) {
+  .thank-preview-nav-r a:not(.thank-preview-nav-btn) { display: none; }
+  .thank-preview-nav-r { gap: 0; }
+  .thank-preview-nav {
+    padding: .85rem 1.1rem .85rem 1.4rem;
+  }
+  .thank-preview-logo { font-size: 1.25rem; }
+  .thank-preview-hero {
+    padding: 8rem 1.1rem 6.5rem;
+  }
+  .thank-preview-step {
+    flex-basis: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thank-preview-spice,
+  .thank-preview-check,
+  .thank-preview-check.is-active svg path,
+  .thank-preview-wa-float {
+    animation: none;
+  }
+  .thank-preview-check.is-active svg path { stroke-dashoffset: 0; }
+}
+
 /* ================================================================
    BLURUFRESH — Premium Design System
    Vibe: Editorial Luxury · Layout: Centred Video Hero

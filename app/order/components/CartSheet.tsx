@@ -56,6 +56,7 @@ export default function CartSheet({
   const [checkoutMode,   setCheckoutMode]   = useState<CheckoutMode>('cashfree')
   const [codEnabled,     setCodEnabled]     = useState(true)
   const [cfEnabled,      setCfEnabled]      = useState(true)
+  const [storeOpen,      setStoreOpen]      = useState(true)
   const [outOfStock,     setOutOfStock]     = useState<string[]>([])
   const [weightMap,      setWeightMap]      = useState<Record<string, number | null>>({})
   const [unitMap,        setUnitMap]        = useState<Record<string, string>>({})
@@ -75,6 +76,10 @@ export default function CartSheet({
   const total      = Math.max(0, subtotal + deliveryFee - discount)
   const totalPaise = Math.round(total * 100)
   const belowMin   = minOrderAmount > 0 && subtotal < minOrderAmount
+  const morningPreorderActive = !storeOpen
+  const morningPreorderNote = morningPreorderActive
+    ? 'Store closed night preorder: deliver fresh between 7 AM - 9 AM.'
+    : null
 
   // Fetch settings + check stock freshness when cart opens
   useEffect(() => {
@@ -89,11 +94,12 @@ export default function CartSheet({
     setError('')
 
     // Settings
-    fetch('/api/settings')
+    fetch('/api/settings', { cache: 'no-store' })
       .then(r => r.json())
       .then(d => {
         setCodEnabled(d.cod_enabled !== false)
         setCfEnabled(d.cashfree_enabled !== false)
+        setStoreOpen(d.store_open !== false)
       })
       .catch(() => {})
 
@@ -256,7 +262,7 @@ export default function CartSheet({
       // Use user prop directly — no Supabase network calls at all
       // Derive base URL from the current window so staging/dev redirects work too
       const baseUrl   = typeof window !== 'undefined' ? window.location.origin : 'https://blurufresh.com'
-      const returnUrl = `${baseUrl}/?cashfree_order_id={order_id}`
+      const returnUrl = `${baseUrl}/thank-you?cashfree_order_id={order_id}`
 
       const orderRes = await fetch('/api/cashfree/create-order', {
         method: 'POST',
@@ -296,7 +302,7 @@ export default function CartSheet({
             order_status:      'placed',
             cashfree_order_id: order_id,
             delivery_address:  deliveryAddress,
-            notes:             null,
+            notes:             morningPreorderNote,
             customer_phone:    deliveryAddress.customerPhone || null,
             customer_name:     deliveryAddress.customerName  || null,
             coupon_code:       couponApplied ? couponInput.trim().toUpperCase() : null,
@@ -312,7 +318,7 @@ export default function CartSheet({
       }
       const realOrderId = dbData.id
 
-      // Store cashfree order ID and supporting tracking data
+      // Store cashfree order ID and supporting tracking data for the thank-you conversion event.
       localStorage.setItem('bf-pending-payment', JSON.stringify({
         cashfreeOrderId: order_id,
         realOrderId,
@@ -362,7 +368,7 @@ export default function CartSheet({
             payment_status:   'cod',
             order_status:     'placed',
             delivery_address: deliveryAddress,
-            notes:            null,
+            notes:            morningPreorderNote,
             customer_phone:   deliveryAddress.customerPhone || null,
             customer_name:    deliveryAddress.customerName  || null,
             coupon_code:      couponApplied ? couponInput.trim().toUpperCase() : null,
@@ -486,6 +492,42 @@ export default function CartSheet({
 
           {/* Items */}
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5" style={{ scrollbarWidth: 'none' }}>
+            {morningPreorderActive && (
+              <div
+                className="rounded-3xl px-4 py-4"
+                style={{
+                  background: 'linear-gradient(135deg, #fff7ed 0%, #fef3c7 48%, #fff7ed 100%)',
+                  border: '2px solid rgba(217,119,6,.35)',
+                  boxShadow: '0 14px 34px rgba(217,119,6,.22)',
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+                    style={{
+                      background: 'linear-gradient(135deg,#f59e0b,#d97706)',
+                      color: '#fff',
+                      fontSize: 24,
+                      boxShadow: '0 8px 20px rgba(217,119,6,.35)',
+                    }}
+                  >
+                    🌙
+                  </div>
+                  <div className="min-w-0">
+                    <p
+                      className="text-sm font-black uppercase"
+                      style={{ color: '#7c2d12', letterSpacing: '0.04em', lineHeight: 1.15 }}
+                    >
+                      Store is closed now
+                    </p>
+                    <p className="mt-1 text-[13px] font-bold leading-relaxed" style={{ color: '#1f110b' }}>
+                      Your order will be cut fresh and delivered to you in the morning between{' '}
+                      <span style={{ color: '#d97706', fontWeight: 900 }}>7 AM - 9 AM</span>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             {cart.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <span className="text-5xl">🛒</span>

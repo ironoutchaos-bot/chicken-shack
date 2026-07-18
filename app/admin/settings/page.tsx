@@ -22,7 +22,7 @@ const DEFAULTS: Settings = {
   cashfree_enabled: true,
   store_open:       true,
   out_of_stock:     false,
-  auto_schedule:    false,
+  auto_schedule:    true,
   min_order_amount: 0,
   delivery_fee:     0,
   delivery_hours:   '8am – 8pm',
@@ -154,7 +154,7 @@ export default function AdminSettingsPage() {
           />
           <ToggleRow
             label="⏰ Auto Shop Open / Close"
-            description="Auto opens at 7:00 AM IST and closes at 7:00 PM IST every day. Overrides the Store Open toggle above."
+            description="Auto opens at 7:00 AM IST and closes at 7:00 PM IST. After 7 PM, the cart shows the morning 7 AM - 9 AM fresh delivery message."
             value={settings.auto_schedule}
             saving={saving === 'auto_schedule'}
             saved={saved === 'auto_schedule'}
