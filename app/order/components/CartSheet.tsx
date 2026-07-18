@@ -57,7 +57,6 @@ export default function CartSheet({
   const [codEnabled,     setCodEnabled]     = useState(true)
   const [cfEnabled,      setCfEnabled]      = useState(true)
   const [storeOpen,      setStoreOpen]      = useState(true)
-  const [autoSchedule,   setAutoSchedule]   = useState(false)
   const [outOfStock,     setOutOfStock]     = useState<string[]>([])
   const [weightMap,      setWeightMap]      = useState<Record<string, number | null>>({})
   const [unitMap,        setUnitMap]        = useState<Record<string, string>>({})
@@ -101,7 +100,6 @@ export default function CartSheet({
         setCodEnabled(d.cod_enabled !== false)
         setCfEnabled(d.cashfree_enabled !== false)
         setStoreOpen(d.store_open !== false)
-        setAutoSchedule(d.auto_schedule === true)
       })
       .catch(() => {})
 
@@ -525,11 +523,6 @@ export default function CartSheet({
                     <p className="mt-1 text-[13px] font-bold leading-relaxed" style={{ color: '#1f110b' }}>
                       Your order will be cut fresh and delivered to you in the morning between{' '}
                       <span style={{ color: '#d97706', fontWeight: 900 }}>7 AM - 9 AM</span>.
-                    </p>
-                    <p className="mt-2 rounded-xl px-3 py-2 text-[11px] font-bold" style={{ background: 'rgba(217,119,6,.12)', color: '#9a3412' }}>
-                      {autoSchedule
-                        ? 'Auto Shop Open / Close is active from Admin Settings.'
-                        : 'Store Open is currently off in Admin Settings.'}
                     </p>
                   </div>
                 </div>
