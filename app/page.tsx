@@ -243,6 +243,15 @@ nav{
 .hero-manifesto-desc strong {
   color: var(--p);
   font-weight: 600;
+  font-size: 1.12em;
+}
+.hero-manifesto-proof {
+  display: block;
+  margin-top: 0.45rem;
+  color: var(--p);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 .hero-manifesto-grid {
   display: grid;
@@ -1977,6 +1986,9 @@ export default function Home() {
               <p className="hero-manifesto-desc">
                 From Now — <strong>Not frozen. Not stored overnight.</strong>{" "}
                 Cut only after you order. Delivered in 60 minutes.
+                <span className="hero-manifesto-proof">
+                  NO FOUL SMELL . NO SLIMINESS
+                </span>
               </p>
               {/* <div className="hero-manifesto-grid">
                 {[
