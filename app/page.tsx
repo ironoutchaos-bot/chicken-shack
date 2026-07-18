@@ -1346,6 +1346,32 @@ nav button,
 .logo {
   font-family: 'League Spartan', serif !important;
 }
+  @media (max-width: 900px) {
+  nav {
+    padding: 0.7rem 1rem;
+  }
+
+  .nav-r {
+    gap: 0.45rem; /* Reduce spacing between login icon and button */
+  }
+
+  .nav-btn {
+    padding: 0.55rem 1rem;
+    font-size: 0.62rem;
+    min-height: 36px;
+  }
+
+  .nav-auth-btn {
+    width: 32px;
+    height: 32px;
+    margin-left: 0;
+  }
+
+  .nav-auth-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
 `;
 const testimonials = [
   {
@@ -1891,7 +1917,6 @@ export default function Home() {
     }
   };
 
-
   const goOrder = () => {
     if (cartItemCount > 0) {
       setCartOpen(true);
@@ -2017,6 +2042,25 @@ export default function Home() {
               <History size={16} />
               <span>Orders</span>
             </Link>
+          )}
+          {user ? (
+            <button
+              className="nav-auth-btn"
+              onClick={handleLogout}
+              aria-label="Logout"
+              title="Logout"
+            >
+              <LogOut size={18} strokeWidth={2.2} />
+            </button>
+          ) : (
+            <button
+              className="nav-auth-btn"
+              onClick={() => setLoginOpen(true)}
+              aria-label="Login"
+              title="Login"
+            >
+              <LogIn size={18} strokeWidth={2.2} />
+            </button>
           )}
           <button
             className="nav-btn"
