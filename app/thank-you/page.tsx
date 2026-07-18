@@ -21,6 +21,14 @@ type PendingPaymentMeta = {
   }>
 }
 
+type ConfirmedOrder = {
+  id?: string | null
+  total_amount?: number | string | null
+  items?: PendingPaymentMeta['cart']
+  coupon_code?: string | null
+  razorpay_order_id?: string | null
+}
+
 declare global {
   interface Window {
     dataLayer?: any[]
@@ -82,6 +90,20 @@ function firePurchase(orderId: string, meta: PendingPaymentMeta) {
     })
   } catch (err) {
     console.error('[thank-you] purchase push failed:', err)
+  }
+}
+
+function mergeServerOrderMeta(meta: PendingPaymentMeta, order?: ConfirmedOrder | null): PendingPaymentMeta {
+  if (!order) return meta
+
+  return {
+    ...meta,
+    cashfreeOrderId: meta.cashfreeOrderId || order.razorpay_order_id || null,
+    realOrderId: order.id || meta.realOrderId || null,
+    total: order.total_amount ?? meta.total,
+    currency: meta.currency || 'INR',
+    coupon: order.coupon_code || meta.coupon || null,
+    cart: Array.isArray(order.items) && order.items.length > 0 ? order.items : meta.cart,
   }
 }
 
@@ -156,9 +178,11 @@ export default function ThankYouPage() {
           })
 
           if (patch.ok) {
+            const patchData = await patch.json().catch(() => null)
+            const purchaseMeta = mergeServerOrderMeta(meta, patchData?.order ?? null)
             if (!trackedRef.current) {
               trackedRef.current = true
-              firePurchase(paymentOrderId, meta)
+              firePurchase(paymentOrderId, purchaseMeta)
             }
             localStorage.removeItem('bf-pending-payment')
             setStatus('success')
