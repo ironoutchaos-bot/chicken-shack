@@ -19,7 +19,7 @@
     "iron-session": "^8.0.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.11.0",
-    "next": "16.2.3",
+    "next": "^16.2.3",
     "postcss": "^8.5.12",
     "razorpay": "^2.9.6",
     "react": "19.2.4",
