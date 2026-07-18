@@ -4,6 +4,101 @@
   to   { transform: rotate(360deg); }
 }
 
+.thank-you-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 18px;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(214, 255, 22, 0.24), transparent 30%),
+    radial-gradient(circle at 82% 80%, rgba(147, 24, 204, 0.16), transparent 34%),
+    #faf7f0;
+  color: #1f110b;
+}
+
+.thank-you-card {
+  width: min(92vw, 560px);
+  padding: clamp(30px, 7vw, 56px);
+  text-align: center;
+  border: 1px solid rgba(31, 17, 11, 0.1);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 28px 90px rgba(31, 17, 11, 0.16);
+}
+
+.thank-you-icon {
+  width: 78px;
+  height: 78px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 22px;
+  border-radius: 24px;
+}
+
+.thank-you-icon.verifying {
+  color: #4c0381;
+  background: rgba(76, 3, 129, 0.1);
+}
+
+.thank-you-icon.verifying svg {
+  animation: thank-you-spin 1s linear infinite;
+}
+
+.thank-you-icon.success {
+  color: #1b7c32;
+  background: rgba(27, 124, 50, 0.12);
+}
+
+.thank-you-icon.failed {
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.1);
+}
+
+.thank-you-kicker {
+  margin: 0 0 8px;
+  font: 800 0.78rem/1.2 var(--font-outfit), sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9318cc;
+}
+
+.thank-you-card h1 {
+  margin: 0;
+  font: 900 clamp(2rem, 6vw, 3.4rem)/0.95 var(--font-outfit), sans-serif;
+  letter-spacing: 0;
+  color: #1f110b;
+}
+
+.thank-you-card p:not(.thank-you-kicker) {
+  max-width: 420px;
+  margin: 18px auto 0;
+  font: 500 1rem/1.65 var(--font-outfit), sans-serif;
+  color: rgba(31, 17, 11, 0.68);
+}
+
+.thank-you-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  margin-top: 28px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: #1f110b;
+  color: #fff;
+  font: 800 0.95rem/1 var(--font-outfit), sans-serif;
+  text-decoration: none;
+  box-shadow: 0 16px 34px rgba(31, 17, 11, 0.22);
+}
+
+@keyframes thank-you-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ================================================================
    BLURUFRESH — Premium Design System
    Vibe: Editorial Luxury · Layout: Centred Video Hero

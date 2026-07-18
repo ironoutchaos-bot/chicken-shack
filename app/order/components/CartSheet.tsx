@@ -256,7 +256,7 @@ export default function CartSheet({
       // Use user prop directly — no Supabase network calls at all
       // Derive base URL from the current window so staging/dev redirects work too
       const baseUrl   = typeof window !== 'undefined' ? window.location.origin : 'https://blurufresh.com'
-      const returnUrl = `${baseUrl}/?cashfree_order_id={order_id}`
+      const returnUrl = `${baseUrl}/thank-you?cashfree_order_id={order_id}`
 
       const orderRes = await fetch('/api/cashfree/create-order', {
         method: 'POST',
@@ -312,7 +312,7 @@ export default function CartSheet({
       }
       const realOrderId = dbData.id
 
-      // Store cashfree order ID and supporting tracking data
+      // Store cashfree order ID and supporting tracking data for the thank-you conversion event.
       localStorage.setItem('bf-pending-payment', JSON.stringify({
         cashfreeOrderId: order_id,
         realOrderId,
