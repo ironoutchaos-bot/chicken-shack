@@ -2468,7 +2468,7 @@ export default function Home() {
           </div>
 
           {/* Card 5: Order (Wide, spans 2 columns) */}
-          <div className="story-card sc-wide rv d1">
+          <div className="story-card sc-wide rv d1" style={{ order: 5 }}>
             <div className="card-bg-panel" />
             <div>
               <div className="sf-label">05 — Taste The Difference</div>
@@ -2489,7 +2489,7 @@ export default function Home() {
           </div>
 
           {/* Card 4: Standard */}
-          <div className="story-card rv d2">
+          <div className="story-card rv d2" style={{ order: 4 }}>
             <div className="card-bg-panel" />
             <div className="card-bg-img img-left">
               <img

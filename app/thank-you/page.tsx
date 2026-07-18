@@ -53,16 +53,29 @@ function firePurchase(orderId: string, meta: PendingPaymentMeta) {
           index,
         }))
       : []
+    const savedValue = Number(meta.total)
+    const itemValue = items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0),
+      0,
+    )
+    const purchaseValue = Number.isFinite(savedValue) && savedValue > 0
+      ? savedValue
+      : Number(itemValue.toFixed(2))
+    const currency = meta.currency || 'INR'
 
     window.dataLayer = window.dataLayer || []
     window.dataLayer.push({ ecommerce: null })
     window.dataLayer.push({
       event: 'purchase',
+      transaction_id: String(txnId),
       payment_type: 'Online',
+      value: purchaseValue,
+      currency,
+      coupon: meta.coupon || undefined,
       ecommerce: {
         transaction_id: String(txnId),
-        value: Number(meta.total ?? 0),
-        currency: meta.currency || 'INR',
+        value: purchaseValue,
+        currency,
         coupon: meta.coupon || undefined,
         items,
       },
