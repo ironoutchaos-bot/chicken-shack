@@ -111,6 +111,19 @@ export default function LoginDrawer({ open, onClose, onSuccess }: Props) {
     if (countdown > 0) return
     setError(''); setOtp(''); setLoading(true)
     try {
+      const retryRes = reqId
+        ? await fetch('/api/auth/retry-otp', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ reqId }),
+          })
+        : null
+
+      if (retryRes?.ok) {
+        startResendTimer()
+        return
+      }
+
       const res  = await fetch('/api/auth/send-otp', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
