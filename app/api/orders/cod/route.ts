@@ -114,15 +114,10 @@ async function saveSettingKey(key: string, value: unknown) {
   } catch { /* best-effort */ }
 }
 
-function normalizeCouponPhone(value: unknown): string {
-  const digits = String(value ?? '').replace(/\D/g, '')
-  if (digits.length >= 10) return digits.slice(-10)
-  return digits
-}
-
-function couponUsageCount(tracker: Record<string, number>, code: string, phone: string): number {
-  const keys = [phone, `91${phone}`]
-  return keys.reduce((sum, key) => sum + Number(tracker[`${code}:${key}`] ?? 0), 0)
+function couponUsageCount(tracker: Record<string, number>, code: string): number {
+  return Object.entries(tracker)
+    .filter(([key]) => key === `${code}:__total` || key.startsWith(`${code}:`))
+    .reduce((sum, [, value]) => sum + Number(value ?? 0), 0)
 }
 
 export async function POST(req: NextRequest) {
@@ -189,16 +184,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check usage limit per phone
+    // Check total usage limit
     if (coupon.max_uses_per_phone > 0) {
-      const phone   = normalizeCouponPhone(session.phone || body.customer_phone)
       const tracker = (settings.coupon_usage_tracker ?? {}) as Record<string, number>
-      const tKey    = `${coupon.code}:${phone}`
-      const used    = couponUsageCount(tracker, coupon.code, phone)
+      const tKey    = `${coupon.code}:__total`
+      const used    = couponUsageCount(tracker, coupon.code)
 
       if (used >= coupon.max_uses_per_phone) {
         return NextResponse.json({
-          error: `This coupon has already been used ${coupon.max_uses_per_phone} time${coupon.max_uses_per_phone !== 1 ? 's' : ''} on your number`,
+          error: `This coupon has reached its usage limit of ${coupon.max_uses_per_phone} order${coupon.max_uses_per_phone !== 1 ? 's' : ''}`,
         }, { status: 400 })
       }
 
@@ -415,11 +409,8 @@ export async function PATCH(req: NextRequest) {
           const coupon = coupons.find(c => c.code === previousOrder?.coupon_code)
           if (coupon && coupon.max_uses_per_phone > 0) {
             const tracker = (settings.coupon_usage_tracker ?? {}) as Record<string, number>
-            const phone = normalizeCouponPhone(previousOrder.customer_phone)
-            if (phone) {
-              const tKey = `${coupon.code}:${phone}`
-              await saveSettingKey('coupon_usage_tracker', { ...tracker, [tKey]: Number(tracker[tKey] ?? 0) + 1 })
-            }
+            const tKey = `${coupon.code}:__total`
+            await saveSettingKey('coupon_usage_tracker', { ...tracker, [tKey]: Number(tracker[tKey] ?? 0) + 1 })
           }
         }
       } catch { /* coupon tracking should never block a confirmed paid order */ }

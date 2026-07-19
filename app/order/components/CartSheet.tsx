@@ -195,14 +195,6 @@ export default function CartSheet({
     setCouponError('')
     const entered = couponInput.trim().toUpperCase()
     if (!entered) { setCouponError('Please enter a coupon code'); return }
-    if (!user?.phone && !authLoading) {
-      setCouponError('Login with your mobile number to apply this coupon')
-      onClose()
-      onLoginRequired()
-      return
-    }
-    if (!user?.phone && authLoading) return
-
     setCouponChecking(true)
     try {
       const res = await fetch('/api/coupon/validate', {

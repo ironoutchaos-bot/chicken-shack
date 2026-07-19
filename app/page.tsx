@@ -1481,6 +1481,7 @@ export default function Home() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loginOpen, setLoginOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [orderThanksOpen, setOrderThanksOpen] = useState(false);
   const testimonialRef = useRef<HTMLDivElement>(null);
   const [pincode, setPincode] = useState<string | null>(null);
   const [, setAreaName] = useState("");
@@ -2996,6 +2997,79 @@ export default function Home() {
         }}
       />
 
+      {orderThanksOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 2147482900,
+            display: "grid",
+            placeItems: "center",
+            padding: 18,
+            background: "rgba(22, 20, 15, .58)",
+            backdropFilter: "blur(10px)",
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            style={{
+              width: "min(92vw, 420px)",
+              borderRadius: 28,
+              background: "#fffdf8",
+              border: "1px solid rgba(145,216,82,.35)",
+              boxShadow: "0 24px 70px rgba(31,17,11,.28)",
+              padding: "26px 24px",
+              textAlign: "center",
+            }}
+          >
+            <p style={{ margin: 0, color: "#4c0381", fontWeight: 900, fontSize: 28, lineHeight: 1 }}>
+              Thank you!
+            </p>
+            <p style={{ margin: "12px 0 0", color: "#1F110B", fontWeight: 800, fontSize: 16, lineHeight: 1.45 }}>
+              Your B&apos;LURU FRESH order has been placed successfully.
+            </p>
+            <p style={{ margin: "8px 0 0", color: "#543C32", fontWeight: 600, fontSize: 14, lineHeight: 1.55 }}>
+              You can track your order status anytime from the Orders tab.
+            </p>
+            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+              <button
+                type="button"
+                onClick={() => setOrderThanksOpen(false)}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  border: "1px solid rgba(76,3,129,.16)",
+                  borderRadius: 999,
+                  background: "#fff",
+                  color: "#4c0381",
+                  fontWeight: 900,
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+              <Link
+                href="/order?tab=active"
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 999,
+                  background: "linear-gradient(135deg,#8EEA2F,#78d820)",
+                  color: "#1F110B",
+                  fontWeight: 900,
+                  display: "grid",
+                  placeItems: "center",
+                  textDecoration: "none",
+                }}
+              >
+                Orders
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       <CartSheet
         open={cartOpen}
         onClose={() => setCartOpen(false)}
@@ -3020,9 +3094,7 @@ export default function Home() {
         onOrderPlaced={() => {
           clearCart();
           setCartOpen(false);
-          alert(
-            "Order placed successfully! Check progress in your active tab.",
-          );
+          setOrderThanksOpen(true);
         }}
       />
     </>

@@ -34,6 +34,7 @@ export default function OrderApp() {
   const [loginOpen,  setLoginOpen]  = useState(false)
   const [pendingTab, setPendingTab] = useState<Tab | null>(null)
   const [cartOpen,   setCartOpen]   = useState(false)
+  const [orderThanksOpen, setOrderThanksOpen] = useState(false)
   const [activeCount,          setActiveCount]          = useState(0)
   const [activeOrdersRefresh,  setActiveOrdersRefresh]  = useState(0)
 
@@ -656,6 +657,53 @@ export default function OrderApp() {
           }}
         />
 
+        {orderThanksOpen && (
+          <div
+            className="fixed inset-0 grid place-items-center px-5"
+            style={{
+              zIndex: 2147482900,
+              background: 'rgba(22, 20, 15, .58)',
+              backdropFilter: 'blur(10px)',
+            }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div
+              className="w-full max-w-[420px] text-center"
+              style={{
+                borderRadius: 28,
+                background: '#fffdf8',
+                border: '1px solid rgba(217,119,6,.18)',
+                boxShadow: '0 24px 70px rgba(31,17,11,.28)',
+                padding: '26px 24px',
+              }}
+            >
+              <p className="m-0 text-[28px] font-black leading-none" style={{ color: '#92400E' }}>Thank you!</p>
+              <p className="mt-3 text-base font-extrabold leading-snug" style={{ color: '#1C0F00' }}>
+                Your B&apos;LURU FRESH order has been placed successfully.
+              </p>
+              <p className="mt-2 text-sm font-semibold leading-relaxed" style={{ color: '#78716C' }}>
+                You can track your order status anytime from the Orders tab.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setOrderThanksOpen(false)
+                  setActiveTab('active')
+                }}
+                className="mt-5 h-12 w-full rounded-full text-sm font-black active:scale-95 transition-all"
+                style={{
+                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                  color: '#fff',
+                  boxShadow: '0 12px 26px rgba(217,119,6,.28)',
+                }}
+              >
+                View Orders
+              </button>
+            </div>
+          </div>
+        )}
+
         <CartSheet
           open={cartOpen}
           onClose={() => setCartOpen(false)}
@@ -676,6 +724,7 @@ export default function OrderApp() {
             clearCart()
             setCartOpen(false)
             setActiveTab('active')
+            setOrderThanksOpen(true)
           }}
         />
 

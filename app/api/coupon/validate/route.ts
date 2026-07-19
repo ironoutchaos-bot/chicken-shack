@@ -3,13 +3,13 @@ export const dynamic = 'force-dynamic'
 /**
  * POST /api/coupon/validate
  *
- * Validates a coupon code against the cart and customer phone.
+ * Validates a coupon code against the cart and total coupon usage.
  * Returns discount amount on success, or an error string on failure.
  *
  * Body: {
  *   code:            string        — coupon code to test
  *   cart_items:      { productId: string; pricePerKg: number; quantity: number }[]
- *   customer_phone?: string        — required when max_uses_per_phone > 0
+ *   customer_phone?: string
  *   subtotal?:       number        — if omitted, calculated from cart_items
  *   delivery_fee?:   number
  * }
@@ -58,15 +58,10 @@ async function loadUsageTracker(): Promise<Record<string, number>> {
   } catch { return {} }
 }
 
-function normalizeCouponPhone(value: unknown): string {
-  const digits = String(value ?? '').replace(/\D/g, '')
-  if (digits.length >= 10) return digits.slice(-10)
-  return digits
-}
-
-function couponUsageCount(tracker: Record<string, number>, code: string, phone: string): number {
-  const keys = [phone, `91${phone}`]
-  return keys.reduce((sum, key) => sum + Number(tracker[`${code}:${key}`] ?? 0), 0)
+function couponUsageCount(tracker: Record<string, number>, code: string): number {
+  return Object.entries(tracker)
+    .filter(([key]) => key === `${code}:__total` || key.startsWith(`${code}:`))
+    .reduce((sum, [, value]) => sum + Number(value ?? 0), 0)
 }
 
 export async function POST(req: NextRequest) {
@@ -110,21 +105,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Usage limit per phone
+  // Total usage limit
   if (coupon.max_uses_per_phone > 0) {
-    const phone = normalizeCouponPhone(body.customer_phone)
-    if (!phone) {
-      return NextResponse.json({
-        valid: false,
-        error: 'Please provide your phone number to use this coupon',
-      })
-    }
     const tracker = await loadUsageTracker()
-    const used    = couponUsageCount(tracker, coupon.code, phone)
+    const used    = couponUsageCount(tracker, coupon.code)
     if (used >= coupon.max_uses_per_phone) {
       return NextResponse.json({
         valid: false,
-        error: `This coupon has already been used ${coupon.max_uses_per_phone} time${coupon.max_uses_per_phone !== 1 ? 's' : ''} on your number`,
+        error: `This coupon has reached its usage limit of ${coupon.max_uses_per_phone} order${coupon.max_uses_per_phone !== 1 ? 's' : ''}`,
       })
     }
   }

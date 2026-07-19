@@ -293,7 +293,7 @@ export default function CouponsPage() {
                   )}
                   {c.max_uses_per_phone > 0 && (
                     <span style={{ background: '#f0f9ff', color: '#0c4a6e', padding: '2px 10px', borderRadius: 999, fontSize: '0.72rem', fontWeight: 700 }}>
-                      Max {c.max_uses_per_phone}× / phone
+                      Max {c.max_uses_per_phone}× total
                     </span>
                   )}
                 </div>
@@ -324,7 +324,7 @@ export default function CouponsPage() {
 
               {/* Details row */}
               <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                {c.max_uses_per_phone === 0 ? 'Unlimited uses per phone' : `Up to ${c.max_uses_per_phone} use${c.max_uses_per_phone !== 1 ? 's' : ''} per phone`}
+                {c.max_uses_per_phone === 0 ? 'Unlimited total uses' : `Can be used ${c.max_uses_per_phone} time${c.max_uses_per_phone !== 1 ? 's' : ''} total`}
                 {' · '}
                 Created {new Date(c.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
               </div>
@@ -417,9 +417,9 @@ export default function CouponsPage() {
               </div>
             </div>
 
-            {/* Max uses per phone */}
+            {/* Total usage limit */}
             <div style={{ marginBottom: '1rem' }}>
-              <label style={S.label}>Max Uses Per Phone Number</label>
+              <label style={S.label}>How many times this coupon can be used</label>
               <input
                 type="number"
                 min={0}
@@ -427,7 +427,7 @@ export default function CouponsPage() {
                 value={form.max_uses_per_phone}
                 onChange={e => setForm(f => ({ ...f, max_uses_per_phone: Math.max(0, Number(e.target.value)) }))}
               />
-              <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 4 }}>Set to 0 for unlimited uses</p>
+              <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 4 }}>Set to 0 for unlimited total uses</p>
             </div>
 
             {/* Applies to */}
@@ -502,7 +502,7 @@ export default function CouponsPage() {
                     {form.applies_to === 'specific' && form.product_ids.length > 0
                       ? ` · ${form.product_ids.length} product${form.product_ids.length !== 1 ? 's' : ''} only`
                       : ' · All products'}
-                    {form.max_uses_per_phone > 0 && ` · ${form.max_uses_per_phone}× per phone`}
+                    {form.max_uses_per_phone > 0 && ` · ${form.max_uses_per_phone}× total`}
                   </p>
                 </div>
               </div>

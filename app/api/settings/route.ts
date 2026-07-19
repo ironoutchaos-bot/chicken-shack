@@ -115,5 +115,5 @@ const DEFAULTS: Record<string, unknown> = {
   coupon_code:                 '',
   coupon_discount_type:        'percent',   // 'percent' | 'fixed'
   coupon_discount_value:       10,
-  coupon_max_uses_per_phone:   0,           // 0 = unlimited
+  coupon_max_uses_per_phone:   0,           // total coupon usage limit; 0 = unlimited
 }

@@ -9,7 +9,7 @@ export type Coupon = {
   enabled:            boolean
   discount_type:      'percent' | 'fixed'
   discount_value:     number
-  max_uses_per_phone: number   // 0 = unlimited
+  max_uses_per_phone: number   // total usage limit; 0 = unlimited
   applies_to:         'all' | 'specific'
   product_ids:        string[] // only used when applies_to = 'specific'
   created_at:         string

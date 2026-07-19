@@ -341,7 +341,7 @@ export default function ThankYouPage() {
 
           <p className="thank-preview-sub">
             {isSuccess
-              ? "Your order is in and we're already sharpening the knives. Your chicken is being cut fresh right now and delivered in under 60 minutes across Yelahanka."
+              ? "Your order is in and we're already sharpening the knives. Your chicken is being cut fresh right now and delivered in under 60 minutes across Yelahanka. You can track your order anytime from the Orders tab."
               : isFailed
                 ? `${message} If money was deducted, contact us and we will sort it out.`
                 : message}
