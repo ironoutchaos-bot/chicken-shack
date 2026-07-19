@@ -114,6 +114,17 @@ async function saveSettingKey(key: string, value: unknown) {
   } catch { /* best-effort */ }
 }
 
+function normalizeCouponPhone(value: unknown): string {
+  const digits = String(value ?? '').replace(/\D/g, '')
+  if (digits.length >= 10) return digits.slice(-10)
+  return digits
+}
+
+function couponUsageCount(tracker: Record<string, number>, code: string, phone: string): number {
+  const keys = [phone, `91${phone}`]
+  return keys.reduce((sum, key) => sum + Number(tracker[`${code}:${key}`] ?? 0), 0)
+}
+
 export async function POST(req: NextRequest) {
   // Enforce authenticated user — read user_id from session, ignore body value
   const session = await getIronSession<SessionData>(await cookies(), sessionOptions)
@@ -180,10 +191,10 @@ export async function POST(req: NextRequest) {
 
     // Check usage limit per phone
     if (coupon.max_uses_per_phone > 0) {
-      const phone   = body.customer_phone ? String(body.customer_phone).replace(/\D/g, '') : ''
+      const phone   = normalizeCouponPhone(session.phone || body.customer_phone)
       const tracker = (settings.coupon_usage_tracker ?? {}) as Record<string, number>
       const tKey    = `${coupon.code}:${phone}`
-      const used    = Number(tracker[tKey] ?? 0)
+      const used    = couponUsageCount(tracker, coupon.code, phone)
 
       if (used >= coupon.max_uses_per_phone) {
         return NextResponse.json({
@@ -192,8 +203,10 @@ export async function POST(req: NextRequest) {
       }
 
       // Increment usage tracker — await so it's saved before order goes through
-      const updated = { ...tracker, [tKey]: used + 1 }
-      await saveSettingKey('coupon_usage_tracker', updated)
+      if (payment_status !== 'pending') {
+        const updated = { ...tracker, [tKey]: Number(tracker[tKey] ?? 0) + 1 }
+        await saveSettingKey('coupon_usage_tracker', updated)
+      }
     }
 
     // Compute actual discount server-side
@@ -327,6 +340,24 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Missing cashfree_order_id or payment_status' }, { status: 400 })
   }
 
+  let previousOrder: {
+    id?: string
+    payment_status?: string | null
+    coupon_code?: string | null
+    customer_phone?: string | null
+  } | null = null
+
+  try {
+    const existing = await fetch(
+      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,payment_status,coupon_code,customer_phone&limit=1`,
+      { headers: srvHeaders() }
+    )
+    if (existing.ok) {
+      const rows = await existing.json()
+      previousOrder = rows?.[0] ?? null
+    }
+  } catch { /* best-effort; update below will still decide the final result */ }
+
   // When marking as paid, verify with Cashfree server-side first
   if (payment_status === 'paid') {
     const APP_ID = process.env.CASHFREE_APP_ID
@@ -364,6 +395,34 @@ export async function PATCH(req: NextRequest) {
       const err = await res.text()
       console.error('[orders/cod PATCH] Supabase error:', err)
       return NextResponse.json({ error: 'Update failed', detail: err }, { status: 500 })
+    }
+
+    if (
+      payment_status === 'paid' &&
+      previousOrder?.coupon_code &&
+      previousOrder.payment_status !== 'paid'
+    ) {
+      try {
+        const sRes = await fetch(
+          `${SUPA_URL()}/rest/v1/settings?select=key,value`,
+          { headers: srvHeaders() }
+        )
+        if (sRes.ok) {
+          const rows: { key: string; value: unknown }[] = await sRes.json()
+          const settings = Object.fromEntries(rows.map(r => [r.key, r.value]))
+          const couponsRaw = settings.coupons
+          const coupons: Coupon[] = Array.isArray(couponsRaw) ? couponsRaw as Coupon[] : []
+          const coupon = coupons.find(c => c.code === previousOrder?.coupon_code)
+          if (coupon && coupon.max_uses_per_phone > 0) {
+            const tracker = (settings.coupon_usage_tracker ?? {}) as Record<string, number>
+            const phone = normalizeCouponPhone(previousOrder.customer_phone)
+            if (phone) {
+              const tKey = `${coupon.code}:${phone}`
+              await saveSettingKey('coupon_usage_tracker', { ...tracker, [tKey]: Number(tracker[tKey] ?? 0) + 1 })
+            }
+          }
+        }
+      } catch { /* coupon tracking should never block a confirmed paid order */ }
     }
 
     let confirmedOrder: {

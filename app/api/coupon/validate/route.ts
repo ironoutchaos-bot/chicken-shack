@@ -58,6 +58,17 @@ async function loadUsageTracker(): Promise<Record<string, number>> {
   } catch { return {} }
 }
 
+function normalizeCouponPhone(value: unknown): string {
+  const digits = String(value ?? '').replace(/\D/g, '')
+  if (digits.length >= 10) return digits.slice(-10)
+  return digits
+}
+
+function couponUsageCount(tracker: Record<string, number>, code: string, phone: string): number {
+  const keys = [phone, `91${phone}`]
+  return keys.reduce((sum, key) => sum + Number(tracker[`${code}:${key}`] ?? 0), 0)
+}
+
 export async function POST(req: NextRequest) {
   let body: {
     code?: string
@@ -101,7 +112,7 @@ export async function POST(req: NextRequest) {
 
   // Usage limit per phone
   if (coupon.max_uses_per_phone > 0) {
-    const phone = (body.customer_phone ?? '').replace(/\D/g, '')
+    const phone = normalizeCouponPhone(body.customer_phone)
     if (!phone) {
       return NextResponse.json({
         valid: false,
@@ -109,8 +120,7 @@ export async function POST(req: NextRequest) {
       })
     }
     const tracker = await loadUsageTracker()
-    const tKey    = `${coupon.code}:${phone}`
-    const used    = Number(tracker[tKey] ?? 0)
+    const used    = couponUsageCount(tracker, coupon.code, phone)
     if (used >= coupon.max_uses_per_phone) {
       return NextResponse.json({
         valid: false,
