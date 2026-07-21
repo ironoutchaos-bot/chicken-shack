@@ -17,6 +17,17 @@ type OrderConfirmationInput = {
   address?: unknown
 }
 
+// AiSensy needs the number in international format with country code (e.g.
+// +919876543210). Checkout stores a bare 10-digit Indian mobile, so add the
+// +91 country code here. Returns empty string if the number is unusable.
+function normalizePhone(raw: string): string {
+  let digits = (raw || '').replace(/\D/g, '')
+  if (digits.length === 11 && digits.charAt(0) === '0') digits = digits.slice(1)
+  if (digits.length === 10) digits = '91' + digits
+  if (digits.length < 11) return ''
+  return '+' + digits
+}
+
 export async function sendOrderConfirmation(input: OrderConfirmationInput) {
   const { phone, name, orderId, itemsText, total, paymentMode, address } = input
   const apiUrl = process.env.AISENSY_API_URL
@@ -34,8 +45,8 @@ const res = await fetch(apiUrl, {
   body: JSON.stringify({
     apiKey,
     campaignName,
-    destination: phone,
-    userName: name,
+      destination: normalizePhone(phone),
+      userName: name,
     // Must match the approved template's placeholders in order:
     // {{1}} customer name, {{2}} order id, {{3}} items, {{4}} total
     templateParams: [name, orderId, itemsText, String(total)],
