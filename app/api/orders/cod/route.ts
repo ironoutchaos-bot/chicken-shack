@@ -311,7 +311,7 @@ export async function POST(req: NextRequest) {
       notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
     }
 
-    if (order?.id && order.customer_phone) {
+    if (order?.id && order.customer_phone && (order.payment_status === 'cod' || order.payment_status === 'paid')) {
       sendOrderConfirmation({
         phone: order.customer_phone,
         name: order.customer_name || 'Customer',
