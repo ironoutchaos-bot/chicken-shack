@@ -324,7 +324,8 @@ export default function CartSheet({
         total,
         coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
         cart,
-        currency: 'INR'
+        currency: 'INR',
+        paymentType: 'Online',
       }))
 
       // Clear cart now — order is safely in DB, no need to keep it locally
@@ -383,26 +384,15 @@ export default function CartSheet({
       }
       stopSlowTimer(slowTimer)
 
-      // Fire GTM purchase event for COD
-      const realOrderId = data.id
-      window.dataLayer = window.dataLayer || []
-      window.dataLayer.push({ ecommerce: null })
-      window.dataLayer.push({
-        event: 'purchase',
-        payment_type: 'COD',
-        ecommerce: {
-          transaction_id: realOrderId,
-          value: total,
-          coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
-          currency: 'INR',
-          items: cart.map(c => ({
-            item_id: c.productId,
-            item_name: c.name,
-            price: c.pricePerKg,
-            quantity: c.quantity
-          }))
-        }
-      })
+      const realOrderId = data.id || data.order_id || data.razorpay_order_id || `cod-${Date.now()}`
+      localStorage.setItem('bf-pending-payment', JSON.stringify({
+        realOrderId,
+        total,
+        coupon: couponApplied ? couponInput.trim().toUpperCase() : null,
+        cart,
+        currency: 'INR',
+        paymentType: 'COD',
+      }))
 
       // Update user's full_name in profiles (fire-and-forget)
       if (deliveryAddress.customerName && user) {
@@ -419,6 +409,7 @@ export default function CartSheet({
       }
       setLoading(false)
       onOrderPlaced()
+      window.location.href = `/thank-you?cod=1&order_id=${encodeURIComponent(String(realOrderId))}`
     } catch (e) {
       stopSlowTimer(slowTimer)
       setError(e instanceof Error ? e.message : 'Something went wrong')

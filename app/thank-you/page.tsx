@@ -12,6 +12,7 @@ type PendingPaymentMeta = {
   total?: number | string | null
   currency?: string | null
   coupon?: string | null
+  paymentType?: string | null
   cart?: Array<{
     productId?: string | null
     id?: string | null
@@ -76,7 +77,7 @@ function firePurchase(orderId: string, meta: PendingPaymentMeta) {
     window.dataLayer.push({
       event: 'purchase',
       transaction_id: String(txnId),
-      payment_type: 'Online',
+      payment_type: meta.paymentType || 'Online',
       value: purchaseValue,
       currency,
       coupon: meta.coupon || undefined,
@@ -132,11 +133,25 @@ export default function ThankYouPage() {
   const confettiRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
-    const orderId = new URLSearchParams(window.location.search).get('cashfree_order_id')
+    const params = new URLSearchParams(window.location.search)
+    const isCod = params.get('cod') === '1'
+    const orderId = params.get('order_id') || params.get('cashfree_order_id')
 
     if (!orderId) {
       setStatus('failed')
-      setMessage('Payment reference is missing.')
+      setMessage(isCod ? 'Order reference is missing.' : 'Payment reference is missing.')
+      return
+    }
+
+    if (isCod) {
+      const meta = readPendingPayment()
+      if (!trackedRef.current) {
+        trackedRef.current = true
+        firePurchase(orderId, { ...meta, paymentType: meta.paymentType || 'COD' })
+      }
+      localStorage.removeItem('bf-pending-payment')
+      setStatus('success')
+      setMessage('Your order is confirmed.')
       return
     }
 
