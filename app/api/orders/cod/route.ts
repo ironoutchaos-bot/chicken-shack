@@ -23,6 +23,7 @@ import { cookies } from 'next/headers'
 import { sessionOptions, type SessionData } from '@/lib/session'
 import { type Coupon } from '@/app/api/coupons/route'
 import { notifyDriverAssignment, notifyAllDrivers } from '@/lib/push-notify'
+import { sendOrderConfirmation, summarizeItems } from '@/lib/aisensy'
 import { ALLOWED_DELIVERY_PINCODES, checkDeliveryZone, isAllowedDeliveryPincode, normalizePincode } from '@/lib/delivery-zone'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
@@ -310,6 +311,18 @@ export async function POST(req: NextRequest) {
       notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
     }
 
+    if (order?.id && order.customer_phone && (order.payment_status === 'cod' || order.payment_status === 'paid')) {
+      sendOrderConfirmation({
+        phone: order.customer_phone,
+        name: order.customer_name || 'Customer',
+        orderId: order.id,
+        itemsText: summarizeItems(order.items),
+        total: order.total_amount,
+        paymentMode: order.payment_status === 'cod' ? 'COD' : 'PREPAID',
+        address: order.delivery_address,
+      }).catch((err) => console.error('[aisensy] order confirmation failed', err))
+    }
+
     return NextResponse.json({ id: order.id }, { status: 201 })
   } catch (err) {
     console.error('[orders/cod POST] Unexpected error:', err)
@@ -336,6 +349,7 @@ export async function PATCH(req: NextRequest) {
 
   let previousOrder: {
     id?: string
+    customer_name?: string | null
     payment_status?: string | null
     coupon_code?: string | null
     customer_phone?: string | null
@@ -343,7 +357,7 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const existing = await fetch(
-      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,payment_status,coupon_code,customer_phone&limit=1`,
+      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,payment_status,coupon_code,customer_phone,customer_name&limit=1`,
       { headers: srvHeaders() }
     )
     if (existing.ok) {
@@ -441,6 +455,17 @@ export async function PATCH(req: NextRequest) {
         }
       }
     } catch { /* notification is best-effort */ }
+
+    if (payment_status === 'paid' && previousOrder?.customer_phone) {
+      sendOrderConfirmation({
+        phone: previousOrder.customer_phone,
+        name: previousOrder.customer_name || 'Customer',
+        orderId: (confirmedOrder?.id ?? previousOrder.id) as string,
+        itemsText: summarizeItems(confirmedOrder?.items),
+        total: confirmedOrder?.total_amount ?? 0,
+        paymentMode: 'PREPAID',
+      }).catch((err) => console.error('[aisensy] order confirmation failed', err))
+    }
 
     return NextResponse.json({ ok: true, order: confirmedOrder })
   } catch (err) {
