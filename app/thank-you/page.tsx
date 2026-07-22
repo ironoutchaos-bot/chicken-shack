@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { Bike, PackageCheck, Scissors } from 'lucide-react'
 
 type ThankYouStatus = 'verifying' | 'success' | 'failed'
 
@@ -309,9 +308,21 @@ export default function ThankYouPage() {
             <Link href="/#why">Why</Link>
             <Link href="/#process">Process</Link>
             <Link href="/#menu">Menu</Link>
-            <a href="tel:+917012488951">Call</a>
+            <Link className="thank-preview-nav-cart" href="/order-history">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="9" cy="20.5" r="1.7" fill="currentColor" />
+                <circle cx="18" cy="20.5" r="1.7" fill="currentColor" />
+                <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M2.5 3.5h3l2.4 11.6a1.2 1.2 0 0 0 1.2 1h8.6a1.2 1.2 0 0 0 1.2-.95L21 7.5H6.2" />
+              </svg>
+              Cart
+            </Link>
             <Link className="thank-preview-nav-btn" href="/">
               Shop Again
+              <svg className="thank-preview-cart-ic" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="9" cy="20.5" r="1.7" fill="#fff" />
+                <circle cx="18" cy="20.5" r="1.7" fill="#fff" />
+                <path fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M2.5 3.5h3l2.4 11.6a1.2 1.2 0 0 0 1.2 1h8.6a1.2 1.2 0 0 0 1.2-.95L21 7.5H6.2" />
+              </svg>
             </Link>
           </div>
         </nav>
@@ -319,10 +330,10 @@ export default function ThankYouPage() {
 
       <section className={`thank-preview-hero ${isFailed ? 'is-failed' : ''}`} aria-live="polite">
         <div className="thank-preview-bg-word">FRESH</div>
-        <span className="thank-preview-spice s1">Fresh</span>
-        <span className="thank-preview-spice s2">Hot</span>
-        <span className="thank-preview-spice s3">Clean</span>
-        <span className="thank-preview-spice s4">Fast</span>
+        <span className="thank-preview-spice s1">🌿</span>
+        <span className="thank-preview-spice s2">🌶️</span>
+        <span className="thank-preview-spice s3">🧄</span>
+        <span className="thank-preview-spice s4">🌿</span>
 
         <div className="thank-preview-hero-inner">
           <div className="thank-preview-pill">
@@ -356,11 +367,29 @@ export default function ThankYouPage() {
 
           <p className="thank-preview-sub">
             {isSuccess
-              ? "Your order is in and we're already sharpening the knives. Your chicken is being cut fresh right now and delivered in under 60 minutes across Yelahanka. You can track your order anytime from the Orders tab."
+              ? (
+                  <>
+                    Your order is in and we&apos;re already sharpening the knives. Your chicken is being{' '}
+                    <strong>cut fresh right now</strong> and delivered in{' '}
+                    <strong>under 60 minutes</strong> across Yelahanka.
+                  </>
+                )
               : isFailed
                 ? `${message} If money was deducted, contact us and we will sort it out.`
                 : message}
           </p>
+
+          <div className="thank-preview-hero-ctas">
+            <Link className="thank-preview-hero-btn primary" href="/order-history">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="none" stroke="#1b3d06" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" />
+              </svg>
+              View My Order History
+            </Link>
+            <Link className="thank-preview-hero-btn ghost" href="/">
+              ← Back to Shopping
+            </Link>
+          </div>
         </div>
 
         <div className="thank-preview-wave" aria-hidden="true">
@@ -375,44 +404,30 @@ export default function ThankYouPage() {
           <div className="thank-preview-steps">
             <div className="thank-preview-step">
               <div className="num">Step 01</div>
-              <Scissors className="ic" size={32} />
+              <div className="ic">🔪</div>
               <div className="t">Cut Fresh</div>
-              <div className="d">Sliced only after your order, never pre-cut, never stored.</div>
+              <div className="d">Sliced only after your order - never pre-cut, never stored.</div>
             </div>
             <div className="thank-preview-step">
               <div className="num">Step 02</div>
-              <PackageCheck className="ic" size={32} />
+              <div className="ic">📦</div>
               <div className="t">Sealed Clean</div>
               <div className="d">Hygienically packed and sterile-sealed for the ride.</div>
             </div>
             <div className="thank-preview-step">
               <div className="num">Step 03</div>
-              <Bike className="ic" size={32} />
+              <div className="ic">🏍️</div>
               <div className="t">On The Way</div>
               <div className="d">At your door in under 60 minutes, ultra-fresh.</div>
             </div>
           </div>
 
-          <a
-            className="thank-preview-wa"
-            href="https://wa.me/917012488951?text=Hi%20B'LURU%20Fresh!%20I%20just%20placed%20an%20order%20and%20would%20like%20to%20track%20it."
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <WhatsAppIcon />
-            Track my order on WhatsApp
-          </a>
-          <br />
-          <Link className="thank-preview-secondary" href="/">
-            Back to shopping
-          </Link>
-
           <div className="thank-preview-divider" />
 
           <div className="thank-preview-trust">
-            <span>FSSAI Lic. 11226331000344</span>
-            <span>Zero Preservatives</span>
-            <span>Cut After Order</span>
+            <span>🛡️ FSSAI Lic. 11226331000344</span>
+            <span>🌿 Zero Preservatives</span>
+            <span>✓ Cut After Order</span>
           </div>
 
           <p className="thank-preview-callline">
