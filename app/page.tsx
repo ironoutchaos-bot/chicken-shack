@@ -2382,7 +2382,6 @@ export default function Home() {
                           </span>
                         )}
                         <span className="menu-card-price">₹{displayPrice}</span>
-                        <span className="menu-card-price-unit">/pc</span>
                       </div>
 
                       {outOfStock ? (

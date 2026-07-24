@@ -286,7 +286,6 @@ function paymentIcon(status: OrderRow["payment_status"]) {
 function OrderCard({ order }: { order: OrderRow }) {
   const { date, time } = formatDate(order.created_at);
   const displayStatus = trackingStatus(order);
-  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const customer =
     order.customer_name || order.delivery_address?.customerName || "Customer";
   const phone = order.customer_phone || order.delivery_address?.customerPhone;
@@ -341,14 +340,6 @@ function OrderCard({ order }: { order: OrderRow }) {
             </div>
             <div className="oh-meta-value">
               {paymentLabel(order.payment_status)}
-            </div>
-          </div>
-          <div className="oh-meta">
-            <div className="oh-meta-label">
-              <ReceiptText size={14} /> Items
-            </div>
-            <div className="oh-meta-value">
-              {order.items.length} cuts · {itemCount} pcs
             </div>
           </div>
           {order.eta_minutes !== null && (
