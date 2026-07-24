@@ -39,6 +39,8 @@ export type OrderItem = {
   productId: string
   name: string
   pricePerKg: number
+  originalPrice?: number
+  discountPercentage?: number
   quantity: number   // kg
 }
 
@@ -92,6 +94,8 @@ export type CartItem = {
   productId: string
   name: string
   pricePerKg: number
+  originalPrice?: number
+  discountPercentage?: number
   quantity: number
   imageUrl: string | null
   weightPerUnit?: number | null

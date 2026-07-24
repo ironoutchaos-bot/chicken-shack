@@ -19,6 +19,8 @@ interface OrderItem {
   productId: string
   name: string
   pricePerKg: number
+  originalPrice?: number
+  discountPercentage?: number
   quantity: number
 }
 
@@ -29,6 +31,7 @@ interface Order {
   payment_status: string
   payment_method?: string
   total_amount: number
+  coupon_discount?: number | null
   items: OrderItem[]
   delivery_address: { pincode?: string } | null
 }
@@ -110,9 +113,36 @@ export async function GET(req: NextRequest) {
 
     const totalRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total_amount ?? 0), 0)
     const avgOrderValue = deliveredOrders.length > 0 ? totalRevenue / deliveredOrders.length : 0
+    let productDiscounts = 0
+    let couponDiscounts = 0
+    let discountedOrders = 0
+
+    for (const order of deliveredOrders) {
+      let orderProductDiscount = 0
+      const items = Array.isArray(order.items) ? order.items : []
+      for (const item of items) {
+        const sellingPrice = Number(item.pricePerKg) || 0
+        const originalPrice = Number(item.originalPrice) || sellingPrice
+        const quantity = Number(item.quantity) || 0
+        orderProductDiscount += Math.max(0, originalPrice - sellingPrice) * quantity
+      }
+
+      const orderCouponDiscount = Math.max(0, Number(order.coupon_discount) || 0)
+      productDiscounts += orderProductDiscount
+      couponDiscounts += orderCouponDiscount
+      if (orderProductDiscount > 0 || orderCouponDiscount > 0) discountedOrders += 1
+    }
+
+    const totalDiscounts = productDiscounts + couponDiscounts
+    const grossRevenueBeforeDiscounts = totalRevenue + totalDiscounts
 
     const summary = {
       totalRevenue,
+      grossRevenueBeforeDiscounts,
+      totalDiscounts,
+      productDiscounts,
+      couponDiscounts,
+      discountedOrders,
       totalOrders: filteredOrders.length,
       deliveredOrders: deliveredOrders.length,
       cancelledOrders: cancelledOrders.length,

@@ -1657,6 +1657,7 @@ export default function Home() {
         const next = [...prev];
         next[idx] = {
           ...next[idx],
+          ...item,
           quantity: +(next[idx].quantity + item.quantity).toFixed(1),
         };
         return next;
@@ -2376,7 +2377,7 @@ export default function Home() {
                       </p>
 
                       <div className="menu-card-price-row">
-                        {discount > 0 && !outOfStock && (
+                        {discount > 0 && (
                           <span className="menu-card-old-price">
                             ₹{oldPrice}
                           </span>
@@ -2400,6 +2401,8 @@ export default function Home() {
                               productId: p.id,
                               name: p.name,
                               pricePerKg: displayPrice,
+                              originalPrice: oldPrice,
+                              discountPercentage: discount,
                               quantity: 1,
                               imageUrl: p.image_url,
                             })

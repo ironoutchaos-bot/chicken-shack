@@ -8,6 +8,11 @@ import { AdminChecking, AdminLoginForm } from '@/app/admin/_hooks/AdminGate'
 
 type Summary = {
   totalRevenue: number
+  grossRevenueBeforeDiscounts?: number
+  totalDiscounts?: number
+  productDiscounts?: number
+  couponDiscounts?: number
+  discountedOrders?: number
   totalOrders: number
   deliveredOrders: number
   cancelledOrders: number
@@ -203,7 +208,12 @@ export default function AdminAnalyticsPage() {
         <div style={S.content}>
           {/* Summary cards */}
           <div style={S.cards}>
-            <SummaryCard label="Total Revenue"     value={fmt(data.summary.totalRevenue)} />
+            <SummaryCard label="Net Revenue"       value={fmt(data.summary.totalRevenue)} />
+            <SummaryCard label="Gross Before Discounts" value={fmt(data.summary.grossRevenueBeforeDiscounts ?? data.summary.totalRevenue)} />
+            <SummaryCard label="Discounts Given"   value={fmt(data.summary.totalDiscounts ?? 0)} />
+            <SummaryCard label="Product Discounts" value={fmt(data.summary.productDiscounts ?? 0)} />
+            <SummaryCard label="Coupon Discounts"  value={fmt(data.summary.couponDiscounts ?? 0)} />
+            <SummaryCard label="Discounted Orders" value={data.summary.discountedOrders ?? 0} />
             <SummaryCard label="Total Orders"      value={data.summary.totalOrders} />
             <SummaryCard label="Delivered"         value={data.summary.deliveredOrders} />
             <SummaryCard label="Cancelled"         value={data.summary.cancelledOrders} />
