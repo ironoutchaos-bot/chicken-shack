@@ -146,8 +146,8 @@ export default function AdminInventoryPage() {
     const nextRate = Number(supplierRateInput)
     setSupplierRateMessage('')
     setSupplierRateError('')
-    if (!Number.isFinite(nextRate) || nextRate <= 0) {
-      setSupplierRateError('Enter a valid supplier rate')
+    if (!Number.isInteger(nextRate) || nextRate <= 0) {
+      setSupplierRateError('Enter a valid whole-rupee supplier rate')
       return
     }
 
@@ -255,7 +255,7 @@ export default function AdminInventoryPage() {
           <p style={S.supplierEyebrow}>Today&apos;s Supplier Rate</p>
           <h2 style={S.supplierTitle}>Update every product price</h2>
           <p style={S.supplierText}>
-            Current rate: <strong>₹{supplierRate}/kg</strong>. Product prices change proportionally; discounts and stock stay unchanged.
+            Current rate: <strong>₹{supplierRate}/kg</strong>. Every ₹1 change adds or subtracts exactly ₹1 from each final selling price. Original prices are recalculated so discounts stay fixed.
           </p>
         </div>
         <div style={S.supplierAction}>
@@ -267,7 +267,7 @@ export default function AdminInventoryPage() {
                 type="number"
                 min={1}
                 max={10000}
-                step="0.01"
+                step="1"
                 value={supplierRateInput}
                 onChange={event => setSupplierRateInput(event.target.value)}
                 onKeyDown={event => {

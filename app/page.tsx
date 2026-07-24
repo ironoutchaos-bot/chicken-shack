@@ -2317,11 +2317,22 @@ export default function Home() {
                   0,
                   Math.min(100, p.discount_percentage ?? 0),
                 );
-                const oldPrice = Math.round(p.price_per_kg);
+                const storedOriginalPrice = Number(p.price_per_kg);
+                const discountFactor = 1 - discount / 100;
                 const displayPrice =
                   discount > 0
-                    ? Math.round(oldPrice * (1 - discount / 100))
-                    : oldPrice;
+                    ? Math.round(
+                        Math.round(storedOriginalPrice) * discountFactor,
+                      )
+                    : Math.round(storedOriginalPrice);
+                const oldPrice =
+                  discount > 0 && discountFactor > 0
+                    ? Math.round((displayPrice / discountFactor) * 100) / 100
+                    : displayPrice;
+                const formatPrice = (value: number) =>
+                  value.toLocaleString("en-IN", {
+                    maximumFractionDigits: 2,
+                  });
                 const unit = productUnits[p.id] ?? "g";
                 const weightLabel = p.weight_per_unit
                   ? unit === "pc"
@@ -2381,10 +2392,12 @@ export default function Home() {
                       <div className="menu-card-price-row">
                         {discount > 0 && (
                           <span className="menu-card-old-price">
-                            ₹{oldPrice}
+                            ₹{formatPrice(oldPrice)}
                           </span>
                         )}
-                        <span className="menu-card-price">₹{displayPrice}</span>
+                        <span className="menu-card-price">
+                          ₹{formatPrice(displayPrice)}
+                        </span>
                       </div>
 
                       {outOfStock ? (

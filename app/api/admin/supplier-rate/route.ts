@@ -71,8 +71,8 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const newRate = Number(body.supplier_rate)
-  if (!Number.isFinite(newRate) || newRate <= 0 || newRate > 10_000) {
-    return NextResponse.json({ error: 'Enter a valid supplier rate' }, { status: 400 })
+  if (!Number.isInteger(newRate) || newRate <= 0 || newRate > 10_000) {
+    return NextResponse.json({ error: 'Enter a valid whole-rupee supplier rate' }, { status: 400 })
   }
 
   try {
@@ -90,19 +90,30 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({
         ok: true,
         supplier_rate: newRate,
-        multiplier: 1,
+        price_change: 0,
         products,
       })
     }
 
-    const multiplier = newRate / currentRate
+    const priceChange = newRate - currentRate
     const originalPrices = new Map<string, number>()
     const updatedProducts = products.map(product => {
       const currentPrice = Number(product.price_per_kg) || 0
+      const discount = Math.max(0, Math.min(100, Number(product.discount_percentage) || 0))
+      const discountFactor = 1 - discount / 100
+      const currentSellingPrice = discountFactor > 0
+        ? Math.round(Math.round(currentPrice) * discountFactor)
+        : Math.round(currentPrice)
+      const nextSellingPrice = Math.max(
+        0,
+        Math.round((currentSellingPrice + priceChange) * 100) / 100,
+      )
       originalPrices.set(product.id, currentPrice)
       return {
         ...product,
-        price_per_kg: Math.round(currentPrice * multiplier * 100) / 100,
+        price_per_kg: discountFactor > 0
+          ? Math.round((nextSellingPrice / discountFactor) * 10_000) / 10_000
+          : currentPrice,
       }
     })
 
@@ -132,7 +143,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       supplier_rate: newRate,
-      multiplier,
+      price_change: priceChange,
       products: updatedProducts,
     })
   } catch (error) {
