@@ -375,94 +375,81 @@ footer > *{position:relative;z-index:1;}
 .fb{padding:1.5rem 3rem;background:#31065F;border-top:1px solid rgba(199,242,10,.14);display:flex;justify-content:space-between;font-family:var(--font-space-grotesk), sans-serif;}
 .fb span{font-size:.7rem;letter-spacing:.02em;color:rgba(255,255,255,.56);}
 .float-order{
-    position:fixed;
-    bottom:2rem;
-    right:2rem;
-    z-index:800;
-
-    display:flex;
-    align-items:center;
-    gap:1rem;
-
-    width:220px;
-    min-width:unset;
-
-    padding:0.95rem 1.5rem;
-
-    gap:0.75rem;
-
-    border:none;
-    border-radius:999px;
-    cursor:pointer;
-
-    background:linear-gradient(
-        180deg,
-        #5f079b 0%,
-        #5f079b 45%,
-        #4f0684 100%
-    );
-
-    color:#fff;
-
-    font-family:var(--font-space-grotesk), sans-serif;
-    font-size:1rem;
-    font-weight:600;
-
-    box-shadow:
-        0 16px 38px rgba(95,7,155,.34),
-        0 0 0 8px rgba(214,255,22,.15),
-        inset 0 1px 0 rgba(255,255,255,.12);
-
-    transition:.25s ease;
+  position:fixed;
+  right:1.35rem;
+  top:62%;
+  z-index:710;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:.7rem;
+  width:190px;
+  min-height:68px;
+  padding:.75rem 1rem;
+  border:1px solid rgba(255,255,255,.48);
+  border-radius:999px;
+  cursor:pointer;
+  background:linear-gradient(135deg,#ff9f1c 0%,#f97316 52%,#e85d04 100%);
+  color:#fff;
+  font-family:var(--font-space-grotesk), sans-serif;
+  box-shadow:0 16px 36px rgba(234,88,12,.34),0 0 0 4px rgba(255,255,255,.86);
+  transform:translateY(-50%);
+  transition:transform .2s ease,box-shadow .2s ease;
 }
 
 .float-order::after{
-    content:"";
-    position:absolute;
-    inset:-8px;
-
-    border-radius:999px;
-    border:2px solid rgba(206,246,33,.28);
-
-    pointer-events:none;
+  content:"";
+  position:absolute;
+  inset:3px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.2);
+  pointer-events:none;
 }
 
 .float-order:hover{
-    transform:translateY(-3px);
-
-    box-shadow:
-        0 22px 46px rgba(95,7,155,.42),
-        0 0 0 8px rgba(206,246,33,.2),
-        inset 0 1px 0 rgba(255,255,255,.18);
+  transform:translateY(calc(-50% - 3px));
+  box-shadow:0 22px 44px rgba(234,88,12,.42),0 0 0 5px rgba(255,255,255,.9);
 }
 
 .fo-icon{
-    font-size:2rem;
-    color:var(--cart-icon);
-    line-height:1;
+  width:38px;
+  height:38px;
+  flex:0 0 38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:rgba(255,255,255,.18);
+  color:#fff;
 }
 
 .fo-text{
-    display:flex;
-    flex-direction:column;
-    gap:.18rem;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:.25rem;
 }
 
 .fo-main{
-    font-family:var(--font-space-grotesk), sans-serif;
-    font-weight:600;
-    color:#fff;
-    line-height:1;
-    font-size:0.95rem;
+  font-family:var(--font-space-grotesk), sans-serif;
+  font-weight:900;
+  color:#fff;
+  line-height:1;
+  font-size:.9rem;
+  letter-spacing:.02em;
+  text-transform:uppercase;
+  white-space:nowrap;
 }
 
 .fo-sub{
-    font-family:var(--font-space-grotesk), sans-serif;
-    font-size:.58rem;
-    font-weight:700;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:#C2B05E;
+  font-family:var(--font-space-grotesk), sans-serif;
+  font-size:.58rem;
+  font-weight:800;
+  line-height:1.1;
+  letter-spacing:.03em;
+  white-space:nowrap;
+  color:rgba(255,255,255,.9);
 }
 @keyframes floatBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 .dnav{position:fixed;right:1.5rem;top:50%;transform:translateY(-50%);z-index:400;display:flex;flex-direction:column;gap:.5rem;}
@@ -523,9 +510,22 @@ footer > *{position:relative;z-index:1;}
   .hero-bg-word{top:40%;font-size:clamp(4rem,22vw,8rem);}
   .hero-scroll-hint{display:none;}
   .f-badge,.fb1,.fb2,.fb3{display:none;}
-  .float-order{padding:.9rem 1.5rem;bottom:1rem;right:1rem;font-size:.9rem;}
-  .fo-main{font-size:.9rem;}
-  .fo-sub{font-size:.58rem;}
+  .float-order{
+    top:auto;
+    right:max(.7rem,env(safe-area-inset-right,0px));
+    bottom:calc(5.5rem + env(safe-area-inset-bottom,0px));
+    width:clamp(142px,42vw,172px);
+    min-height:58px;
+    padding:.58rem .72rem;
+    gap:.55rem;
+    transform:none;
+    border-radius:18px;
+    box-shadow:0 12px 28px rgba(234,88,12,.36),0 0 0 3px rgba(255,255,255,.88);
+  }
+  .float-order:hover{transform:translateY(-2px);}
+  .fo-icon{width:34px;height:34px;flex-basis:34px;}
+  .fo-main{font-size:.76rem;}
+  .fo-sub{font-size:.5rem;}
   .ti{font-size:.62rem;}
   .sf-heading{font-size:clamp(1.8rem,9vw,3.5rem);}
   .sf-spicy{font-size:clamp(2rem,9vw,4rem);}
@@ -1951,6 +1951,9 @@ export default function Home() {
       document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
     }
   };
+  const goProducts = () => {
+    document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
+  };
   const goStory = () => {
     document
       .getElementById("scroll-story")
@@ -1996,45 +1999,22 @@ export default function Home() {
 
       <div id="prog" />
 
-      {/* {!cartOpen && !loginOpen && (
+      {!cartOpen && !loginOpen && (
         <button
+          type="button"
           className="float-order"
-          onClick={goOrder}
-          style={
-            cartItemCount > 0
-              ? {
-                  background:
-                    "linear-gradient(135deg,var(--p2),var(--p),var(--pd))",
-                  color: "#fff",
-                  boxShadow:
-                    "0 18px 56px rgba(123, 31, 208, 0.62), 0 0 0 8px rgba(199, 242, 10, 0.12), 0 8px 18px rgba(0,0,0,0.2)",
-                }
-              : undefined
-          }
+          onClick={goProducts}
+          aria-label="Order now, delivery in 60 to 90 minutes"
         >
-          <span className="fo-icon">{cartItemCount > 0 ? "🛒" : "⚡"}</span>
+          <span className="fo-icon">
+            <ShoppingBag size={20} strokeWidth={2.5} />
+          </span>
           <span className="fo-text">
-            <span
-              className="fo-main"
-              style={cartItemCount > 0 ? { color: "#fff" } : undefined}
-            >
-              {cartItemCount > 0 ? `Cart (${cartItemCount})` : "Order Now"}
-            </span>
-            <span
-              className="fo-sub"
-              style={
-                cartItemCount > 0
-                  ? { color: "rgba(255,255,255,0.7)" }
-                  : undefined
-              }
-            >
-              {cartItemCount > 0
-                ? `Total: ₹${cartTotal.toFixed(0)}`
-                : "Delivery in 60 min"}
-            </span>
+            <span className="fo-main">Order Now</span>
+            <span className="fo-sub">60–90 min delivery</span>
           </span>
         </button>
-      )} */}
+      )}
 
       <div className="dnav" id="dnav">
         {[0, 1, 2, 3, 4].map((i) => (
