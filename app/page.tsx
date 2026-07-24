@@ -391,6 +391,7 @@ footer > *{position:relative;z-index:1;}
   cursor:pointer;
   background:linear-gradient(135deg,#ff9f1c 0%,#f97316 52%,#e85d04 100%);
   color:#fff;
+  text-decoration:none;
   font-family:var(--font-space-grotesk), sans-serif;
   box-shadow:0 16px 36px rgba(234,88,12,.34),0 0 0 4px rgba(255,255,255,.86);
   transform:translateY(-50%);
@@ -1951,9 +1952,6 @@ export default function Home() {
       document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
     }
   };
-  const goProducts = () => {
-    document.getElementById("menu")?.scrollIntoView({ behavior: "smooth" });
-  };
   const goStory = () => {
     document
       .getElementById("scroll-story")
@@ -2000,10 +1998,9 @@ export default function Home() {
       <div id="prog" />
 
       {!cartOpen && !loginOpen && (
-        <button
-          type="button"
+        <a
+          href="#menu"
           className="float-order"
-          onClick={goProducts}
           aria-label="Order now, delivery in 60 to 90 minutes"
         >
           <span className="fo-icon">
@@ -2013,7 +2010,7 @@ export default function Home() {
             <span className="fo-main">Order Now</span>
             <span className="fo-sub">60–90 min delivery</span>
           </span>
-        </button>
+        </a>
       )}
 
       <div className="dnav" id="dnav">
