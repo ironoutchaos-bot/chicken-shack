@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
 
   // Override any client-supplied user_id with the authenticated session value
   const user_id      = session.userId
-  const { items, payment_status, order_status } = body
+  const { items, payment_status } = body
   if (!items || !payment_status) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
     items,
     total_amount:     verifiedTotal,
     payment_status:   payment_status ?? 'cod',
-    order_status:     order_status   ?? 'placed',
+    order_status:     'placed',
     delivery_address: deliveryAddressCheck.address,
     notes:            body.notes            ?? null,
     customer_phone:   body.customer_phone   ?? null,
@@ -351,13 +351,14 @@ export async function PATCH(req: NextRequest) {
     id?: string
     customer_name?: string | null
     payment_status?: string | null
+    order_status?: string | null
     coupon_code?: string | null
     customer_phone?: string | null
   } | null = null
 
   try {
     const existing = await fetch(
-      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,payment_status,coupon_code,customer_phone,customer_name&limit=1`,
+      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,payment_status,order_status,coupon_code,customer_phone,customer_name&limit=1`,
       { headers: srvHeaders() }
     )
     if (existing.ok) {
@@ -393,7 +394,6 @@ export async function PATCH(req: NextRequest) {
         headers: srvHeaders({ 'Prefer': 'return=minimal' }),
         body:    JSON.stringify({
           payment_status,
-          order_status: 'placed',
           updated_at:   new Date().toISOString(),
         }),
       }
@@ -433,6 +433,7 @@ export async function PATCH(req: NextRequest) {
     let confirmedOrder: {
       id?: string
       driver_id?: string | null
+      order_status?: string | null
       total_amount?: number | null
       items?: unknown
       coupon_code?: string | null
@@ -442,7 +443,7 @@ export async function PATCH(req: NextRequest) {
     // Fetch the updated order to check if DB trigger auto-assigned a driver
     try {
       const updated = await fetch(
-        `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,driver_id,total_amount,items,coupon_code,razorpay_order_id`,
+        `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,driver_id,order_status,total_amount,items,coupon_code,razorpay_order_id`,
         { headers: srvHeaders() }
       )
       if (updated.ok) {
@@ -450,7 +451,7 @@ export async function PATCH(req: NextRequest) {
         const order = rows?.[0]
         confirmedOrder = order ?? null
         // Online payment just confirmed → the order is now live. Alert all drivers.
-        if (order?.id) {
+        if (order?.id && order.order_status !== 'delivered' && order.order_status !== 'cancelled') {
           notifyAllDrivers(order.id).catch(() => {})
         }
       }

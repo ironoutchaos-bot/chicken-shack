@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
       headers: srvHeaders({ 'Prefer': 'return=representation' }),
       body:    JSON.stringify({
         payment_status: 'paid',
-        order_status:   'placed',
         updated_at:     new Date().toISOString(),
       }),
     }

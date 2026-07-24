@@ -29,6 +29,10 @@ function isDeletedOrder(order: OrderRow) {
   return order.delivery_address?.adminDeleted === true || Boolean(order.delivery_address?.adminDeletedAt)
 }
 
+function isPaymentConfirmed(order: OrderRow) {
+  return order.payment_status === 'cod' || order.payment_status === 'paid'
+}
+
 export default function AdminOrdersPage() {
   const [authed,   setAuthed]   = useState(false)
   const [checking, setChecking] = useState(true)
@@ -135,7 +139,7 @@ export default function AdminOrdersPage() {
     try {
       const etaRaw = etaInputs[orderId]
       const eta = etaRaw ? parseInt(etaRaw, 10) : null
-      await fetch(`/api/orders/${orderId}`, {
+      const res = await fetch(`/api/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -143,6 +147,11 @@ export default function AdminOrdersPage() {
           eta_minutes: isNaN(eta as number) ? null : eta,
         }),
       })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setOrderError(data.error ?? `Status update failed (${res.status})`)
+        return
+      }
       setOrders(prev => prev.map(o =>
         o.id === orderId
           ? { ...o, order_status: newStatus, eta_minutes: isNaN(eta as number) ? null : eta }
@@ -275,7 +284,7 @@ export default function AdminOrdersPage() {
 
   const deletedOrders = orders.filter(isDeletedOrder)
   const normalOrders = orders.filter(o => !isDeletedOrder(o))
-  const activeOrders = normalOrders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled')
+  const activeOrders = normalOrders.filter(o => isPaymentConfirmed(o) && o.order_status !== 'delivered' && o.order_status !== 'cancelled')
   const deliveredOrders = normalOrders.filter(o => o.order_status === 'delivered')
 
   const baseDisplayed = filter === 'active'
@@ -374,8 +383,9 @@ export default function AdminOrdersPage() {
   async function bulkUpdateStatus() {
     if (selected.size === 0 || bulkUpdating) return
     setBulkUpdating(true)
+    setOrderError(null)
     try {
-      await Promise.all(
+      const results = await Promise.all(
         Array.from(selected).map(id =>
           fetch(`/api/orders/${id}`, {
             method: 'PATCH',
@@ -384,8 +394,13 @@ export default function AdminOrdersPage() {
           })
         )
       )
+      const failed = results.find(res => !res.ok)
+      if (failed) {
+        const data = await failed.json().catch(() => ({}))
+        setOrderError(data.error ?? `Bulk status update failed (${failed.status})`)
+      }
       await loadOrders()
-      setSelected(new Set())
+      if (!failed) setSelected(new Set())
     } finally {
       setBulkUpdating(false)
     }

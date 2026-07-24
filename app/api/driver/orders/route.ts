@@ -13,6 +13,8 @@ function srvHeaders() {
   }
 }
 
+const CONFIRMED_PAYMENT_FILTER = 'payment_status=in.(cod,paid)'
+
 async function getDriverId(req: NextRequest): Promise<string | null> {
   const token    = req.cookies.get('driver_token')?.value ?? ''
   const driverId = verifyDriverToken(token)   // verifies HMAC signature
@@ -39,11 +41,11 @@ export async function GET(req: NextRequest) {
   // 2. Unassigned active orders (so driver sees new orders even if auto-assign didn't fire)
   const [assignedRes, unassignedRes] = await Promise.all([
     fetch(
-      `${SUPA_URL()}/rest/v1/orders?driver_id=eq.${encodeURIComponent(driverId)}&order=created_at.desc&select=*`,
+      `${SUPA_URL()}/rest/v1/orders?driver_id=eq.${encodeURIComponent(driverId)}&${CONFIRMED_PAYMENT_FILTER}&order=created_at.desc&select=*`,
       { headers: srvHeaders() }
     ),
     fetch(
-      `${SUPA_URL()}/rest/v1/orders?driver_id=is.null&order_status=not.in.(delivered,cancelled)&order=created_at.desc&select=*`,
+      `${SUPA_URL()}/rest/v1/orders?driver_id=is.null&order_status=not.in.(delivered,cancelled)&${CONFIRMED_PAYMENT_FILTER}&order=created_at.desc&select=*`,
       { headers: srvHeaders() }
     ),
   ])

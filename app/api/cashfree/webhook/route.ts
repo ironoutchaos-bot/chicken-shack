@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   try {
     // Find the order by cashfree_order_id (stored in razorpay_order_id column)
     const findRes = await fetch(
-      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cfOrderId)}&select=id,payment_status`,
+      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cfOrderId)}&select=id,payment_status,order_status`,
       { headers: srvHeaders() }
     )
 
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'DB error' }, { status: 500 })
     }
 
-    const rows = await findRes.json() as { id: string; payment_status: string }[]
+    const rows = await findRes.json() as { id: string; payment_status: string; order_status?: string | null }[]
 
     if (!rows.length) {
       // Order not found — could mean the user was redirected back and created the
@@ -115,7 +115,6 @@ export async function POST(req: NextRequest) {
     // Mark order as paid
     const patch: Record<string, unknown> = {
       payment_status: 'paid',
-      order_status:   'placed',
       updated_at:     new Date().toISOString(),
     }
     if (cfPaymentId) {
@@ -141,7 +140,9 @@ export async function POST(req: NextRequest) {
 
     // Online payment confirmed → the order is now live. Alert all drivers so a
     // loud notification pops for every order, assigned or not.
-    notifyAllDrivers(dbOrder.id).catch(() => {})
+    if (dbOrder.order_status !== 'delivered' && dbOrder.order_status !== 'cancelled') {
+      notifyAllDrivers(dbOrder.id).catch(() => {})
+    }
 
     return NextResponse.json({ ok: true })
   } catch (err) {

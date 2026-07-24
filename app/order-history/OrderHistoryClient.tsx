@@ -25,6 +25,7 @@ import type { OrderRow } from "@/lib/supabase-browser";
 type Tab = "current" | "history";
 
 const PAGE_SIZE = 20;
+const AUTO_PACKING_AFTER_MS = 20 * 60 * 1000;
 
 const css = `
 :root{
@@ -66,6 +67,16 @@ const css = `
 .oh-count{color:var(--oh-purple);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;margin-top:.35rem;}
 .oh-refresh{display:inline-flex;align-items:center;gap:.55rem;border:1.5px solid rgba(95,7,155,.16);border-radius:999px;background:#fff;color:var(--oh-purple);padding:.8rem 1rem;font-family:var(--font-space-grotesk), sans-serif;font-size:.65rem;font-weight:900;text-transform:uppercase;box-shadow:0 8px 22px rgba(31,17,11,.04);}
 .oh-refresh:disabled{opacity:.55;}
+.oh-live-panel{margin:-.25rem 0 1.25rem;padding:1rem;border-radius:28px;background:linear-gradient(135deg,rgba(95,7,155,.08),rgba(206,246,33,.16),#fff);border:1px solid rgba(95,7,155,.12);box-shadow:0 16px 44px rgba(31,17,11,.06);}
+.oh-live-panel-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:.9rem;padding:0 .1rem;}
+.oh-live-eyebrow{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--oh-purple);font-weight:900;}
+.oh-live-title{font-family:'Fraunces', serif;font-weight:900;font-size:clamp(1.2rem,2vw,1.75rem);line-height:1;color:var(--oh-ink);margin-top:.25rem;}
+.oh-live-sub{max-width:42ch;color:rgba(31,17,11,.56);font-size:.76rem;line-height:1.5;text-align:right;}
+.oh-live-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.9rem;}
+.oh-live-card{min-width:0;border-radius:24px;background:rgba(255,255,255,.92);border:1px solid rgba(95,7,155,.1);box-shadow:0 10px 30px rgba(95,7,155,.08);padding:1rem;}
+.oh-live-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.2rem;}
+.oh-live-id{font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(31,17,11,.38);font-weight:900;}
+.oh-live-items{margin-top:.25rem;font-size:.82rem;font-weight:900;color:var(--oh-ink);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .oh-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.1rem;}
 .oh-card{position:relative;overflow:hidden;border-radius:26px;background:#fff;border:1px solid rgba(95,7,155,.1);box-shadow:0 14px 40px rgba(31,17,11,.06);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease;}
 .oh-card:hover{transform:translateY(-3px);border-color:rgba(95,7,155,.2);box-shadow:0 24px 54px rgba(95,7,155,.12);}
@@ -80,6 +91,22 @@ const css = `
 .oh-status.on_the_way{background:rgba(95,7,155,.09);color:var(--oh-purple);border:1px solid rgba(95,7,155,.18);}
 .oh-status.delivered{background:rgba(16,185,129,.1);color:#047857;border:1px solid rgba(16,185,129,.22);}
 .oh-status.cancelled{background:rgba(239,68,68,.1);color:#b91c1c;border:1px solid rgba(239,68,68,.2);}
+.oh-tracker{position:relative;margin:1rem 0;padding:1rem;border-radius:22px;background:linear-gradient(135deg,#fffdf7,rgba(206,246,33,.12));border:1px solid rgba(95,7,155,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.8);}
+.oh-tracker-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem;}
+.oh-tracker-label{font-size:.56rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(31,17,11,.4);font-weight:900;}
+.oh-tracker-now{margin-top:.25rem;font-size:.95rem;font-weight:900;color:var(--oh-ink);line-height:1.2;}
+.oh-tracker-note{font-size:.7rem;color:rgba(31,17,11,.58);line-height:1.5;text-align:right;max-width:24ch;}
+.oh-track{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem;}
+.oh-track::before{content:'';position:absolute;left:10%;right:10%;top:22px;height:3px;border-radius:999px;background:rgba(95,7,155,.1);}
+.oh-track-fill{position:absolute;left:10%;top:22px;height:3px;border-radius:999px;background:linear-gradient(90deg,var(--oh-green),var(--oh-purple));transition:width .35s ease;}
+.oh-track-step{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:.45rem;text-align:center;min-width:0;}
+.oh-track-dot{width:46px;height:46px;border-radius:16px;display:flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid rgba(95,7,155,.14);color:rgba(31,17,11,.32);box-shadow:0 6px 18px rgba(31,17,11,.04);transition:transform .25s ease,background .25s ease,color .25s ease,box-shadow .25s ease;}
+.oh-track-step.done .oh-track-dot{background:linear-gradient(135deg,var(--oh-green),#b6ff4d);color:#213900;border-color:rgba(206,246,33,.75);}
+.oh-track-step.active .oh-track-dot{background:linear-gradient(135deg,var(--oh-start),var(--oh-purple));color:#fff;border-color:rgba(95,7,155,.35);box-shadow:0 0 0 6px rgba(95,7,155,.1),0 12px 26px rgba(95,7,155,.24);transform:translateY(-2px);}
+.oh-track-text{font-size:.58rem;font-weight:900;line-height:1.1;text-transform:uppercase;letter-spacing:.03em;color:rgba(31,17,11,.42);}
+.oh-track-step.done .oh-track-text{color:#506600;}
+.oh-track-step.active .oh-track-text{color:var(--oh-purple);}
+.oh-cancel-track{margin:1rem 0;padding:.9rem 1rem;border-radius:18px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#991b1b;font-weight:900;font-size:.85rem;}
 .oh-items{display:flex;flex-direction:column;gap:.7rem;margin:1rem 0;}
 .oh-item{display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:start;padding:.8rem;border-radius:18px;background:var(--oh-cream2);border:1px solid rgba(31,17,11,.05);}
 .oh-item-name{font-weight:900;color:var(--oh-ink);font-size:.86rem;line-height:1.25;}
@@ -118,9 +145,21 @@ const css = `
   .oh-toolbar{align-items:flex-start;}
   .oh-refresh span{display:none;}
   .oh-refresh{width:44px;height:44px;padding:0;justify-content:center;}
+  .oh-live-panel{padding:.85rem;border-radius:24px;}
+  .oh-live-panel-head{align-items:flex-start;flex-direction:column;gap:.5rem;}
+  .oh-live-sub{text-align:left;}
+  .oh-live-list{grid-template-columns:1fr;}
+  .oh-live-card{padding:.85rem;}
   .oh-card-body{padding:1rem;}
   .oh-card-head{flex-direction:column;gap:.7rem;}
   .oh-status{align-self:flex-start;}
+  .oh-tracker{padding:.85rem;}
+  .oh-tracker-head{flex-direction:column;margin-bottom:.85rem;}
+  .oh-tracker-note{text-align:left;max-width:none;}
+  .oh-track{gap:.25rem;}
+  .oh-track-dot{width:40px;height:40px;border-radius:14px;}
+  .oh-track::before,.oh-track-fill{top:19px;}
+  .oh-track-text{font-size:.5rem;}
   .oh-meta-grid{grid-template-columns:1fr;}
   .oh-total{font-size:1.35rem;}
 }
@@ -142,8 +181,23 @@ function formatDate(value: string) {
   };
 }
 
+function trackingStatus(order: OrderRow): OrderRow["order_status"] {
+  if (order.order_status === "placed") {
+    const placedAt = new Date(order.created_at).getTime();
+    if (Number.isFinite(placedAt) && Date.now() - placedAt >= AUTO_PACKING_AFTER_MS) {
+      return "packed";
+    }
+  }
+  return order.order_status;
+}
+
 function statusLabel(status: OrderRow["order_status"]) {
-  return status.replaceAll("_", " ");
+  if (status === "placed") return "Processing";
+  if (status === "packed") return "Packing";
+  if (status === "on_the_way") return "On the way";
+  if (status === "delivered") return "Delivered";
+  if (status === "cancelled") return "Cancelled";
+  return String(status).replaceAll("_", " ");
 }
 
 function paymentLabel(status: OrderRow["payment_status"]) {
@@ -175,12 +229,109 @@ function statusIcon(status: OrderRow["order_status"]) {
   return <Clock3 size={13} />;
 }
 
+const TRACKING_STEPS: {
+  key: OrderRow["order_status"];
+  label: string;
+  note: string;
+  Icon: typeof Clock3;
+}[] = [
+  { key: "placed", label: "Processing", note: "Order received", Icon: Clock3 },
+  { key: "packed", label: "Packing", note: "Fresh cut packing", Icon: PackageCheck },
+  { key: "on_the_way", label: "On the way", note: "Rider started", Icon: Truck },
+  { key: "delivered", label: "Delivered", note: "Order completed", Icon: CheckCircle2 },
+];
+
+function TrackingTimeline({ order, status }: { order: OrderRow; status: OrderRow["order_status"] }) {
+  if (status === "cancelled") {
+    return <div className="oh-cancel-track">This order was cancelled.</div>;
+  }
+
+  const currentIndex = Math.max(0, TRACKING_STEPS.findIndex((step) => step.key === status));
+  const currentStep = TRACKING_STEPS[currentIndex] ?? TRACKING_STEPS[0];
+  const fillWidth = `${(currentIndex / (TRACKING_STEPS.length - 1)) * 80}%`;
+  const autoPacking = order.order_status === "placed" && status === "packed";
+
+  return (
+    <div className="oh-tracker" aria-label="Order tracking">
+      <div className="oh-tracker-head">
+        <div>
+          <div className="oh-tracker-label">Live Tracking</div>
+          <div className="oh-tracker-now">{currentStep.label}</div>
+        </div>
+        <div className="oh-tracker-note">
+          {autoPacking
+            ? "Your order has crossed 20 minutes, so we are showing it as packing."
+            : currentStep.note}
+        </div>
+      </div>
+
+      <div className="oh-track">
+        <div className="oh-track-fill" style={{ width: fillWidth }} />
+        {TRACKING_STEPS.map((step, index) => {
+          const Icon = step.Icon;
+          const state = index < currentIndex ? "done" : index === currentIndex ? "active" : "";
+          return (
+            <div className={`oh-track-step ${state}`} key={step.key}>
+              <div className="oh-track-dot">
+                <Icon size={17} strokeWidth={2.4} />
+              </div>
+              <div className="oh-track-text">{step.label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function LiveTrackingPanel({ orders }: { orders: OrderRow[] }) {
+  if (orders.length === 0) return null;
+
+  return (
+    <section className="oh-live-panel" aria-label="Live order tracking summary">
+      <div className="oh-live-panel-head">
+        <div>
+          <div className="oh-live-eyebrow">Live Tracking</div>
+          <div className="oh-live-title">Track your fresh order here.</div>
+        </div>
+        <div className="oh-live-sub">
+          Updates refresh automatically. Rider changes appear here once packing,
+          on-the-way, or delivery is marked.
+        </div>
+      </div>
+
+      <div className="oh-live-list">
+        {orders.map((order) => {
+          const displayStatus = trackingStatus(order);
+          const itemNames = order.items.map((item) => item.name).join(", ");
+          return (
+            <article className="oh-live-card" key={`live-${order.id}`}>
+              <div className="oh-live-card-top">
+                <div className="min-w-0">
+                  <div className="oh-live-id">Order #{order.id.slice(0, 8).toUpperCase()}</div>
+                  <div className="oh-live-items">{itemNames || "Fresh chicken order"}</div>
+                </div>
+                <span className={`oh-status ${displayStatus}`}>
+                  {statusIcon(displayStatus)}
+                  {statusLabel(displayStatus)}
+                </span>
+              </div>
+              <TrackingTimeline order={order} status={displayStatus} />
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function paymentIcon(status: OrderRow["payment_status"]) {
   return status === "cod" ? <Banknote size={14} /> : <CreditCard size={14} />;
 }
 
 function OrderCard({ order }: { order: OrderRow }) {
   const { date, time } = formatDate(order.created_at);
+  const displayStatus = trackingStatus(order);
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const customer =
     order.customer_name || order.delivery_address?.customerName || "Customer";
@@ -202,11 +353,13 @@ function OrderCard({ order }: { order: OrderRow }) {
               </span>
             </div>
           </div>
-          <span className={`oh-status ${order.order_status}`}>
-            {statusIcon(order.order_status)}
-            {statusLabel(order.order_status)}
+          <span className={`oh-status ${displayStatus}`}>
+            {statusIcon(displayStatus)}
+            {statusLabel(displayStatus)}
           </span>
         </div>
+
+        <TrackingTimeline order={order} status={displayStatus} />
 
         <div className="oh-items">
           {order.items.map((item, index) => (
@@ -334,7 +487,11 @@ function LoadingState() {
 }
 
 export default function OrderHistoryClient({ user }: { user: AuthUser }) {
-  const [activeTab, setActiveTab] = useState<Tab>("current");
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "current";
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    return tab === "history" ? "history" : "current";
+  });
   const [activeOrders, setActiveOrders] = useState<OrderRow[]>([]);
   const [historyOrders, setHistoryOrders] = useState<OrderRow[]>([]);
   const [activeLoading, setActiveLoading] = useState(true);
@@ -343,6 +500,7 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
   const [historyOffset, setHistoryOffset] = useState(0);
   const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [, setClockTick] = useState(0);
 
   const fetchActive = useCallback(async () => {
     setActiveLoading(true);
@@ -392,6 +550,19 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
     fetchHistory(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockTick((tick) => tick + 1), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      fetchActive();
+      fetchHistory(true);
+    }, 20_000);
+    return () => window.clearInterval(timer);
+  }, [fetchActive, fetchHistory]);
 
   async function refresh() {
     setRefreshing(true);
@@ -499,6 +670,8 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
             <EmptyState tab={activeTab} />
           ) : (
             <>
+              {activeTab === "current" && <LiveTrackingPanel orders={currentOrders} />}
+
               <div className="oh-grid">
                 {currentOrders.map((order) => (
                   <OrderCard key={order.id} order={order} />

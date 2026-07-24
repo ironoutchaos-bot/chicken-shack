@@ -35,9 +35,9 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const allowed = ['on_the_way', 'delivered']
+  const allowed = ['packed', 'on_the_way', 'delivered']
   if (!body.order_status || !allowed.includes(body.order_status)) {
-    return NextResponse.json({ error: 'Drivers can only set: on_the_way, delivered' }, { status: 400 })
+    return NextResponse.json({ error: 'Drivers can only set: packed, on_the_way, delivered' }, { status: 400 })
   }
 
   // ── Run driver-auth check and order-ownership fetch IN PARALLEL ────────────
@@ -51,7 +51,7 @@ export async function PATCH(
     // Look the order up by id only — drivers can act on unassigned orders too
     // (the dashboard shows the unassigned pool). Ownership is checked below.
     fetch(
-      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,order_status,user_id,driver_id`,
+      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}&select=id,order_status,payment_status,user_id,driver_id`,
       { headers: srvHeaders() }
     ),
   ])
@@ -69,6 +69,12 @@ export async function PATCH(
   const order = Array.isArray(orders) ? orders[0] : null
   if (!order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  }
+  if (order.order_status === 'delivered' || order.order_status === 'cancelled') {
+    return NextResponse.json({ error: 'This order is already closed' }, { status: 409 })
+  }
+  if (order.payment_status !== 'cod' && order.payment_status !== 'paid') {
+    return NextResponse.json({ error: 'Payment is not confirmed for this order yet' }, { status: 422 })
   }
   // Block only if the order is already claimed by a DIFFERENT driver.
   if (order.driver_id && order.driver_id !== driverId) {

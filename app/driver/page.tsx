@@ -70,6 +70,10 @@ const STATUS_GLYPH: Record<string, string> = {
   cancelled:  '✕',
 }
 
+function isDriverLiveOrder(order: OrderRow) {
+  return order.payment_status === 'cod' || order.payment_status === 'paid'
+}
+
 export default function DriverPage() {
   const [view,        setView]        = useState<ViewState>('checking')
   const [driver,      setDriver]      = useState<DriverInfo | null>(null)
@@ -268,7 +272,7 @@ export default function DriverPage() {
         setOrders(data)
 
         // Detect newly-arrived orders that still need action → ring the alarm.
-        const actionable = data.filter(o => o.order_status === 'placed' || o.order_status === 'packed')
+        const actionable = data.filter(o => isDriverLiveOrder(o) && (o.order_status === 'placed' || o.order_status === 'packed'))
         if (seenOrderIdsRef.current === null) {
           // First load — establish the baseline without ringing.
           seenOrderIdsRef.current = new Set(data.map(o => o.id))
@@ -349,7 +353,7 @@ export default function DriverPage() {
   }
 
   // ── Status update ────────────────────────────────────────────
-  async function updateStatus(orderId: string, newStatus: 'on_the_way' | 'delivered') {
+  async function updateStatus(orderId: string, newStatus: 'packed' | 'on_the_way' | 'delivered') {
     setUpdatingId(orderId)
     try {
       const res = await fetch(`/api/driver/orders/${orderId}`, {
@@ -423,8 +427,8 @@ export default function DriverPage() {
   }
 
   // ── Dashboard ────────────────────────────────────────────────
-  const active    = orders.filter(o => o.order_status !== 'delivered' && o.order_status !== 'cancelled')
-  const delivered = orders.filter(o => o.order_status === 'delivered')
+  const active    = orders.filter(o => isDriverLiveOrder(o) && o.order_status !== 'delivered' && o.order_status !== 'cancelled')
+  const delivered = orders.filter(o => isDriverLiveOrder(o) && o.order_status === 'delivered')
 
   return (
     <div style={S.shell}>
@@ -711,19 +715,33 @@ function OrderCard({
   expanded: boolean
   updating: boolean
   onToggle: () => void
-  onStatusChange: (id: string, status: 'on_the_way' | 'delivered') => void
+  onStatusChange: (id: string, status: 'packed' | 'on_the_way' | 'delivered') => void
 }) {
-  const [pendingStatus, setPendingStatus] = useState<'on_the_way' | 'delivered' | null>(null)
+  const [pendingStatus, setPendingStatus] = useState<'packed' | 'on_the_way' | 'delivered' | null>(null)
 
   const addr    = order.delivery_address as DeliveryAddress | null
   const exactPin = getExactPin(addr)
   const navUrl  = getDriverNavigationUrl(addr)
+  const isPlaced = order.order_status === 'placed'
+  const isPacked = order.order_status === 'packed'
   const isOTW   = order.order_status === 'on_the_way'
   const isDone  = order.order_status === 'delivered'
   const isCOD   = order.payment_status === 'cod'
   const glyph   = STATUS_GLYPH[order.order_status] ?? '📦'
   const label   = STATUS_LABEL[order.order_status] ?? order.order_status
   const stColor = isDone ? '#30d158' : isOTW ? '#ff9f0a' : order.order_status === 'packed' ? '#0a84ff' : '#ebebf5'
+  const pendingTitle =
+    pendingStatus === 'packed'
+      ? 'Packing?'
+      : pendingStatus === 'on_the_way'
+      ? 'Mark On the Way?'
+      : 'Mark as Delivered?'
+  const pendingConfirmBg =
+    pendingStatus === 'packed'
+      ? 'linear-gradient(135deg, #0a84ff, #0066d6)'
+      : pendingStatus === 'on_the_way'
+      ? 'linear-gradient(135deg, #ff9f0a, #ff6b00)'
+      : 'linear-gradient(135deg, #30d158, #25a244)'
 
   return (
     <div style={{ ...S.orderCard, opacity: isDone ? 0.6 : 1 }}>
@@ -736,7 +754,7 @@ function OrderCard({
 
             {/* Title */}
             <p style={S.modalTitle}>
-              {pendingStatus === 'on_the_way' ? '🛵 Mark On the Way?' : '✅ Mark as Delivered?'}
+              {pendingTitle}
             </p>
             <p style={S.modalSub}>
               Order #{order.id.slice(0, 8).toUpperCase()} ·{' '}
@@ -777,9 +795,7 @@ function OrderCard({
                 disabled={updating}
                 style={{
                   ...S.modalConfirmBtn,
-                  background: pendingStatus === 'on_the_way'
-                    ? 'linear-gradient(135deg, #ff9f0a, #ff6b00)'
-                    : 'linear-gradient(135deg, #30d158, #25a244)',
+                  background: pendingConfirmBg,
                 }}
               >
                 {updating ? '…' : 'Confirm'}
@@ -900,7 +916,16 @@ function OrderCard({
       {/* Action buttons */}
       {!isDone && order.order_status !== 'cancelled' && (
         <div style={S.actions}>
-          {!isOTW && (
+          {isPlaced && (
+            <button
+              onClick={() => setPendingStatus('packed')}
+              disabled={updating}
+              style={S.btnOTW}
+            >
+              {updating ? '…' : '📦 Mark Packing'}
+            </button>
+          )}
+          {isPacked && (
             <button
               onClick={() => setPendingStatus('on_the_way')}
               disabled={updating}

@@ -19,10 +19,10 @@ interface Props {
 type StatusKey = OrderRow['order_status']
 
 const STEPS: { key: StatusKey; label: string; Icon: React.ElementType }[] = [
-  { key: 'placed',     label: 'Placed',   Icon: Package      },
+  { key: 'placed',     label: 'Processing', Icon: Package      },
   { key: 'packed',     label: 'Packing',  Icon: ChefHat      },
-  { key: 'on_the_way', label: 'On Way',   Icon: Bike         },
-  { key: 'delivered',  label: 'Done',     Icon: CheckCircle2 },
+  { key: 'on_the_way', label: 'On the way', Icon: Bike         },
+  { key: 'delivered',  label: 'Delivered', Icon: CheckCircle2 },
 ]
 
 function stepIndex(status: StatusKey) {
@@ -35,12 +35,22 @@ function formatEta(minutes: number): string {
 }
 
 const DELIVERY_CELEBRATION_MS = 5 * 60 * 1000
+const AUTO_PACKING_AFTER_MS = 20 * 60 * 1000
+
+function trackingStatus(order: OrderRow): StatusKey {
+  if (order.order_status === 'placed') {
+    const placedAt = new Date(order.created_at).getTime()
+    if (Number.isFinite(placedAt) && Date.now() - placedAt >= AUTO_PACKING_AFTER_MS) return 'packed'
+  }
+  return order.order_status
+}
 
 export default function ActiveOrdersTab({ user, onTabCountChange, refreshTrigger, activeTab, onTabChange }: Props) {
   const [orders,         setOrders]         = useState<OrderRow[]>([])
   const [deliveredCards, setDeliveredCards] = useState<OrderRow[]>([])
   const [loading,        setLoading]        = useState(true)
   const [spinning,       setSpinning]       = useState(false)
+  const [,               setClockTick]      = useState(0)
 
   const supabase       = getSupabaseBrowser()
   const channelRef     = useRef<ReturnType<typeof supabase.channel> | null>(null)
@@ -67,6 +77,10 @@ export default function ActiveOrdersTab({ user, onTabCountChange, refreshTrigger
   useEffect(() => { onTabCountChange(orders.length) }, [orders, onTabCountChange])
   useEffect(() => { loadOrdersRef.current = loadOrders }, [loadOrders])
   useEffect(() => { if (refreshTrigger) loadOrders() }, [refreshTrigger]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const timer = setInterval(() => setClockTick(t => t + 1), 60_000)
+    return () => clearInterval(timer)
+  }, [])
 
   const addDeliveredCard = useCallback((order: OrderRow) => {
     setDeliveredCards(prev => {
@@ -334,8 +348,10 @@ const STATUS_META: Record<string, { label: string; emoji: string; textColor: str
 }
 
 function OrderCard({ order }: { order: OrderRow }) {
-  const curStep = stepIndex(order.order_status)
-  const meta    = STATUS_META[order.order_status] ?? STATUS_META.placed
+  const displayStatus = trackingStatus(order)
+  const curStep = stepIndex(displayStatus)
+  const metaBase = STATUS_META[displayStatus] ?? STATUS_META.placed
+  const meta    = displayStatus === 'placed' ? { ...metaBase, label: 'Processing' } : metaBase
 
   return (
     <div
@@ -460,7 +476,7 @@ function OrderCard({ order }: { order: OrderRow }) {
 
       {/* ── Driver card ── */}
       {order.driver_name && order.driver_phone &&
-       (order.order_status === 'packed' || order.order_status === 'on_the_way') && (
+       (displayStatus === 'packed' || displayStatus === 'on_the_way') && (
         <div className="mx-4 mb-3">
           <div
             className="flex items-center gap-3 rounded-2xl px-4 py-3"
@@ -476,7 +492,7 @@ function OrderCard({ order }: { order: OrderRow }) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[9px] font-black tracking-[0.14em] leading-none mb-0.5" style={{ color: '#065F46' }}>
-                {order.order_status === 'on_the_way' ? 'YOUR RIDER' : 'DRIVER ASSIGNED'}
+                {displayStatus === 'on_the_way' ? 'YOUR RIDER' : 'DRIVER ASSIGNED'}
               </p>
               <p className="text-sm font-black truncate" style={{ color: '#1C0F00' }}>{order.driver_name}</p>
             </div>

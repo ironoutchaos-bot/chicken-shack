@@ -308,13 +308,13 @@ export default function ThankYouPage() {
             <Link href="/#why">Why</Link>
             <Link href="/#process">Process</Link>
             <Link href="/#menu">Menu</Link>
-            <Link className="thank-preview-nav-cart" href="/order-history">
+            <Link className="thank-preview-nav-cart" href="/order-history?tab=current">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="9" cy="20.5" r="1.7" fill="currentColor" />
                 <circle cx="18" cy="20.5" r="1.7" fill="currentColor" />
                 <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M2.5 3.5h3l2.4 11.6a1.2 1.2 0 0 0 1.2 1h8.6a1.2 1.2 0 0 0 1.2-.95L21 7.5H6.2" />
               </svg>
-              Cart
+              Orders
             </Link>
             <Link className="thank-preview-nav-btn" href="/">
               Shop Again
@@ -348,7 +348,7 @@ export default function ThankYouPage() {
               <>
                 Thank You -
                 <br />
-                It&apos;s <span>On The Way!</span>
+                It&apos;s <span>Confirmed!</span>
               </>
             ) : isFailed ? (
               <>
@@ -371,7 +371,7 @@ export default function ThankYouPage() {
                   <>
                     Your order is in and we&apos;re already sharpening the knives. Your chicken is being{' '}
                     <strong>cut fresh right now</strong> and delivered in{' '}
-                    <strong>under 60 minutes</strong> across Yelahanka.
+                    <strong>under 60 minutes</strong> across Yelahanka. Track live updates from the Orders page.
                   </>
                 )
               : isFailed
@@ -380,11 +380,11 @@ export default function ThankYouPage() {
           </p>
 
           <div className="thank-preview-hero-ctas">
-            <Link className="thank-preview-hero-btn primary" href="/order-history">
+            <Link className="thank-preview-hero-btn primary" href="/order-history?tab=current">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="none" stroke="#1b3d06" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l2.5 2.5M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z" />
               </svg>
-              View My Order History
+              Track My Order
             </Link>
             <Link className="thank-preview-hero-btn ghost" href="/">
               ← Back to Shopping

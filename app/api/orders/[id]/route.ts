@@ -45,14 +45,29 @@ export async function PATCH(
   if (body.driver_phone !== undefined) patch.driver_phone = body.driver_phone
 
   try {
-    // Fetch the order first to get user_id and payment_status
+    // Fetch the order first to get user_id, payment_status, and current status
     const orderRes = await fetch(
-      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}&select=user_id,payment_status`,
+      `${SUPA_URL()}/rest/v1/orders?id=eq.${encodeURIComponent(id)}&select=user_id,payment_status,order_status`,
       { headers: { 'apikey': SUPA_SRV(), 'Authorization': `Bearer ${SUPA_SRV()}` } }
     )
     const orders = await orderRes.json()
-    const userId: string | undefined = orders?.[0]?.user_id
-    const paymentStatus: string | undefined = orders?.[0]?.payment_status
+    const order = Array.isArray(orders) ? orders[0] : null
+    const userId: string | undefined = order?.user_id
+    const paymentStatus: string | undefined = order?.payment_status
+    const currentStatus: string | undefined = order?.order_status
+
+    if (body.order_status && (currentStatus === 'delivered' || currentStatus === 'cancelled') && body.order_status !== currentStatus) {
+      return NextResponse.json(
+        { error: 'This order is already closed and cannot be moved back to active' },
+        { status: 409 }
+      )
+    }
+    if (body.order_status && paymentStatus !== 'cod' && paymentStatus !== 'paid') {
+      return NextResponse.json(
+        { error: 'Cannot update order status until payment is confirmed (COD or paid online)' },
+        { status: 422 }
+      )
+    }
 
     // Block manual driver assignment if payment is not yet confirmed.
     // Fail-safe: if we couldn't read the status (undefined/null), block too.
