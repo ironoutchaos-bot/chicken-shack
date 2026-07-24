@@ -5,6 +5,7 @@ import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, ShieldCheck, Banknote, Al
 import { type CartItem } from '@/lib/supabase-browser'
 import { type AuthUser } from '@/lib/auth-types'
 import AddressSheet, { type DeliveryAddress } from './AddressSheet'
+import { trackFunnelEvent } from '@/lib/analytics-client'
 
 type CheckoutMode = 'cashfree' | 'cod'
 
@@ -162,6 +163,7 @@ export default function CartSheet({
   const showCF  = cfEnabled
 
   function handleCheckout(mode: CheckoutMode) {
+    if (cart.length > 0) trackFunnelEvent('checkout_started')
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ ecommerce: null });
     window.dataLayer.push({

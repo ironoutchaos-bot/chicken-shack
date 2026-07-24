@@ -112,6 +112,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Keep a dated record for the admin calendar. This starts from the
+    // deployment of date-range analytics; legacy all-time counters stay intact.
+    const dailyKey = `analytics_visits_day_${todayIST}`
+    const daily = ((await getSetting(dailyKey) ?? {}) as {
+      visits?: number
+      visitors?: Record<string, number>
+    })
+    daily.visits = (Number(daily.visits) || 0) + 1
+    daily.visitors = daily.visitors ?? {}
+    daily.visitors[deviceId] = Date.now()
+    await setSetting(dailyKey, daily)
+
     return NextResponse.json({ ok: true, new_device: isNewDevice })
   } catch {
     return NextResponse.json({ ok: false }, { status: 500 })

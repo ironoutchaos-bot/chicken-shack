@@ -23,6 +23,12 @@ type Summary = {
   shopUniqueDevices: number
   todayVisits?: number
   todayDevices?: number
+  selectedVisitSessions?: number
+  selectedVisitors?: number
+  checkoutStarters?: number
+  completedCustomers?: number
+  abandonedCheckouts?: number
+  checkoutConversionRate?: number
 }
 
 type StatusItem      = { status: string; count: number }
@@ -32,6 +38,14 @@ type RevenueDay      = { date: string; revenue: number; orderCount: number }
 type PeakHour        = { hour: number; orderCount: number }
 type DayAvg          = { day: string; avg: number }
 type PincodeItem     = { pincode: string; orderCount: number; revenue: number }
+type DailyFunnelItem = {
+  date: string
+  visits: number
+  visitors: number
+  checkoutStarters: number
+  completedCustomers: number
+  abandonedCheckouts: number
+}
 
 type Analytics = {
   summary: Summary
@@ -42,9 +56,11 @@ type Analytics = {
   peakHours: PeakHour[]
   avgOrderByDay: DayAvg[]
   pincodeBreakdown?: PincodeItem[]
+  dailyFunnel?: DailyFunnelItem[]
+  selectedDates?: { start: string | null; end: string | null }
 }
 
-type Range = '1d' | '7d' | '30d' | '90d' | 'all'
+type Range = '1d' | '7d' | '30d' | '90d' | 'all' | 'custom'
 
 /* ── Status colours ─────────────────────────────────────────────── */
 
@@ -73,6 +89,12 @@ const RANGE_OPTIONS: { label: string; value: Range }[] = [
   { label: '90 Days',  value: '90d' },
   { label: 'All Time', value: 'all' },
 ]
+
+function dateInIST(offsetDays = 0) {
+  const date = new Date(Date.now() + 330 * 60 * 1000)
+  date.setUTCDate(date.getUTCDate() + offsetDays)
+  return date.toISOString().slice(0, 10)
+}
 
 /* ── Helper sub-components ──────────────────────────────────────── */
 
@@ -116,6 +138,12 @@ export default function AdminAnalyticsPage() {
   const [data,    setData]    = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(false)
   const [range,   setRange]   = useState<Range>('30d')
+  const [startDate, setStartDate] = useState(() => dateInIST(-29))
+  const [endDate, setEndDate] = useState(() => dateInIST())
+  const [appliedDates, setAppliedDates] = useState(() => ({
+    start: dateInIST(-29),
+    end: dateInIST(),
+  }))
 
   /* Revenue target state */
   const [target,      setTarget]      = useState<number | null>(null)
@@ -131,10 +159,18 @@ export default function AdminAnalyticsPage() {
     }
   }, [])
 
-  const fetchAnalytics = useCallback(async (r: Range) => {
+  const fetchAnalytics = useCallback(async (
+    r: Range,
+    dates: { start: string; end: string },
+  ) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/admin/analytics?range=${r}`)
+      const params = new URLSearchParams({ range: r })
+      if (r === 'custom') {
+        params.set('start', dates.start)
+        params.set('end', dates.end)
+      }
+      const res = await fetch(`/api/admin/analytics?${params.toString()}`)
       if (!res.ok) throw new Error()
       setData(await res.json())
     } catch {}
@@ -142,11 +178,20 @@ export default function AdminAnalyticsPage() {
   }, [])
 
   useEffect(() => {
-    if (authed) fetchAnalytics(range)
-  }, [authed, range, fetchAnalytics])
+    if (authed) fetchAnalytics(range, appliedDates)
+  }, [authed, range, appliedDates, fetchAnalytics])
 
   function handleRangeChange(r: Range) {
     setRange(r)
+  }
+
+  function handleApplyDates() {
+    if (!startDate || !endDate) return
+    setAppliedDates({
+      start: startDate <= endDate ? startDate : endDate,
+      end: startDate <= endDate ? endDate : startDate,
+    })
+    setRange('custom')
   }
 
   function handleSaveTarget() {
@@ -177,7 +222,7 @@ export default function AdminAnalyticsPage() {
           <h1 style={S.title}>Analytics</h1>
           <p style={S.subtitle}>Store performance overview</p>
         </div>
-        <button onClick={() => fetchAnalytics(range)} style={S.refreshBtn} disabled={loading}>
+        <button onClick={() => fetchAnalytics(range, appliedDates)} style={S.refreshBtn} disabled={loading}>
           {loading ? '…' : '↻ Refresh'}
         </button>
       </div>
@@ -199,6 +244,30 @@ export default function AdminAnalyticsPage() {
           </button>
         ))}
       </div>
+      <div style={S.calendarBar}>
+        <label style={S.dateLabel}>
+          From
+          <input
+            type="date"
+            value={startDate}
+            max={endDate}
+            onChange={event => setStartDate(event.target.value)}
+            style={S.dateInput}
+          />
+        </label>
+        <label style={S.dateLabel}>
+          To
+          <input
+            type="date"
+            value={endDate}
+            min={startDate}
+            max={dateInIST()}
+            onChange={event => setEndDate(event.target.value)}
+            style={S.dateInput}
+          />
+        </label>
+        <button onClick={handleApplyDates} style={S.applyDateBtn}>Show These Dates</button>
+      </div>
 
       {loading && !data && (
         <p style={{ color: '#9ca3af', padding: '3rem 0', textAlign: 'center' }}>Loading analytics…</p>
@@ -206,7 +275,29 @@ export default function AdminAnalyticsPage() {
 
       {data && (
         <div style={S.content}>
-          {/* Summary cards */}
+          <div>
+            <p style={S.groupTitle}>Customer Journey</p>
+            <p style={S.groupHint}>
+              Unique people during the selected dates. Recorded from this update onward.
+            </p>
+          </div>
+          <div style={S.cards}>
+            <SummaryCard label="Website Visitors" value={data.summary.selectedVisitors ?? 0} />
+            <SummaryCard label="Started Checkout" value={data.summary.checkoutStarters ?? 0} />
+            <SummaryCard label="Ordered" value={data.summary.completedCustomers ?? 0} />
+            <SummaryCard label="Did Not Order" value={data.summary.abandonedCheckouts ?? 0} />
+            <SummaryCard
+              label="Checkout Success"
+              value={`${Math.round(data.summary.checkoutConversionRate ?? 0)}%`}
+            />
+          </div>
+
+          <DailyFunnelTable items={data.dailyFunnel ?? []} />
+
+          <div>
+            <p style={S.groupTitle}>Sales Overview</p>
+            <p style={S.groupHint}>Orders and revenue during the selected dates</p>
+          </div>
           <div style={S.cards}>
             <SummaryCard label="Net Revenue"       value={fmt(data.summary.totalRevenue)} />
             <SummaryCard label="Gross Before Discounts" value={fmt(data.summary.grossRevenueBeforeDiscounts ?? data.summary.totalRevenue)} />
@@ -216,21 +307,10 @@ export default function AdminAnalyticsPage() {
             <SummaryCard label="Discounted Orders" value={data.summary.discountedOrders ?? 0} />
             <SummaryCard label="Total Orders"      value={data.summary.totalOrders} />
             <SummaryCard label="Delivered"         value={data.summary.deliveredOrders} />
+            <SummaryCard label="Active Orders"     value={data.summary.activeOrders} />
             <SummaryCard label="Cancelled"         value={data.summary.cancelledOrders} />
             <SummaryCard label="Avg Order Value"   value={fmt(data.summary.avgOrderValue)} />
-            <SummaryCard label="Total Customers"   value={data.summary.totalCustomers} />
-            <SummaryCard label="Today's Visitors"  value={(data.summary.todayVisits ?? 0).toLocaleString('en-IN')} />
-            <SummaryCard label="Today's Devices"   value={(data.summary.todayDevices ?? 0).toLocaleString('en-IN')} />
-            <SummaryCard label="Total Visits"      value={(data.summary.shopVisits ?? 0).toLocaleString('en-IN')} />
-            <SummaryCard label="Unique Devices"    value={(data.summary.shopUniqueDevices ?? 0).toLocaleString('en-IN')} />
-            <SummaryCard
-              label="Order Conversion"
-              value={
-                (data.summary.shopVisits ?? 0) > 0
-                  ? `${Math.round((data.summary.totalOrders / data.summary.shopVisits) * 100)}%`
-                  : '—'
-              }
-            />
+            <SummaryCard label="All-time Customers" value={data.summary.totalCustomers} />
           </div>
 
           {/* Revenue Target tracker */}
@@ -272,6 +352,56 @@ export default function AdminAnalyticsPage() {
 }
 
 /* ── Revenue Target Tracker ─────────────────────────────────────── */
+
+function DailyFunnelTable({ items }: { items: DailyFunnelItem[] }) {
+  const rows = [...items].sort((a, b) => b.date.localeCompare(a.date))
+
+  return (
+    <SectionBox title="Daily Customer Journey">
+      <p style={{ margin: 0, color: '#6b7280', fontSize: '0.8125rem' }}>
+        Visitor and checkout history is recorded from 24 Jul 2026.
+      </p>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ ...S.table, minWidth: 650 }}>
+          <thead>
+            <tr>
+              <th style={S.th}>Date</th>
+              <th style={S.th}>Visitors</th>
+              <th style={S.th}>Started Checkout</th>
+              <th style={S.th}>Ordered</th>
+              <th style={S.th}>Did Not Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td style={S.td} colSpan={5}>No customer journey data for these dates.</td>
+              </tr>
+            ) : rows.map(item => (
+              <tr key={item.date}>
+                <td style={{ ...S.td, fontWeight: 700 }}>
+                  {new Date(`${item.date}T00:00:00`).toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </td>
+                <td style={S.td}>{item.visitors}</td>
+                <td style={S.td}>{item.checkoutStarters}</td>
+                <td style={{ ...S.td, color: '#15803d', fontWeight: 700 }}>
+                  {item.completedCustomers}
+                </td>
+                <td style={{ ...S.td, color: '#b45309', fontWeight: 700 }}>
+                  {item.abandonedCheckouts}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </SectionBox>
+  )
+}
 
 function RevenueTarget({
   totalRevenue,
@@ -645,10 +775,16 @@ const S: Record<string, React.CSSProperties> = {
   subtitle:     { fontSize: '0.8125rem', color: '#6b5744', marginTop: 4 },
   refreshBtn:   { background: 'transparent', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '0.4rem 0.85rem', cursor: 'pointer', fontSize: '0.8125rem', color: '#6b5744' },
 
-  rangeBar:     { display: 'flex', gap: 8, marginBottom: '1.5rem', flexWrap: 'wrap' },
+  rangeBar:     { display: 'flex', gap: 8, marginBottom: '0.75rem', flexWrap: 'wrap' },
   rangeBtn:     { border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '0.35rem 0.85rem', cursor: 'pointer', fontSize: '0.8125rem', fontWeight: 600, fontFamily: 'system-ui', transition: 'background 0.15s, color 0.15s' },
+  calendarBar:  { display: 'flex', alignItems: 'flex-end', gap: 10, marginBottom: '1.5rem', flexWrap: 'wrap', background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10, padding: 12 },
+  dateLabel:    { display: 'flex', flexDirection: 'column', gap: 5, color: '#6b5744', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' },
+  dateInput:    { border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '0.55rem 0.7rem', color: '#1a1109', background: '#fff', fontFamily: 'system-ui', fontSize: '0.875rem', minHeight: 40 },
+  applyDateBtn: { border: 'none', borderRadius: 8, padding: '0.62rem 1rem', minHeight: 40, background: '#d97706', color: '#fff', cursor: 'pointer', fontWeight: 700, fontFamily: 'system-ui' },
 
   content:      { display: 'flex', flexDirection: 'column', gap: '1.25rem' },
+  groupTitle:   { margin: 0, color: '#1a1109', fontSize: '1rem', fontWeight: 800 },
+  groupHint:    { margin: '3px 0 0', color: '#6b7280', fontSize: '0.8125rem' },
 
   cards:        { display: 'flex', flexWrap: 'wrap', gap: 12 },
   card:         { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, padding: 16, minWidth: 140, flex: '1 1 140px' },

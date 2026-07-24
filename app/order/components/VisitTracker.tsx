@@ -1,26 +1,13 @@
 'use client'
 
 import { useEffect } from 'react'
+import { getAnalyticsDeviceId } from '@/lib/analytics-client'
 
 /**
  * Tracks visits per device using a persistent localStorage device ID.
  * - Fires once per browser session (sessionStorage guard prevents re-counts on tab switch).
  * - Sends a stable device_id (localStorage) so the server can count unique devices.
  */
-
-function getDeviceId(): string {
-  try {
-    let id = localStorage.getItem('bf-device-id')
-    if (!id) {
-      // Generate a random device ID and store it permanently
-      id = 'dev_' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
-      localStorage.setItem('bf-device-id', id)
-    }
-    return id
-  } catch {
-    return 'dev_unknown'
-  }
-}
 
 export default function VisitTracker() {
   useEffect(() => {
@@ -30,7 +17,7 @@ export default function VisitTracker() {
     } catch {
       // sessionStorage unavailable — still count
     }
-    const deviceId = getDeviceId()
+    const deviceId = getAnalyticsDeviceId()
     fetch('/api/track/visit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

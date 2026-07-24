@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { trackFunnelEvent } from '@/lib/analytics-client'
 
 type ThankYouStatus = 'verifying' | 'success' | 'failed'
 
@@ -88,6 +89,7 @@ function firePurchase(orderId: string, meta: PendingPaymentMeta) {
         items,
       },
     })
+    trackFunnelEvent('order_completed')
   } catch (err) {
     console.error('[thank-you] purchase push failed:', err)
   }

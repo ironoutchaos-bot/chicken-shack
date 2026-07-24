@@ -28,6 +28,7 @@ import { UNIT_LABEL } from "@/lib/units";
 import LoginDrawer from "@/app/order/components/LoginDrawer";
 import CartSheet from "@/app/order/components/CartSheet";
 import BannerCarousel from "@/app/order/components/BannerCarousel";
+import VisitTracker from "@/app/order/components/VisitTracker";
 
 const css = `
 :root{
@@ -1983,6 +1984,7 @@ export default function Home() {
 
   return (
     <>
+      <VisitTracker />
       <link
         href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,700&display=swap"
         rel="stylesheet"

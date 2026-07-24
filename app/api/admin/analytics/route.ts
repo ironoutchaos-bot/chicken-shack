@@ -43,6 +43,30 @@ interface Profile {
   created_at: string
 }
 
+type DeviceSet = Record<string, number>
+type DailyFunnelRow = {
+  date: string
+  visits: number
+  visitors: number
+  checkoutStarters: number
+  completedCustomers: number
+  abandonedCheckouts: number
+}
+
+function shiftDate(date: string, days: number): string {
+  const value = new Date(`${date}T00:00:00Z`)
+  value.setUTCDate(value.getUTCDate() + days)
+  return value.toISOString().slice(0, 10)
+}
+
+function toISTDateKey(value: string): string {
+  return new Date(new Date(value).getTime() + 330 * 60 * 1000).toISOString().slice(0, 10)
+}
+
+function validDate(value: string | null): value is string {
+  return Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value))
+}
+
 export async function GET(req: NextRequest) {
   // Admin auth check
   if (!isAdminRequest(req)) {
@@ -56,10 +80,7 @@ export async function GET(req: NextRequest) {
       fetch(`${SUPA_URL()}/rest/v1/profiles?select=id,phone_number,full_name,created_at`, {
         headers: srvHeaders(),
       }),
-      fetch(
-        `${SUPA_URL()}/rest/v1/settings?key=in.(shop_visits,shop_unique_devices,shop_visits_today,shop_visits_today_date,shop_device_ids_today)&select=key,value`,
-        { headers: srvHeaders() }
-      ),
+      fetch(`${SUPA_URL()}/rest/v1/settings?select=key,value`, { headers: srvHeaders() }),
     ])
 
     const orders: Order[] = await ordersRes.json()
@@ -84,32 +105,140 @@ export async function GET(req: NextRequest) {
 
     // --- Date range filtering ---
     const range = req.nextUrl.searchParams.get('range') ?? '30d'
-    let fromDate: Date | null = null
-    if (range === '1d') {
-      // Start of today in IST (UTC+5:30)
-      const nowIST = new Date(Date.now() + 330 * 60 * 1000)
-      const todayStr = nowIST.toISOString().slice(0, 10) // YYYY-MM-DD in IST
-      fromDate = new Date(todayStr + 'T00:00:00+05:30')
-    } else if (range === '7d') {
-      fromDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    } else if (range === '30d') {
-      fromDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    } else if (range === '90d') {
-      fromDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
-    }
-    // 'all' → fromDate stays null
-    const filteredOrders = fromDate
-      ? orders.filter(o => new Date(o.created_at) >= fromDate!)
-      : orders
+    const requestedStart = req.nextUrl.searchParams.get('start')
+    const requestedEnd = req.nextUrl.searchParams.get('end')
+    let startKey: string | null = null
+    let endKey: string | null = todayIST
 
-    // Number of days for revenueByDate chart (all → cap at 90 for readability)
-    const chartDays = range === '1d' ? 1 : range === '7d' ? 7 : range === '90d' || range === 'all' ? 90 : 30
+    if (range === 'custom' && validDate(requestedStart) && validDate(requestedEnd)) {
+      startKey = requestedStart <= requestedEnd ? requestedStart : requestedEnd
+      endKey = requestedStart <= requestedEnd ? requestedEnd : requestedStart
+    } else if (range === '1d') {
+      startKey = todayIST
+    } else if (range === '7d') {
+      startKey = shiftDate(todayIST, -6)
+    } else if (range === '30d') {
+      startKey = shiftDate(todayIST, -29)
+    } else if (range === '90d') {
+      startKey = shiftDate(todayIST, -89)
+    } else if (range === 'all') {
+      startKey = null
+      endKey = null
+    }
+
+    const fromDate = startKey ? new Date(`${startKey}T00:00:00+05:30`) : null
+    const toDate = endKey ? new Date(`${endKey}T23:59:59.999+05:30`) : null
+    const filteredOrders = orders.filter(order => {
+      const created = new Date(order.created_at)
+      return (!fromDate || created >= fromDate) && (!toDate || created <= toDate)
+    })
+
+    const inSelectedDates = (date: string) =>
+      (!startKey || date >= startKey) && (!endKey || date <= endKey)
+
+    const visitsByDate = new Map<string, { visits: number; visitors: DeviceSet }>()
+    const startersByDate = new Map<string, DeviceSet>()
+    const completedByDate = new Map<string, DeviceSet>()
+
+    for (const row of visitsRows) {
+      const value = (row.value ?? {}) as Record<string, unknown>
+      if (row.key.startsWith('analytics_visits_day_')) {
+        const date = row.key.replace('analytics_visits_day_', '')
+        visitsByDate.set(date, {
+          visits: Number(value.visits) || 0,
+          visitors: (value.visitors ?? {}) as DeviceSet,
+        })
+      } else if (row.key.startsWith('analytics_starters_day_')) {
+        const date = row.key.replace('analytics_starters_day_', '')
+        startersByDate.set(date, (value.checkoutStarters ?? {}) as DeviceSet)
+      } else if (row.key.startsWith('analytics_completed_day_')) {
+        const date = row.key.replace('analytics_completed_day_', '')
+        completedByDate.set(date, (value.completedCustomers ?? {}) as DeviceSet)
+      }
+    }
+
+    const selectedVisitors = new Set<string>()
+    const selectedStarters = new Set<string>()
+    const selectedCompleted = new Set<string>()
+    let selectedVisitSessions = 0
+    const trackedDates = new Set<string>()
+
+    for (const [date, data] of visitsByDate) {
+      if (!inSelectedDates(date)) continue
+      trackedDates.add(date)
+      selectedVisitSessions += data.visits
+      Object.keys(data.visitors).forEach(id => selectedVisitors.add(id))
+    }
+    for (const [date, devices] of startersByDate) {
+      if (!inSelectedDates(date)) continue
+      trackedDates.add(date)
+      Object.keys(devices).forEach(id => selectedStarters.add(id))
+    }
+    for (const [date, devices] of completedByDate) {
+      if (!inSelectedDates(date)) continue
+      trackedDates.add(date)
+      Object.keys(devices).forEach(id => selectedCompleted.add(id))
+    }
+
+    const includesToday = inSelectedDates(todayIST)
+    if (includesToday) {
+      selectedVisitSessions = Math.max(selectedVisitSessions, todayVisits)
+      trackedDates.add(todayIST)
+    }
+    const selectedVisitorCount = includesToday
+      ? Math.max(selectedVisitors.size, todayDevices)
+      : selectedVisitors.size
+    const abandonedDevices = new Set(
+      [...selectedStarters].filter(device => !selectedCompleted.has(device)),
+    )
+
+    const dailyFunnelDates = [...trackedDates].filter(inSelectedDates).sort()
+    const dailyFunnel: DailyFunnelRow[] = dailyFunnelDates.map(date => {
+      const visits = visitsByDate.get(date)
+      const starters = startersByDate.get(date) ?? {}
+      const completed = completedByDate.get(date) ?? {}
+      const visitorCount = date === todayIST
+        ? Math.max(Object.keys(visits?.visitors ?? {}).length, todayDevices)
+        : Object.keys(visits?.visitors ?? {}).length
+      const visitCount = date === todayIST
+        ? Math.max(visits?.visits ?? 0, todayVisits)
+        : visits?.visits ?? 0
+      return {
+        date,
+        visits: visitCount,
+        visitors: visitorCount,
+        checkoutStarters: Object.keys(starters).length,
+        completedCustomers: Object.keys(completed).length,
+        abandonedCheckouts: Object.keys(starters).filter(id => !completed[id]).length,
+      }
+    })
+
+    const chartEnd = endKey ?? todayIST
+    const chartStart = startKey ?? shiftDate(chartEnd, -89)
+    const chartSpan = Math.min(
+      90,
+      Math.max(
+        1,
+        Math.round(
+          (new Date(chartEnd).getTime() - new Date(chartStart).getTime()) / 86_400_000,
+        ) + 1,
+      ),
+    )
+    const chartDateKeys = Array.from(
+      { length: chartSpan },
+      (_, index) => shiftDate(chartEnd, index - chartSpan + 1),
+    )
 
     // --- Summary ---
-    const deliveredOrders = filteredOrders.filter(o => o.order_status === 'delivered')
-    const cancelledOrders = filteredOrders.filter(o => o.order_status === 'cancelled')
+    const confirmedOrders = filteredOrders.filter(order =>
+      order.payment_status === 'paid' ||
+      order.payment_status === 'cod' ||
+      order.order_status === 'delivered',
+    )
+    const deliveredOrders = confirmedOrders.filter(o => o.order_status === 'delivered')
+    const cancelledOrders = confirmedOrders.filter(o => o.order_status === 'cancelled')
     const activeStatuses = new Set(['placed', 'packed', 'on_the_way'])
-    const activeOrders = filteredOrders.filter(o => activeStatuses.has(o.order_status))
+    const activeOrders = confirmedOrders.filter(o => activeStatuses.has(o.order_status))
 
     const totalRevenue = deliveredOrders.reduce((sum, o) => sum + (o.total_amount ?? 0), 0)
     const avgOrderValue = deliveredOrders.length > 0 ? totalRevenue / deliveredOrders.length : 0
@@ -143,7 +272,7 @@ export async function GET(req: NextRequest) {
       productDiscounts,
       couponDiscounts,
       discountedOrders,
-      totalOrders: filteredOrders.length,
+      totalOrders: confirmedOrders.length,
       deliveredOrders: deliveredOrders.length,
       cancelledOrders: cancelledOrders.length,
       activeOrders: activeOrders.length,
@@ -153,11 +282,19 @@ export async function GET(req: NextRequest) {
       shopUniqueDevices,
       todayVisits,
       todayDevices,
+      selectedVisitSessions,
+      selectedVisitors: selectedVisitorCount,
+      checkoutStarters: selectedStarters.size,
+      completedCustomers: selectedCompleted.size,
+      abandonedCheckouts: abandonedDevices.size,
+      checkoutConversionRate: selectedStarters.size > 0
+        ? (selectedCompleted.size / selectedStarters.size) * 100
+        : 0,
     }
 
     // --- Status breakdown ---
     const statusMap = new Map<string, number>()
-    for (const o of filteredOrders) {
+    for (const o of confirmedOrders) {
       statusMap.set(o.order_status, (statusMap.get(o.order_status) ?? 0) + 1)
     }
     const statusBreakdown = Array.from(statusMap.entries()).map(([status, count]) => ({
@@ -167,7 +304,7 @@ export async function GET(req: NextRequest) {
 
     // --- Payment breakdown ---
     const paymentMap = new Map<string, { count: number; revenue: number }>()
-    for (const o of filteredOrders) {
+    for (const o of confirmedOrders) {
       const method = o.payment_method ?? o.payment_status ?? 'unknown'
       const existing = paymentMap.get(method) ?? { count: 0, revenue: 0 }
       paymentMap.set(method, {
@@ -186,7 +323,7 @@ export async function GET(req: NextRequest) {
       string,
       { name: string; totalQty: number; totalRevenue: number; orderCount: number }
     >()
-    for (const o of filteredOrders) {
+    for (const o of confirmedOrders) {
       if (o.order_status === 'cancelled') continue
       const items = Array.isArray(o.items) ? o.items : []
       const seenInOrder = new Set<string>()
@@ -213,7 +350,7 @@ export async function GET(req: NextRequest) {
 
     // --- Pincode breakdown (from delivery_address JSONB, non-cancelled orders) ---
     const pincodeMap = new Map<string, { orderCount: number; revenue: number }>()
-    for (const o of filteredOrders) {
+    for (const o of confirmedOrders) {
       if (o.order_status === 'cancelled') continue
       const addr = o.delivery_address as { pincode?: string } | null
       const pincode = addr?.pincode?.trim()
@@ -229,16 +366,12 @@ export async function GET(req: NextRequest) {
       .slice(0, 10)
 
     // --- Revenue by date (delivered orders only, window based on range) ---
-    const today = new Date()
     const dateMap = new Map<string, { revenue: number; orderCount: number }>()
-    for (let i = chartDays - 1; i >= 0; i--) {
-      const d = new Date(today)
-      d.setUTCDate(today.getUTCDate() - i)
-      const key = d.toISOString().slice(0, 10)
+    for (const key of chartDateKeys) {
       dateMap.set(key, { revenue: 0, orderCount: 0 })
     }
     for (const o of deliveredOrders) {
-      const date = o.created_at?.slice(0, 10)
+      const date = o.created_at ? toISTDateKey(o.created_at) : ''
       if (date && dateMap.has(date)) {
         const entry = dateMap.get(date)!
         entry.revenue += o.total_amount ?? 0
@@ -253,7 +386,7 @@ export async function GET(req: NextRequest) {
     // --- Peak hours (UTC+5:30 = add 330 minutes), filtered orders ---
     const hourMap = new Map<number, number>()
     for (let h = 0; h < 24; h++) hourMap.set(h, 0)
-    for (const o of filteredOrders) {
+    for (const o of confirmedOrders) {
       if (!o.created_at) continue
       const ms = new Date(o.created_at).getTime()
       const istMs = ms + 330 * 60 * 1000
@@ -268,7 +401,7 @@ export async function GET(req: NextRequest) {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const dayTotals = new Map<number, { sum: number; count: number }>()
     for (let d = 0; d < 7; d++) dayTotals.set(d, { sum: 0, count: 0 })
-    for (const o of filteredOrders) {
+    for (const o of confirmedOrders) {
       if (!o.created_at || o.total_amount == null) continue
       const ms = new Date(o.created_at).getTime()
       const istMs = ms + 330 * 60 * 1000
@@ -296,6 +429,8 @@ export async function GET(req: NextRequest) {
       revenueByDate,
       peakHours,
       avgOrderByDay,
+      dailyFunnel,
+      selectedDates: { start: startKey, end: endKey },
     }
 
     return NextResponse.json(result)
