@@ -246,6 +246,24 @@ export async function POST(req: NextRequest) {
     }
   } catch { /* best-effort — insert will surface the FK error if it still fails */ }
 
+  const customerName =
+    typeof body.customer_name === 'string' ? body.customer_name.trim() : ''
+  if (customerName) {
+    try {
+      await fetch(
+        `${SUPA_URL()}/rest/v1/profiles?id=eq.${encodeURIComponent(String(user_id))}`,
+        {
+          method: 'PATCH',
+          headers: srvHeaders({ 'Prefer': 'return=minimal' }),
+          body: JSON.stringify({ full_name: customerName }),
+          signal: AbortSignal.timeout(6_000),
+        },
+      )
+    } catch {
+      // Order placement should continue; profile name can be synced next time.
+    }
+  }
+
   // ── Build insert payload ───────────────────────────────────────────────────
   const insert: Record<string, unknown> = {
     user_id,

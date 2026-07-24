@@ -35,7 +35,7 @@ function formatEta(minutes: number): string {
 }
 
 const DELIVERY_CELEBRATION_MS = 5 * 60 * 1000
-const AUTO_PACKING_AFTER_MS = 20 * 60 * 1000
+const AUTO_PACKING_AFTER_MS = 25 * 60 * 1000
 
 function trackingStatus(order: OrderRow): StatusKey {
   if (order.order_status === 'placed') {
@@ -50,7 +50,7 @@ export default function ActiveOrdersTab({ user, onTabCountChange, refreshTrigger
   const [deliveredCards, setDeliveredCards] = useState<OrderRow[]>([])
   const [loading,        setLoading]        = useState(true)
   const [spinning,       setSpinning]       = useState(false)
-  const [,               setClockTick]      = useState(0)
+  const [clockTick,      setClockTick]      = useState(0)
 
   const supabase       = getSupabaseBrowser()
   const channelRef     = useRef<ReturnType<typeof supabase.channel> | null>(null)
@@ -78,9 +78,18 @@ export default function ActiveOrdersTab({ user, onTabCountChange, refreshTrigger
   useEffect(() => { loadOrdersRef.current = loadOrders }, [loadOrders])
   useEffect(() => { if (refreshTrigger) loadOrders() }, [refreshTrigger]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const timer = setInterval(() => setClockTick(t => t + 1), 60_000)
-    return () => clearInterval(timer)
-  }, [])
+    const now = Date.now()
+    const waits = orders
+      .filter(order => order.order_status === 'placed')
+      .map(order => new Date(order.created_at).getTime() + AUTO_PACKING_AFTER_MS - now)
+      .filter(wait => Number.isFinite(wait) && wait > 0)
+    if (waits.length === 0) return
+    const timer = setTimeout(() => {
+      setClockTick(t => t + 1)
+      loadOrders()
+    }, Math.min(...waits) + 25)
+    return () => clearTimeout(timer)
+  }, [orders, clockTick, loadOrders])
 
   const addDeliveredCard = useCallback((order: OrderRow) => {
     setDeliveredCards(prev => {

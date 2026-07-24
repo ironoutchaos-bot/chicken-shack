@@ -25,7 +25,7 @@ import type { OrderRow } from "@/lib/supabase-browser";
 type Tab = "current" | "history";
 
 const PAGE_SIZE = 20;
-const AUTO_PACKING_AFTER_MS = 20 * 60 * 1000;
+const AUTO_PACKING_AFTER_MS = 25 * 60 * 1000;
 
 const css = `
 :root{
@@ -249,7 +249,6 @@ function TrackingTimeline({ order, status }: { order: OrderRow; status: OrderRow
   const currentIndex = Math.max(0, TRACKING_STEPS.findIndex((step) => step.key === status));
   const currentStep = TRACKING_STEPS[currentIndex] ?? TRACKING_STEPS[0];
   const fillWidth = `${(currentIndex / (TRACKING_STEPS.length - 1)) * 80}%`;
-  const autoPacking = order.order_status === "placed" && status === "packed";
 
   return (
     <div className="oh-tracker" aria-label="Order tracking">
@@ -258,11 +257,7 @@ function TrackingTimeline({ order, status }: { order: OrderRow; status: OrderRow
           <div className="oh-tracker-label">Live Tracking</div>
           <div className="oh-tracker-now">{currentStep.label}</div>
         </div>
-        <div className="oh-tracker-note">
-          {autoPacking
-            ? "Your order has crossed 20 minutes, so we are showing it as packing."
-            : currentStep.note}
-        </div>
+        <div className="oh-tracker-note">{currentStep.note}</div>
       </div>
 
       <div className="oh-track">
@@ -281,47 +276,6 @@ function TrackingTimeline({ order, status }: { order: OrderRow; status: OrderRow
         })}
       </div>
     </div>
-  );
-}
-
-function LiveTrackingPanel({ orders }: { orders: OrderRow[] }) {
-  if (orders.length === 0) return null;
-
-  return (
-    <section className="oh-live-panel" aria-label="Live order tracking summary">
-      <div className="oh-live-panel-head">
-        <div>
-          <div className="oh-live-eyebrow">Live Tracking</div>
-          <div className="oh-live-title">Track your fresh order here.</div>
-        </div>
-        <div className="oh-live-sub">
-          Updates refresh automatically. Rider changes appear here once packing,
-          on-the-way, or delivery is marked.
-        </div>
-      </div>
-
-      <div className="oh-live-list">
-        {orders.map((order) => {
-          const displayStatus = trackingStatus(order);
-          const itemNames = order.items.map((item) => item.name).join(", ");
-          return (
-            <article className="oh-live-card" key={`live-${order.id}`}>
-              <div className="oh-live-card-top">
-                <div className="min-w-0">
-                  <div className="oh-live-id">Order #{order.id.slice(0, 8).toUpperCase()}</div>
-                  <div className="oh-live-items">{itemNames || "Fresh chicken order"}</div>
-                </div>
-                <span className={`oh-status ${displayStatus}`}>
-                  {statusIcon(displayStatus)}
-                  {statusLabel(displayStatus)}
-                </span>
-              </div>
-              <TrackingTimeline order={order} status={displayStatus} />
-            </article>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 
@@ -500,10 +454,11 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
   const [historyOffset, setHistoryOffset] = useState(0);
   const [hasMoreHistory, setHasMoreHistory] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [, setClockTick] = useState(0);
+  const [clockTick, setClockTick] = useState(0);
+  const [profileName, setProfileName] = useState(user.name);
 
-  const fetchActive = useCallback(async () => {
-    setActiveLoading(true);
+  const fetchActive = useCallback(async (showLoading = false) => {
+    if (showLoading) setActiveLoading(true);
     try {
       const res = await fetch("/api/orders/active", { cache: "no-store" });
       if (res.status === 401) {
@@ -513,15 +468,18 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
       const rows = res.ok ? ((await res.json()) as OrderRow[]) : [];
       setActiveOrders(Array.isArray(rows) ? rows : []);
     } finally {
-      setActiveLoading(false);
+      if (showLoading) setActiveLoading(false);
     }
   }, []);
 
   const fetchHistory = useCallback(
-    async (reset = true) => {
+    async (reset = true, showLoading = false) => {
       const offset = reset ? 0 : historyOffset;
-      if (reset) setHistoryLoading(true);
-      else setLoadingMore(true);
+      if (reset) {
+        if (showLoading) setHistoryLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
 
       try {
         const res = await fetch(
@@ -538,7 +496,7 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
         setHistoryOffset(offset + safeRows.length);
         setHasMoreHistory(safeRows.length === PAGE_SIZE);
       } finally {
-        setHistoryLoading(false);
+        if (showLoading) setHistoryLoading(false);
         setLoadingMore(false);
       }
     },
@@ -546,27 +504,48 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
   );
 
   useEffect(() => {
-    fetchActive();
-    fetchHistory(true);
+    fetchActive(true);
+    fetchHistory(true, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setClockTick((tick) => tick + 1), 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
+    const now = Date.now();
+    const waits = activeOrders
+      .filter((order) => order.order_status === "placed")
+      .map((order) => new Date(order.created_at).getTime() + AUTO_PACKING_AFTER_MS - now)
+      .filter((wait) => Number.isFinite(wait) && wait > 0);
+    if (waits.length === 0) return;
+    const timer = window.setTimeout(
+      () => {
+        setClockTick((tick) => tick + 1);
+        fetchActive(false);
+      },
+      Math.min(...waits) + 25,
+    );
+    return () => window.clearTimeout(timer);
+  }, [activeOrders, clockTick, fetchActive]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      fetchActive();
-      fetchHistory(true);
+      fetchActive(false);
+      fetchHistory(true, false);
     }, 20_000);
     return () => window.clearInterval(timer);
   }, [fetchActive, fetchHistory]);
 
+  useEffect(() => {
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user?.name) setProfileName(data.user.name);
+      })
+      .catch(() => {});
+  }, []);
+
   async function refresh() {
     setRefreshing(true);
-    await Promise.all([fetchActive(), fetchHistory(true)]);
+    await Promise.all([fetchActive(false), fetchHistory(true, false)]);
     setRefreshing(false);
   }
 
@@ -614,7 +593,7 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
           <div className="oh-user-card">
             <div className="oh-user-label">Signed in as</div>
             <div className="oh-user-name">
-              {user.name || "B’LURU Fresh Customer"}
+              {profileName || "B’LURU Fresh Customer"}
             </div>
             <div className="oh-user-phone">
               <Phone size={14} />
@@ -670,8 +649,6 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
             <EmptyState tab={activeTab} />
           ) : (
             <>
-              {activeTab === "current" && <LiveTrackingPanel orders={currentOrders} />}
-
               <div className="oh-grid">
                 {currentOrders.map((order) => (
                   <OrderCard key={order.id} order={order} />
