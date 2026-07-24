@@ -5,7 +5,7 @@ import { X, Minus, Plus, Trash2, ShoppingBag, Loader2, ShieldCheck, Banknote, Al
 import { type CartItem } from '@/lib/supabase-browser'
 import { type AuthUser } from '@/lib/auth-types'
 import AddressSheet, { type DeliveryAddress } from './AddressSheet'
-import { trackFunnelEvent } from '@/lib/analytics-client'
+import { getAnalyticsDeviceId, trackFunnelEvent } from '@/lib/analytics-client'
 
 type CheckoutMode = 'cashfree' | 'cod'
 
@@ -308,6 +308,7 @@ export default function CartSheet({
             customer_name:     deliveryAddress.customerName  || null,
             coupon_code:       couponApplied ? couponInput.trim().toUpperCase() : null,
             coupon_discount:   couponApplied ? couponDiscount : 0,
+            analytics_device_id: getAnalyticsDeviceId(),
           }),
         }),
         20_000,
@@ -375,6 +376,7 @@ export default function CartSheet({
             customer_name:    deliveryAddress.customerName  || null,
             coupon_code:      couponApplied ? couponInput.trim().toUpperCase() : null,
             coupon_discount:  couponApplied ? couponDiscount : 0,
+            analytics_device_id: getAnalyticsDeviceId(),
           }),
         }),
         25_000,

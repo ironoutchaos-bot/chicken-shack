@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic'
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'node:crypto'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
@@ -59,6 +60,24 @@ function getTodayIST(): string {
   return now.toISOString().slice(0, 10)
 }
 
+async function recordUniqueVisitor(date: string, deviceId: string) {
+  const hash = createHash('sha256').update(deviceId).digest('hex').slice(0, 20)
+  await fetch(
+    `${SUPA_URL()}/rest/v1/settings?on_conflict=key`,
+    {
+      method: 'POST',
+      headers: srvHeaders({
+        Prefer: 'resolution=ignore-duplicates,return=minimal',
+      }),
+      body: JSON.stringify({
+        key: `analytics_event_visit_${date}_${hash}`,
+        value: { deviceId, at: Date.now() },
+      }),
+      signal: AbortSignal.timeout(6_000),
+    },
+  )
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
@@ -91,6 +110,7 @@ export async function POST(req: NextRequest) {
 
     // ── 3. Track today's visits & devices (resets at midnight IST) ────────
     const todayIST  = getTodayIST()
+    await recordUniqueVisitor(todayIST, deviceId).catch(() => {})
     const savedDate = (await getSetting('shop_visits_today_date')) as string | null
     const isNewDay  = savedDate !== todayIST
 

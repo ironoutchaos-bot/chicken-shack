@@ -8,6 +8,7 @@ import { AdminChecking, AdminLoginForm } from '@/app/admin/_hooks/AdminGate'
 
 type Summary = {
   totalRevenue: number
+  currentMonthRevenue?: number
   grossRevenueBeforeDiscounts?: number
   totalDiscounts?: number
   productDiscounts?: number
@@ -278,7 +279,7 @@ export default function AdminAnalyticsPage() {
           <div>
             <p style={S.groupTitle}>Customer Journey</p>
             <p style={S.groupHint}>
-              Unique people during the selected dates. Recorded from this update onward.
+              Checkout results include only tracked attempts from 24 Jul 2026. Sales below come from confirmed orders.
             </p>
           </div>
           <div style={S.cards}>
@@ -305,7 +306,7 @@ export default function AdminAnalyticsPage() {
             <SummaryCard label="Product Discounts" value={fmt(data.summary.productDiscounts ?? 0)} />
             <SummaryCard label="Coupon Discounts"  value={fmt(data.summary.couponDiscounts ?? 0)} />
             <SummaryCard label="Discounted Orders" value={data.summary.discountedOrders ?? 0} />
-            <SummaryCard label="Total Orders"      value={data.summary.totalOrders} />
+            <SummaryCard label="Confirmed Orders"  value={data.summary.totalOrders} />
             <SummaryCard label="Delivered"         value={data.summary.deliveredOrders} />
             <SummaryCard label="Active Orders"     value={data.summary.activeOrders} />
             <SummaryCard label="Cancelled"         value={data.summary.cancelledOrders} />
@@ -315,7 +316,7 @@ export default function AdminAnalyticsPage() {
 
           {/* Revenue Target tracker */}
           <RevenueTarget
-            totalRevenue={data.summary.totalRevenue}
+            totalRevenue={data.summary.currentMonthRevenue ?? 0}
             target={target}
             targetInput={targetInput}
             onInputChange={setTargetInput}
@@ -334,7 +335,7 @@ export default function AdminAnalyticsPage() {
           {/* Payment Breakdown */}
           <PaymentBreakdown items={data.paymentBreakdown} />
 
-          {/* Revenue Last 30 Days */}
+          {/* Delivered revenue for the selected dates */}
           <RevenueChart days={data.revenueByDate} />
 
           {/* Peak Hours */}
@@ -481,7 +482,7 @@ function TopItemsRevenue({ items }: { items: TopItem[] }) {
   const RANK_COLORS = ['#f59e0b', '#6b7280', '#92400e']
 
   return (
-    <SectionBox title="Top Items by Revenue">
+    <SectionBox title="Top Delivered Items by Revenue">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
         {top10.map((item, i) => {
           const pct = Math.round((item.totalRevenue / maxRev) * 100)
@@ -546,7 +547,7 @@ function TopItemsQty({ items }: { items: TopItem[] }) {
   const top5 = [...items].sort((a, b) => b.totalQty - a.totalQty).slice(0, 5)
   const maxQty = top5[0]?.totalQty ?? 1
   return (
-    <SectionBox title="Top Items by Quantity Sold">
+    <SectionBox title="Top Delivered Items by Quantity">
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {top5.map((item, i) => (
           <div key={item.productId} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -596,7 +597,7 @@ function PaymentBreakdown({ items }: { items: PaymentItem[] }) {
   const stats = [
     { label: 'Cash on Delivery', count: cod?.count ?? 0,     rev: cod?.revenue ?? 0,     color: '#16a34a' },
     { label: 'Online (Paid)',     count: online?.count ?? 0,  rev: online?.revenue ?? 0,  color: '#3b82f6' },
-    { label: 'Pending',          count: pending?.count ?? 0, rev: pending?.revenue ?? 0, color: '#f59e0b' },
+    { label: 'Payment Status Pending', count: pending?.count ?? 0, rev: pending?.revenue ?? 0, color: '#f59e0b' },
   ]
 
   return (
@@ -614,18 +615,17 @@ function PaymentBreakdown({ items }: { items: PaymentItem[] }) {
   )
 }
 
-/* ── Revenue Last 30 Days ───────────────────────────────────────── */
+/* ── Delivered revenue by date ──────────────────────────────────── */
 
 function RevenueChart({ days }: { days: RevenueDay[] }) {
-  const recent = days.slice(-30)
-  const maxRev = Math.max(...recent.map(d => d.revenue), 1)
+  const maxRev = Math.max(...days.map(d => d.revenue), 1)
   const BAR_HEIGHT = 120
 
   return (
-    <SectionBox title="Revenue — Last 30 Days">
+    <SectionBox title="Delivered Revenue by Date">
       <div style={{ overflowX: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: BAR_HEIGHT + 28, minWidth: recent.length * 18 }}>
-          {recent.map((d, i) => {
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: BAR_HEIGHT + 28, minWidth: days.length * 18 }}>
+          {days.map((d, i) => {
             const ratio = d.revenue / maxRev
             const showLabel = i % 5 === 0
             const label = d.date.slice(5) // MM-DD
@@ -662,7 +662,7 @@ function PeakHoursChart({ hours }: { hours: PeakHour[] }) {
   const BAR_HEIGHT = 60
 
   return (
-    <SectionBox title="Peak Hours (Orders by Hour)">
+    <SectionBox title="Confirmed Orders by Hour (IST)">
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: BAR_HEIGHT + 24 }}>
         {filled.map(h => {
           const ratio = h.orderCount / max
@@ -696,7 +696,7 @@ function AvgByDayChart({ days }: { days: DayAvg[] }) {
   const BAR_HEIGHT = 80
 
   return (
-    <SectionBox title="Avg Order Value by Day of Week">
+    <SectionBox title="Delivered Avg Order Value by Day">
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: BAR_HEIGHT + 32 }}>
         {sorted.map(d => {
           const ratio = d.avg / max
@@ -732,7 +732,7 @@ function PincodeDemand({ items }: { items: PincodeItem[] }) {
   const max = Math.max(...top10.map(p => p.orderCount), 1)
 
   return (
-    <SectionBox title="Demand by Pincode">
+    <SectionBox title="Delivered Sales by Pincode">
       {top10.length === 0 ? (
         <p style={{ margin: 0, fontSize: '0.875rem', color: '#9ca3af' }}>No pincode data available yet.</p>
       ) : (

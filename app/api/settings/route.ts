@@ -42,7 +42,12 @@ export async function GET() {
     const rows: { key: string; value: unknown }[] = await res.json()
     if (!Array.isArray(rows) || rows.length === 0) return NextResponse.json(DEFAULTS)
 
-    const settings = { ...DEFAULTS, ...flatten(rows) }
+    const publicRows = rows.filter(row =>
+      !row.key.startsWith('analytics_') &&
+      row.key !== 'shop_device_ids' &&
+      row.key !== 'shop_device_ids_today'
+    )
+    const settings = { ...DEFAULTS, ...flatten(publicRows) }
 
     // If auto-schedule is enabled, override store_open with time-based value
     if (settings.auto_schedule) {

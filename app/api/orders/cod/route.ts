@@ -142,6 +142,12 @@ export async function POST(req: NextRequest) {
 
   const deliveryAddressCheck = validateDeliveryAddressForZone(body.delivery_address)
   if (!deliveryAddressCheck.ok) return deliveryAddressCheck.response
+  const analyticsDeviceId = typeof body.analytics_device_id === 'string'
+    ? body.analytics_device_id.slice(0, 64)
+    : null
+  const deliveryAddress = analyticsDeviceId
+    ? { ...deliveryAddressCheck.address, analyticsDeviceId }
+    : deliveryAddressCheck.address
 
   // ── Fetch live settings for coupon validation + delivery fee ──────────────
   let settings: Record<string, unknown> = {}
@@ -271,7 +277,7 @@ export async function POST(req: NextRequest) {
     total_amount:     verifiedTotal,
     payment_status:   payment_status ?? 'cod',
     order_status:     'placed',
-    delivery_address: deliveryAddressCheck.address,
+    delivery_address: deliveryAddress,
     notes:            body.notes            ?? null,
     customer_phone:   body.customer_phone   ?? null,
     customer_name:    body.customer_name    ?? null,
