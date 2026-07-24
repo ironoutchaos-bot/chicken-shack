@@ -25,6 +25,23 @@ const STATUS_COLOR: Record<OrderRow['order_status'], string> = {
 
 type OrdersFilter = 'active' | 'delivered' | 'all' | 'deleted'
 
+const MONTH_OPTIONS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+]
+
+function indiaYearMonth(value: string | Date) {
+  const parts = new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(typeof value === 'string' ? new Date(value) : value)
+  return {
+    year: Number(parts.find(part => part.type === 'year')?.value ?? 0),
+    month: Number(parts.find(part => part.type === 'month')?.value ?? 0),
+  }
+}
+
 function isDeletedOrder(order: OrderRow) {
   return order.delivery_address?.adminDeleted === true || Boolean(order.delivery_address?.adminDeletedAt)
 }
@@ -51,6 +68,9 @@ export default function AdminOrdersPage() {
   const [selected,  setSelected]  = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<OrderRow['order_status']>('placed')
   const [bulkUpdating, setBulkUpdating] = useState(false)
+  const currentPeriod = indiaYearMonth(new Date())
+  const [exportMonth, setExportMonth] = useState(currentPeriod.month)
+  const [exportYear, setExportYear] = useState(currentPeriod.year)
 
   const supabase = getSupabaseBrowser()
 
@@ -304,6 +324,11 @@ export default function AdminOrdersPage() {
       )
     : baseDisplayed
 
+  const exportYears = Array.from(new Set([
+    currentPeriod.year,
+    ...orders.map(order => indiaYearMonth(order.created_at).year).filter(Boolean),
+  ])).sort((a, b) => b - a)
+
   function toggleSelected(id: string) {
     setSelected(prev => {
       const next = new Set(prev)
@@ -333,6 +358,7 @@ export default function AdminOrdersPage() {
   }
 
   function exportCSV() {
+    setOrderError(null)
     const exportBase = filter === 'active'
       ? activeOrders
       : filter === 'delivered'
@@ -340,12 +366,23 @@ export default function AdminOrdersPage() {
       : filter === 'deleted'
       ? deletedOrders
       : normalOrders
+    const periodOrders = exportBase.filter(order => {
+      const period = indiaYearMonth(order.created_at)
+      return period.year === exportYear && period.month === exportMonth
+    })
     const toExport = search.trim()
-      ? exportBase.filter(o =>
+      ? periodOrders.filter(o =>
           o.customer_phone?.includes(search) ||
+          o.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
+          o.delivery_address?.customerName?.toLowerCase().includes(search.toLowerCase()) ||
           o.id.slice(0, 8).toUpperCase().includes(search.toUpperCase())
         )
-      : exportBase
+      : periodOrders
+    if (toExport.length === 0) {
+      const viewName = filter.charAt(0).toUpperCase() + filter.slice(1)
+      setOrderError(`No ${viewName} orders found for ${MONTH_OPTIONS[exportMonth - 1]} ${exportYear}.`)
+      return
+    }
     const rows = [
       ['Order ID', 'Date', 'Customer Name', 'Customer Phone', 'Status', 'Payment', 'Total (₹)', 'Items', 'Address', 'Notes'],
       ...toExport.map(o => {
@@ -358,7 +395,7 @@ export default function AdminOrdersPage() {
         const nameStr  = o.customer_name ?? addr?.customerName ?? ''
         return [
           o.id.slice(0, 8).toUpperCase(),
-          new Date(o.created_at).toLocaleString('en-IN'),
+          new Date(o.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
           nameStr,
           o.customer_phone ?? '',
           o.order_status,
@@ -371,11 +408,12 @@ export default function AdminOrdersPage() {
       }),
     ]
     const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')
     a.href     = url
-    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`
+    const monthKey = String(exportMonth).padStart(2, '0')
+    a.download = `${filter}-orders-${exportYear}-${monthKey}.csv`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -415,7 +453,7 @@ export default function AdminOrdersPage() {
             {loading ? '⏳ Loading…' : `${activeOrders.length} active · ${deliveredOrders.length} delivered · ${normalOrders.length} total · ${deletedOrders.length} deleted`}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           <div style={S.filterGroup}>
             {([
               { key: 'active',    label: 'Active' },
@@ -429,7 +467,31 @@ export default function AdminOrdersPage() {
               </button>
             ))}
           </div>
-          <button onClick={exportCSV}   style={S.refreshBtn}>⬇ Export CSV</button>
+          <div style={S.exportPeriod}>
+            <select
+              value={exportMonth}
+              onChange={e => setExportMonth(Number(e.target.value))}
+              aria-label="Export month"
+              style={S.exportSelect}
+            >
+              {MONTH_OPTIONS.map((month, index) => (
+                <option key={month} value={index + 1}>{month}</option>
+              ))}
+            </select>
+            <select
+              value={exportYear}
+              onChange={e => setExportYear(Number(e.target.value))}
+              aria-label="Export year"
+              style={S.exportSelect}
+            >
+              {exportYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+          <button onClick={exportCSV} style={S.refreshBtn}>
+            ⬇ Export {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)} CSV
+          </button>
           <button onClick={() => loadOrders(true)} style={S.refreshBtn}>↻ Refresh</button>
         </div>
       </div>
@@ -817,6 +879,8 @@ const S: Record<string, React.CSSProperties> = {
   filterGroup: { display: 'flex', border: '1.5px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' },
   filterBtn:   { background: 'transparent', border: 'none', padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', color: '#6b5744', fontWeight: 500 },
   filterActive:{ background: '#1a1109', color: '#fff' },
+  exportPeriod:{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' },
+  exportSelect:{ background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '0.4rem 0.6rem', fontSize: '0.8125rem', color: '#4b3528', outline: 'none', minHeight: 34 },
   refreshBtn:  { background: 'transparent', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '0.4rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem', color: '#6b5744' },
   empty:       { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 1rem', gap: 12 },
   table:       { display: 'flex', flexDirection: 'column', gap: '0.875rem' },
