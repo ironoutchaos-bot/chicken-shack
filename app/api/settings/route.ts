@@ -106,6 +106,7 @@ const DEFAULTS: Record<string, unknown> = {
   out_of_stock:                false, // global "out of stock — order for morning delivery" banner
   product_order:               [],    // custom display order on the order page (array of product ids)
   product_units:               {},    // per-product display unit: { [id]: 'pc' | 'g' | 'kg' }
+  supplier_rate:               160,   // current raw chicken supplier rate per kg
   auto_schedule:               true,  // auto open 7:00 AM – close 7:00 PM IST
   min_order_amount:            0,
   delivery_fee:                0,

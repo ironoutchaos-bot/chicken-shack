@@ -33,6 +33,11 @@ export default function AdminInventoryPage() {
   const [addOpen,   setAddOpen]   = useState(false)
   const [deleteId,  setDeleteId]  = useState<string | null>(null)
   const [threshold, setThreshold] = useState(10)
+  const [supplierRate, setSupplierRate] = useState(160)
+  const [supplierRateInput, setSupplierRateInput] = useState('160')
+  const [savingSupplierRate, setSavingSupplierRate] = useState(false)
+  const [supplierRateMessage, setSupplierRateMessage] = useState('')
+  const [supplierRateError, setSupplierRateError] = useState('')
 
   // Display-order arrangement (stored in settings.product_order)
   const [order,       setOrder]       = useState<string[]>([])
@@ -57,6 +62,12 @@ export default function AdminInventoryPage() {
       const ids = prods.map(p => p.id)
       setOrder([...saved.filter(id => ids.includes(id)), ...ids.filter(id => !saved.includes(id))])
       setUnits(settings.product_units && typeof settings.product_units === 'object' ? settings.product_units : {})
+      const currentSupplierRate = Number(settings.supplier_rate)
+      const validSupplierRate = Number.isFinite(currentSupplierRate) && currentSupplierRate > 0
+        ? currentSupplierRate
+        : 160
+      setSupplierRate(validSupplierRate)
+      setSupplierRateInput(String(validSupplierRate))
     } catch {} finally { setLoading(false) }
   }
 
@@ -131,6 +142,43 @@ export default function AdminInventoryPage() {
     } finally { setSaving(null) }
   }
 
+  async function updateAllPricesFromSupplierRate() {
+    const nextRate = Number(supplierRateInput)
+    setSupplierRateMessage('')
+    setSupplierRateError('')
+    if (!Number.isFinite(nextRate) || nextRate <= 0) {
+      setSupplierRateError('Enter a valid supplier rate')
+      return
+    }
+
+    setSavingSupplierRate(true)
+    try {
+      const response = await fetch('/api/admin/supplier-rate', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supplier_rate: nextRate }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setSupplierRateError(data.error ?? 'Could not update product prices')
+        return
+      }
+
+      if (Array.isArray(data.products)) setProducts(data.products)
+      setSupplierRate(nextRate)
+      setSupplierRateInput(String(nextRate))
+      setSupplierRateMessage(
+        Math.abs(nextRate - supplierRate) < 0.001
+          ? 'Prices are already set for this supplier rate.'
+          : `All product prices updated for ₹${nextRate}/kg.`,
+      )
+    } catch {
+      setSupplierRateError('Network error. Prices were not changed.')
+    } finally {
+      setSavingSupplierRate(false)
+    }
+  }
+
   async function addProduct(p: Omit<Product, 'category' | 'image_url'> & { image_url: string | null }) {
     setSaving('new')
     try {
@@ -201,6 +249,55 @@ export default function AdminInventoryPage() {
           <button onClick={() => setAddOpen(true)} style={S.addBtn}>+ Add Product</button>
         </div>
       </div>
+
+      <section style={S.supplierCard}>
+        <div>
+          <p style={S.supplierEyebrow}>Today&apos;s Supplier Rate</p>
+          <h2 style={S.supplierTitle}>Update every product price</h2>
+          <p style={S.supplierText}>
+            Current rate: <strong>₹{supplierRate}/kg</strong>. Product prices change proportionally; discounts and stock stay unchanged.
+          </p>
+        </div>
+        <div style={S.supplierAction}>
+          <label style={S.supplierLabel}>
+            Rate per kg
+            <span style={S.supplierInputWrap}>
+              <span style={S.supplierCurrency}>₹</span>
+              <input
+                type="number"
+                min={1}
+                max={10000}
+                step="0.01"
+                value={supplierRateInput}
+                onChange={event => setSupplierRateInput(event.target.value)}
+                onKeyDown={event => {
+                  if (event.key === 'Enter') updateAllPricesFromSupplierRate()
+                }}
+                style={S.supplierInput}
+              />
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={updateAllPricesFromSupplierRate}
+            disabled={savingSupplierRate}
+            style={{
+              ...S.supplierButton,
+              opacity: savingSupplierRate ? 0.65 : 1,
+            }}
+          >
+            {savingSupplierRate ? 'Updating prices…' : 'Update All Prices'}
+          </button>
+        </div>
+        {(supplierRateMessage || supplierRateError) && (
+          <p style={{
+            ...S.supplierMessage,
+            color: supplierRateError ? '#b91c1c' : '#166534',
+          }}>
+            {supplierRateError || supplierRateMessage}
+          </p>
+        )}
+      </section>
 
       {/* Out of stock banner */}
       {outOfStock.length > 0 && (
@@ -597,6 +694,18 @@ const S: Record<string, React.CSSProperties> = {
   addBtn:       { background: '#1a1109', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 0.875rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.8125rem' },
   hint:         { background: '#fff8ed', border: '1px solid #fed7aa', borderRadius: 12, padding: '1.25rem', color: '#92400e', fontWeight: 500 },
   grid:         { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' },
+
+  supplierCard: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'end', gap: '1rem 1.5rem', background: '#fff8ed', border: '1.5px solid #f59e0b', borderRadius: 12, padding: '1rem 1.125rem', marginBottom: '1rem' },
+  supplierEyebrow: { margin: '0 0 4px', color: '#b45309', fontSize: '0.6875rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' },
+  supplierTitle: { margin: 0, color: '#1a1109', fontSize: '1rem', fontWeight: 800 },
+  supplierText: { margin: '5px 0 0', color: '#6b5744', fontSize: '0.8125rem', lineHeight: 1.45 },
+  supplierAction: { display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' },
+  supplierLabel: { display: 'flex', flex: '1 1 150px', flexDirection: 'column', gap: 4, color: '#6b5744', fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' },
+  supplierInputWrap: { display: 'flex', alignItems: 'center', minHeight: 44, background: '#fff', border: '1.5px solid #d97706', borderRadius: 8, overflow: 'hidden' },
+  supplierCurrency: { paddingLeft: 12, color: '#92400e', fontSize: '1rem', fontWeight: 800 },
+  supplierInput: { width: '100%', minWidth: 0, border: 'none', outline: 'none', background: 'transparent', padding: '0.65rem 0.75rem 0.65rem 0.4rem', color: '#1a1109', fontSize: '1rem', fontWeight: 800 },
+  supplierButton: { flex: '1 1 170px', minHeight: 44, border: 'none', borderRadius: 8, background: '#1a1109', color: '#fff', padding: '0.65rem 1rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 800, whiteSpace: 'nowrap' },
+  supplierMessage: { gridColumn: '1 / -1', margin: 0, fontSize: '0.8125rem', fontWeight: 700 },
 
   orderCard:    { background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12, marginBottom: '1rem', overflow: 'hidden' },
   orderToggle:  { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'transparent', border: 'none', padding: '0.875rem 1rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 700, color: '#1a1109' },
