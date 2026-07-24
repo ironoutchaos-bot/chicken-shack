@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Script from "next/script";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
   Clock,
@@ -19,8 +19,8 @@ import {
   Smartphone,
   Bike,
   History,
-  LogIn,
   LogOut,
+  UserRound,
 } from "lucide-react";
 import type { CartItem, ProductRow } from "@/lib/supabase-browser";
 import type { AuthUser } from "@/lib/auth-types";
@@ -82,11 +82,26 @@ nav{
 .nav-r a:hover{color:var(--p);}
 .nav-btn{background:linear-gradient(135deg,var(--p2),var(--p),var(--pd));color:#fff;border:none;padding:.92rem 2.15rem;font-family:var(--font-space-grotesk), sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all .2s;border-radius:9999px;box-shadow:0 14px 36px rgba(95,7,155,.55),0 8px 22px rgba(115,8,176,.26);}
 .nav-btn:hover{background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;box-shadow:0 10px 34px rgba(206,246,33,.28),0 16px 36px rgba(95,7,155,.44);}
-.nav-orders-btn{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;letter-spacing:.04em;color:var(--p);text-decoration:none;text-transform:uppercase;transition:color .2s;font-weight:600;font-family:var(--font-space-grotesk), sans-serif;cursor:pointer;}
+.nav-orders-btn{display:inline-flex;align-items:center;gap:6px;padding:0;background:transparent;border:0;font-size:.8rem;letter-spacing:.04em;color:var(--p);text-decoration:none;text-transform:uppercase;transition:color .2s;font-weight:600;font-family:var(--font-space-grotesk), sans-serif;cursor:pointer;white-space:nowrap;}
 .nav-orders-btn:hover{color:var(--pl);}
-.nav-auth-btn{background:rgba(123,31,208,0.06);border:1.5px solid rgba(123,31,208,0.18);color:var(--p);width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;margin-left:0.5rem;}.nav-auth-btn:hover{background:var(--p);color:#fff;border-color:var(--p);}@media(max-width:900px){.nav-auth-btn{width:30px;height:30px;margin-left:0.3rem;}}
-.nav-orders-btn.active{color:var(--g);}
-@media(max-width:900px){.nav-orders-btn{display:none !important;}}
+.nav-auth-btn{position:relative;background:rgba(123,31,208,0.06);border:1.5px solid rgba(123,31,208,0.18);color:var(--p);width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;margin-left:0.5rem;}
+.nav-auth-btn:hover{background:var(--p);color:#fff;border-color:var(--p);}
+.nav-auth-btn.signed-in::after{content:'';position:absolute;right:-1px;bottom:0;width:9px;height:9px;border-radius:50%;background:var(--g);border:2px solid var(--cream);}
+.nav-profile-wrap{position:relative;display:flex;align-items:center;}
+.nav-profile-menu{position:absolute;right:0;top:calc(100% + 12px);width:230px;padding:.65rem;background:#fff;border:1px solid rgba(95,7,155,.14);border-radius:8px;box-shadow:0 18px 42px rgba(57,13,84,.2);color:var(--ink);text-align:left;}
+.nav-profile-summary{padding:.55rem .65rem .7rem;border-bottom:1px solid rgba(95,7,155,.1);margin-bottom:.35rem;}
+.nav-profile-summary strong,.nav-profile-summary span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nav-profile-summary strong{font-size:.82rem;}
+.nav-profile-summary span{font-size:.7rem;color:#806f67;margin-top:.2rem;}
+.nav-profile-action{width:100%;display:flex;align-items:center;gap:.6rem;padding:.68rem .65rem;border:0;border-radius:6px;background:transparent;color:var(--p);font:700 .72rem var(--font-space-grotesk),sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;}
+.nav-profile-action:hover{background:rgba(95,7,155,.07);}
+.nav-profile-action.sign-out{color:#a72b2b;}
+@media(max-width:900px){
+  .nav-orders-btn{width:34px;height:34px;border:1.5px solid rgba(123,31,208,.18);border-radius:50%;align-items:center;justify-content:center;background:rgba(123,31,208,.06);}
+  .nav-orders-label{display:none;}
+  .nav-auth-btn{width:34px;height:34px;margin-left:0;}
+  .nav-profile-menu{position:fixed;right:1rem;top:78px;width:min(230px,calc(100vw - 2rem));}
+}
 #prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--g),var(--p));z-index:600;transition:width .05s linear;width:0%;}
 #hero{min-height:auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:5.9rem 2rem 1rem;background:radial-gradient(circle at 50% 43%,rgba(132,19,190,.38) 0%,rgba(115,8,176,.28) 32%,rgba(96,7,157,0) 68%),linear-gradient(180deg,#60079d 0%,#6908a7 48%,#7308b0 100%);position:relative;overflow:hidden;text-align:center;}
 #hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 47%,rgba(255,255,255,.07) 0%,rgba(255,255,255,.03) 28%,transparent 62%),linear-gradient(90deg,rgba(38,0,78,.38),transparent 30%,transparent 70%,rgba(38,0,78,.42));pointer-events:none;z-index:0;}
@@ -1474,13 +1489,14 @@ const testimonials = [
   },
 ];
 export default function Home() {
-  const pathname = usePathname();
-  const isOrderPage = pathname === "/order";
+  const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loginOpen, setLoginOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const ordersAfterLoginRef = useRef(false);
   const testimonialRef = useRef<HTMLDivElement>(null);
   const [pincode, setPincode] = useState<string | null>(null);
   const [, setAreaName] = useState("");
@@ -1910,11 +1926,22 @@ export default function Home() {
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+      setProfileMenuOpen(false);
       setUser(null);
       setCart([]);
     } catch (err) {
       console.error("Logout failed:", err);
     }
+  };
+
+  const openOrders = () => {
+    setProfileMenuOpen(false);
+    if (user) {
+      router.push("/order-history?tab=current");
+      return;
+    }
+    ordersAfterLoginRef.current = true;
+    setLoginOpen(true);
   };
 
   const goOrder = () => {
@@ -2033,35 +2060,56 @@ export default function Home() {
           <a href="#process">Process</a>
           <a href="#menu">Menu</a>
           <a href="tel:+917012488951">Call</a>
-          {user && (
-            <Link
-              href="/order-history"
-              className={`nav-orders-btn ${isOrderPage ? "active" : ""}`}
-              title="Your Orders"
-            >
-              <History size={16} />
-              <span>Orders</span>
-            </Link>
-          )}
-          {user ? (
+          <button
+            type="button"
+            className="nav-orders-btn"
+            onClick={openOrders}
+            aria-label="Open your orders"
+            title="Your Orders"
+          >
+            <History size={17} />
+            <span className="nav-orders-label">Orders</span>
+          </button>
+          <div className="nav-profile-wrap">
             <button
-              className="nav-auth-btn"
-              onClick={handleLogout}
-              aria-label="Logout"
-              title="Logout"
+              type="button"
+              className={`nav-auth-btn${user ? " signed-in" : ""}`}
+              onClick={
+                user
+                  ? () => setProfileMenuOpen((open) => !open)
+                  : () => setLoginOpen(true)
+              }
+              aria-label={user ? "Open customer profile" : "Customer login"}
+              aria-expanded={user ? profileMenuOpen : undefined}
+              title={user ? "Customer profile" : "Customer login"}
             >
-              <LogOut size={18} strokeWidth={2.2} />
+              <UserRound size={19} strokeWidth={2.2} />
             </button>
-          ) : (
-            <button
-              className="nav-auth-btn"
-              onClick={() => setLoginOpen(true)}
-              aria-label="Login"
-              title="Login"
-            >
-              <LogIn size={18} strokeWidth={2.2} />
-            </button>
-          )}
+            {user && profileMenuOpen && (
+              <div className="nav-profile-menu">
+                <div className="nav-profile-summary">
+                  <strong>{user.name || "B'LURU Fresh Customer"}</strong>
+                  <span>+91 {user.phone}</span>
+                </div>
+                <button
+                  type="button"
+                  className="nav-profile-action"
+                  onClick={openOrders}
+                >
+                  <History size={16} />
+                  My Orders
+                </button>
+                <button
+                  type="button"
+                  className="nav-profile-action sign-out"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  Sign out
+                </button>
+              </div>
+            )}
+          </div>
           <button
             className="nav-btn"
             onClick={goOrder}
@@ -2155,23 +2203,14 @@ export default function Home() {
               >
                 Watch ↓
               </button>
-              {user ? (
-                <Link
-                  href="/order-history"
-                  className="btn-fill mobile-orders-cta"
-                >
-                  <History size={16} aria-hidden="true" />
-                  <span>Orders</span>
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  className="btn-line mobile-watch-cta"
-                  onClick={goStory}
-                >
-                  Watch ↓
-                </button>
-              )}
+              <button
+                type="button"
+                className="btn-fill mobile-orders-cta"
+                onClick={openOrders}
+              >
+                <History size={16} aria-hidden="true" />
+                <span>My Orders</span>
+              </button>
             </div>
 
             {/* Redesigned highlighted manifesto & 4 circular items grid */}
@@ -2989,10 +3028,17 @@ export default function Home() {
 
       <LoginDrawer
         open={loginOpen}
-        onClose={() => setLoginOpen(false)}
+        onClose={() => {
+          ordersAfterLoginRef.current = false;
+          setLoginOpen(false);
+        }}
         onSuccess={(u) => {
           setUser(u);
           setLoginOpen(false);
+          if (ordersAfterLoginRef.current) {
+            ordersAfterLoginRef.current = false;
+            router.push("/order-history?tab=current");
+          }
         }}
       />
 
