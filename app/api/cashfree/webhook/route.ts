@@ -16,6 +16,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
 import { notifyAllDrivers } from '@/lib/push-notify'
+import { sendOrderConfirmationOnce, summarizeItems } from '@/lib/aisensy'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
@@ -27,6 +28,31 @@ function srvHeaders(extra?: Record<string, string>) {
     'Content-Type':  'application/json',
     ...extra,
   }
+}
+
+type WebhookOrder = {
+  id: string
+  customer_phone?: string | null
+  customer_name?: string | null
+  items?: unknown
+  total_amount?: number | null
+  delivery_address?: unknown
+}
+
+// Safety net for the customer's WhatsApp order confirmation. sendOrderConfirmationOnce
+// de-duplicates against the order row, so this is a no-op when the return-URL
+// flow already sent the message.
+async function sendConfirmation(order: WebhookOrder) {
+  if (!order?.id || !order.customer_phone) return
+  await sendOrderConfirmationOnce({
+    phone: order.customer_phone,
+    name: order.customer_name || 'Customer',
+    orderId: order.id,
+    itemsText: summarizeItems(order.items),
+    total: order.total_amount ?? 0,
+    paymentMode: 'PREPAID',
+    address: order.delivery_address,
+  })
 }
 
 export async function POST(req: NextRequest) {
@@ -84,7 +110,7 @@ export async function POST(req: NextRequest) {
   try {
     // Find the order by cashfree_order_id (stored in razorpay_order_id column)
     const findRes = await fetch(
-      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cfOrderId)}&select=id,payment_status,order_status`,
+      `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cfOrderId)}&select=id,payment_status,order_status,customer_phone,customer_name,items,total_amount,delivery_address`,
       { headers: srvHeaders() }
     )
 
@@ -94,7 +120,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'DB error' }, { status: 500 })
     }
 
-    const rows = await findRes.json() as { id: string; payment_status: string; order_status?: string | null }[]
+    const rows = await findRes.json() as (WebhookOrder & { payment_status: string; order_status?: string | null })[]
 
     if (!rows.length) {
       // Order not found — could mean the user was redirected back and created the
@@ -109,6 +135,7 @@ export async function POST(req: NextRequest) {
     // Idempotency guard — already marked paid (by return-URL flow or previous webhook)
     if (dbOrder.payment_status === 'paid') {
       console.log('[cashfree/webhook] Order already paid, skipping:', dbOrder.id)
+      await sendConfirmation(dbOrder)
       return NextResponse.json({ ok: true })
     }
 
@@ -143,6 +170,8 @@ export async function POST(req: NextRequest) {
     if (dbOrder.order_status !== 'delivered' && dbOrder.order_status !== 'cancelled') {
       notifyAllDrivers(dbOrder.id).catch(() => {})
     }
+
+    await sendConfirmation(dbOrder)
 
     return NextResponse.json({ ok: true })
   } catch (err) {
