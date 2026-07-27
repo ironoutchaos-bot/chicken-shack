@@ -30,15 +30,15 @@ function srvHeaders(extra?: Record<string, string>) {
 }
 
 // AiSensy expects the number in international format with the country code and
-// no leading '+', matching the sample payload under Dashboard > Test Campaign
-// (e.g. 919876543210). Checkout stores a bare 10-digit Indian mobile, so the 91
-// country code is added here. Returns '' if the number is unusable.
+// a leading '+' (e.g. +919876543210) - confirmed with AiSensy support. Checkout
+// stores a bare 10-digit Indian mobile, so the 91 country code is added here.
+// Returns '' if the number is unusable.
 function normalizePhone(raw: string): string {
   let digits = (raw || '').replace(/\D/g, '')
   if (digits.length === 11 && digits.charAt(0) === '0') digits = digits.slice(1)
   if (digits.length === 10) digits = '91' + digits
   if (digits.length < 11) return ''
-  return digits
+  return '+' + digits
 }
 
 // WhatsApp rejects template parameters that are empty or contain newlines, tabs
