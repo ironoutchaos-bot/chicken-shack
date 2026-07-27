@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { notifyDriverAssignment } from '@/lib/push-notify'
+import { sendOrderConfirmationOnce, summarizeItems } from '@/lib/aisensy'
 import { isAdminRequest } from '@/app/api/admin/login/route'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
@@ -55,6 +56,21 @@ export async function POST(req: NextRequest) {
   // Notify driver if auto-assigned by trigger
   if (updated?.driver_id && updated?.id) {
     notifyDriverAssignment(updated.driver_id, updated.id).catch(() => {})
+  }
+
+  // Same WhatsApp confirmation the customer would have received automatically.
+  // sendOrderConfirmationOnce de-duplicates, so a manual confirm can never send
+  // a second copy of a message that already went out.
+  if (updated?.id && updated?.customer_phone) {
+    await sendOrderConfirmationOnce({
+      phone: updated.customer_phone,
+      name: updated.customer_name || 'Customer',
+      orderId: updated.id,
+      itemsText: summarizeItems(updated.items),
+      total: updated.total_amount ?? 0,
+      paymentMode: 'PREPAID',
+      address: updated.delivery_address,
+    })
   }
 
   return NextResponse.json({ ok: true, order: updated })
