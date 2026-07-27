@@ -23,7 +23,7 @@ import { cookies } from 'next/headers'
 import { sessionOptions, type SessionData } from '@/lib/session'
 import { type Coupon } from '@/app/api/coupons/route'
 import { notifyDriverAssignment, notifyAllDrivers } from '@/lib/push-notify'
-import { sendOrderConfirmation, summarizeItems } from '@/lib/aisensy'
+import { sendOrderConfirmationOnce, summarizeItems } from '@/lib/aisensy'
 import { ALLOWED_DELIVERY_PINCODES, checkDeliveryZone, isAllowedDeliveryPincode, normalizePincode } from '@/lib/delivery-zone'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
@@ -336,7 +336,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (order?.id && order.customer_phone && (order.payment_status === 'cod' || order.payment_status === 'paid')) {
-      sendOrderConfirmation({
+      await sendOrderConfirmationOnce({
         phone: order.customer_phone,
         name: order.customer_name || 'Customer',
         orderId: order.id,
@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
         total: order.total_amount,
         paymentMode: order.payment_status === 'cod' ? 'COD' : 'PREPAID',
         address: order.delivery_address,
-      }).catch((err) => console.error('[aisensy] order confirmation failed', err))
+      })
     }
 
     return NextResponse.json({ id: order.id }, { status: 201 })
@@ -462,12 +462,13 @@ export async function PATCH(req: NextRequest) {
       items?: unknown
       coupon_code?: string | null
       razorpay_order_id?: string | null
+      delivery_address?: unknown
     } | null = null
 
     // Fetch the updated order to check if DB trigger auto-assigned a driver
     try {
       const updated = await fetch(
-        `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,driver_id,order_status,total_amount,items,coupon_code,razorpay_order_id`,
+        `${SUPA_URL()}/rest/v1/orders?razorpay_order_id=eq.${encodeURIComponent(cashfree_order_id as string)}&select=id,driver_id,order_status,total_amount,items,coupon_code,razorpay_order_id,delivery_address`,
         { headers: srvHeaders() }
       )
       if (updated.ok) {
@@ -482,14 +483,15 @@ export async function PATCH(req: NextRequest) {
     } catch { /* notification is best-effort */ }
 
     if (payment_status === 'paid' && previousOrder?.customer_phone) {
-      sendOrderConfirmation({
+      await sendOrderConfirmationOnce({
         phone: previousOrder.customer_phone,
         name: previousOrder.customer_name || 'Customer',
         orderId: (confirmedOrder?.id ?? previousOrder.id) as string,
         itemsText: summarizeItems(confirmedOrder?.items),
         total: confirmedOrder?.total_amount ?? 0,
         paymentMode: 'PREPAID',
-      }).catch((err) => console.error('[aisensy] order confirmation failed', err))
+        address: confirmedOrder?.delivery_address,
+      })
     }
 
     return NextResponse.json({ ok: true, order: confirmedOrder })
