@@ -265,12 +265,33 @@ nav{
   font-size: 1.12em;
 }
 .hero-manifesto-proof {
-  display: block;
-  margin-top: 0.45rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 2rem;
+  width: min(100%, 620px);
+  margin: 0.9rem auto 0;
+  padding: 0;
+  list-style: none;
+}
+.hero-manifesto-proof li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   color: var(--p);
   font-weight: 900;
+  font-size: 0.72rem;
   letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-align: left;
   text-transform: uppercase;
+}
+.hero-manifesto-proof li::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--g);
 }
 .hero-manifesto-grid {
   display: grid;
@@ -446,7 +467,7 @@ footer > *{position:relative;z-index:1;}
 
 .fo-sub{
   font-family:var(--font-space-grotesk), sans-serif;
-  font-size:.58rem;
+  font-size:.68rem;
   font-weight:800;
   line-height:1.1;
   letter-spacing:.03em;
@@ -531,7 +552,7 @@ footer > *{position:relative;z-index:1;}
   .float-order:hover{transform:translateY(-2px);}
   .fo-icon{width:34px;height:34px;flex-basis:34px;}
   .fo-main{font-size:.76rem;}
-  .fo-sub{font-size:.5rem;}
+  .fo-sub{font-size:.6rem;}
   .ti{font-size:.62rem;}
   .sf-heading{font-size:clamp(1.8rem,9vw,3.5rem);}
   .sf-spicy{font-size:clamp(2rem,9vw,4rem);}
@@ -540,7 +561,10 @@ footer > *{position:relative;z-index:1;}
   .hero-manifesto-wrap{margin:2.5rem auto 0;padding:0 0.5rem;}
   #why.hero-manifesto-wrap{padding:0 0.5rem;}
   .hero-manifesto-title{font-size:clamp(1.15rem, 5.5vw, 1.65rem);padding:0;margin-bottom:1.8rem;line-height:1.2;background:transparent;border:none;box-shadow:none;}
-  .hero-manifesto-desc{font-size:0.78rem;margin-bottom:1.5rem;max-width:100%;}
+  .hero-manifesto-desc{font-size:0.78rem;margin-bottom:1rem;max-width:100%;}
+  .hero-manifesto-proof{gap:.65rem .9rem;margin-top:.75rem;}
+  .hero-manifesto-proof li{font-size:.58rem;gap:.4rem;}
+  .hero-manifesto-proof li::before{width:6px;height:6px;flex-basis:6px;}
   .hero-manifesto-grid{display:flex;flex-direction:row;justify-content:space-between;gap:0.4rem;}
   .hero-manifesto-item{gap:0.4rem;flex:1;}
   .hmi-circle{width:36px;height:36px;border-radius:10px;border-width:1.2px;}
@@ -1502,6 +1526,7 @@ export default function Home() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [showFloatingOrder, setShowFloatingOrder] = useState(false);
   const ordersAfterLoginRef = useRef(false);
   const testimonialRef = useRef<HTMLDivElement>(null);
   const [pincode, setPincode] = useState<string | null>(null);
@@ -1707,11 +1732,19 @@ export default function Home() {
     // Progress bar
     const prog = document.getElementById("prog");
     const onScroll = () => {
-      if (!prog) return;
-      const h = document.documentElement.scrollHeight - window.innerHeight;
-      prog.style.width = (window.scrollY / h) * 100 + "%";
+      if (prog) {
+        const h = document.documentElement.scrollHeight - window.innerHeight;
+        prog.style.width = (window.scrollY / h) * 100 + "%";
+      }
+
+      const rating = document.querySelector<HTMLElement>(".trust-rating-pill");
+      setShowFloatingOrder(
+        Boolean(rating && rating.getBoundingClientRect().bottom <= window.innerHeight - 24),
+      );
     };
     window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    onScroll();
 
     // Dot nav
     const secIds = ["hero", "scroll-story", "why", "process", "menu"];
@@ -1836,6 +1869,7 @@ export default function Home() {
 
     return () => {
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
     };
   }, []);
 
@@ -2004,7 +2038,7 @@ export default function Home() {
 
       <div id="prog" />
 
-      {!cartOpen && !loginOpen && (
+      {showFloatingOrder && !cartOpen && !loginOpen && (
         <a
           href="#menu"
           className="float-order"
@@ -2146,7 +2180,7 @@ export default function Home() {
           Fresh Chicken Delivery in Bengaluru — Cut After Your Order |
           B&apos;LURU Fresh. Order fresh curry cut, boneless, drumstick &amp;
           wings chicken online in Yelahanka, Bangalore. Zero preservatives,
-          delivered in 60 minutes.
+          delivered in 60–90 minutes.
         </h1>
         <div className="hero-bg-word">FRESH</div>
 
@@ -2204,13 +2238,16 @@ export default function Home() {
                 <br />
                 Ultra-Fresh System
               </div>
-              <p className="hero-manifesto-desc">
+              <div className="hero-manifesto-desc">
                 From Now — <strong>Not frozen. Not stored overnight.</strong>{" "}
-                Cut only after you order. Delivered in 60 minutes.
-                <span className="hero-manifesto-proof">
-                  NO FOUL SMELL . NO SLIMINESS
-                </span>
-              </p>
+                Cut only after you order. Delivered in 60–90 minutes.
+                <ul className="hero-manifesto-proof">
+                  <li>No foul smell</li>
+                  <li>No sliminess</li>
+                  <li>Spend less time cleaning</li>
+                  <li>Your sink smells less</li>
+                </ul>
+              </div>
               {/* <div className="hero-manifesto-grid">
                 {[
                   { Icon: BadgeCheck, label: "FSSAI Licensed" },
@@ -2557,13 +2594,13 @@ export default function Home() {
           {[
             "NO FOUL SMELL",
             "CUT AFTER ORDER",
-            "60 MIN DELIVERY",
+            "60–90 MIN DELIVERY",
             "ZERO PRESERVATIVES",
             "BENGALURU'S FIRST",
             "ULTRA-FRESH SYSTEM",
             "NO FOUL SMELL",
             "CUT AFTER ORDER",
-            "60 MIN DELIVERY",
+            "60–90 MIN DELIVERY",
             "ZERO PRESERVATIVES",
             "BENGALURU'S FIRST",
             "ULTRA-FRESH SYSTEM",
@@ -2648,8 +2685,8 @@ export default function Home() {
               <span className="hp">KITCHEN.</span>
             </h3>
             <p className="sf-sub">
-              Processing → Hygienic Packing → Delivery. In under{" "}
-              <strong>60 minutes.</strong>
+              Processing → Hygienic Packing → Delivery in{" "}
+              <strong>60–90 minutes.</strong>
             </p>
           </div>
 
@@ -2758,8 +2795,8 @@ export default function Home() {
                   />
                 ),
                 title: "Delivered",
-                desc: "At your door in under 60 minutes, guaranteed. No smell. No slime. Just clean, fresh chicken.",
-                tag: "Under 60 Mins",
+                desc: "At your door in 60–90 minutes. No smell. No slime. Just clean, fresh chicken.",
+                tag: "60–90 Mins",
               },
             ].map((s, i) => (
               <div
@@ -2811,7 +2848,7 @@ export default function Home() {
           </button>
         </div>
         <div className="cta-meta rv d4">
-          YELAHANKA · BANGALORE · DELIVERY IN 60 MIN · FSSAI LIC. 11226331000344
+          YELAHANKA · BANGALORE · DELIVERY IN 60–90 MIN · FSSAI LIC. 11226331000344
         </div>
       </section>
 
@@ -2855,7 +2892,7 @@ export default function Home() {
           {[
             {
               q: "Where can I get fresh chicken in Bengaluru?",
-              a: "B'LURU Fresh delivers farm-fresh chicken across Bengaluru — especially Yelahanka and nearby areas. We cut the chicken only after you place your order. Zero stored meat. Order at blurufresh.com and receive delivery within 60 minutes.",
+              a: "B'LURU Fresh delivers farm-fresh chicken across Bengaluru — especially Yelahanka and nearby areas. We cut the chicken only after you place your order. Zero stored meat. Order at blurufresh.com and receive delivery in 60–90 minutes.",
             },
             {
               q: "What makes B'LURU Fresh different from other chicken delivery in Bangalore?",
@@ -2863,7 +2900,7 @@ export default function Home() {
             },
             {
               q: "How quickly does B'LURU Fresh deliver in Bangalore?",
-              a: "We deliver fresh chicken within 60 minutes of placing your order. Cut → packed under sterile conditions → dispatched immediately. The entire process happens in under 60 minutes.",
+              a: "We deliver fresh chicken in 60–90 minutes after you place your order. Cut → packed under sterile conditions → dispatched immediately.",
             },
             {
               q: "Does B'LURU Fresh deliver to Yelahanka?",

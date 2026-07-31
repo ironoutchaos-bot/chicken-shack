@@ -373,7 +373,7 @@ export default function ThankYouPage() {
                   <>
                     Your order is in and we&apos;re already sharpening the knives. Your chicken is being{' '}
                     <strong>cut fresh right now</strong> and delivered in{' '}
-                    <strong>under 60 minutes</strong> across Yelahanka. Track live updates from the Orders page.
+                    <strong>in 60–90 minutes</strong> across Yelahanka. Track live updates from the Orders page.
                   </>
                 )
               : isFailed
@@ -420,7 +420,7 @@ export default function ThankYouPage() {
               <div className="num">Step 03</div>
               <div className="ic">🏍️</div>
               <div className="t">On The Way</div>
-              <div className="d">At your door in under 60 minutes, ultra-fresh.</div>
+              <div className="d">At your door in 60–90 minutes, ultra-fresh.</div>
             </div>
           </div>
 

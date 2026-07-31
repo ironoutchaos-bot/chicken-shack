@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   // ── Keyword-rich title for the ordering page
-  title: "Order Fresh Chicken Online Bengaluru | B'LURU Fresh — Delivered in 60 Min",
+  title: "Order Fresh Chicken Online Bengaluru | B'LURU Fresh — Delivered in 60-90 Min",
 
   description:
-    "Order fresh chicken online in Bengaluru. Curry cut, boneless, drumstick & wings — cut fresh after your order, zero preservatives, delivered in 60 minutes across Yelahanka & Bangalore. FSSAI 11226331000344.",
+    "Order fresh chicken online in Bengaluru. Curry cut, boneless, drumstick & wings — cut fresh after your order, zero preservatives, delivered in 60-90 minutes across Yelahanka & Bangalore. FSSAI 11226331000344.",
 
   keywords: [
     "order fresh chicken bengaluru",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Order Fresh Chicken Online | B'LURU Fresh Bengaluru",
     description:
-      "Curry cut, boneless, drumstick & wings — cut fresh after your order, delivered in 60 minutes across Yelahanka & Bangalore. Zero preservatives.",
+      "Curry cut, boneless, drumstick & wings — cut fresh after your order, delivered in 60-90 minutes across Yelahanka & Bangalore. Zero preservatives.",
     url: 'https://www.blurufresh.com',
     siteName: "B'LURU Fresh",
     type: 'website',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "Order Fresh Chicken Online | B'LURU Fresh Bengaluru",
-    description: "Cut fresh after your order. Delivered in 60 minutes across Yelahanka, Bangalore.",
+    description: "Cut fresh after your order. Delivered in 60-90 minutes across Yelahanka, Bangalore.",
     images: ['https://www.blurufresh.com/assets/raw_chicken_breast.jpg'],
   },
 

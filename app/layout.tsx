@@ -460,7 +460,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   name: "How quickly does B'LURU Fresh deliver chicken in Bangalore?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "B'LURU Fresh delivers fresh chicken within 1 hour of placing your order in Bangalore. We start cutting only after your order is placed, then pack it under hygienic sterile conditions, and dispatch it immediately. The entire process from cut to delivery happens in under 60 minutes.",
+                    text: "B'LURU Fresh delivers fresh chicken in 60-90 minutes after you place your order in Bangalore. We start cutting only after your order is placed, then pack it under hygienic sterile conditions, and dispatch it immediately.",
                   },
                 },
                 {
