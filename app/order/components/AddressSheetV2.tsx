@@ -157,8 +157,8 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
       if (!response.ok || !result) throw new Error('zone check failed')
       setZoneResult(result)
       if (result.pincodeAllowed === false) setMapHint(`Delivery is available only for ${ALLOWED_PINCODES.join(', ')}.`)
-      else if (result.deliverable) setMapHint(`Delivery available. This location is ${result.distanceKm.toFixed(1)} km from our store.`)
-      else setMapHint(`Delivery is not available here. This location is ${result.distanceKm.toFixed(1)} km away.`)
+      else if (result.deliverable) setMapHint('Delivery is available at this location.')
+      else setMapHint('Delivery is not available at this location.')
       return result
     } catch {
       setZoneResult(null)
@@ -401,7 +401,7 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
           <footer className="shrink-0 space-y-2.5 border-t border-stone-100 px-5 pb-[max(env(safe-area-inset-bottom),1rem)] pt-3">
             {step === 'map' && !pinTouched && <Notice text="Search, tap, or move the map to place the pin before continuing." />}
             {step === 'map' && pinTouched && zoneChecking && <Notice text="Checking the delivery area..." loading />}
-            {step === 'map' && pinTouched && zoneResult && !zoneResult.deliverable && <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3"><XCircle size={15} className="mt-0.5 shrink-0 text-red-500" /><div><p className="text-xs font-bold text-red-700">Delivery not available here</p><p className="mt-0.5 text-[11px] text-red-600">{zoneResult.pincodeAllowed === false ? `We deliver only to ${ALLOWED_PINCODES.join(', ')}.` : `This location is ${zoneResult.distanceKm.toFixed(1)} km away. Our radius is ${zoneResult.radiusKm.toFixed(1)} km.`}</p></div></div>}
+            {step === 'map' && pinTouched && zoneResult && !zoneResult.deliverable && <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3"><XCircle size={15} className="mt-0.5 shrink-0 text-red-500" /><div><p className="text-xs font-bold text-red-700">Delivery not available here</p><p className="mt-0.5 text-[11px] text-red-600">{zoneResult.pincodeAllowed === false ? `We deliver only to ${ALLOWED_PINCODES.join(', ')}.` : 'This location is outside our current delivery area.'}</p></div></div>}
             {step === 'map' ? <button type="button" onClick={() => setStep('details')} disabled={!canConfirmPin} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#6510a8] py-4 text-[15px] font-black text-white shadow-lg shadow-purple-700/20 disabled:bg-stone-300 disabled:shadow-none"><CheckCircle2 size={18} />Confirm this location</button> : <button type="button" onClick={handleConfirm} disabled={!canProceed || validating} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-stone-950 py-4 text-[15px] font-black text-white shadow-lg shadow-stone-900/20 disabled:bg-stone-300 disabled:shadow-none">{validating ? <><Loader2 size={18} className="animate-spin" />Checking delivery area...</> : <><CheckCircle2 size={18} />Confirm address &amp; proceed to pay</>}</button>}
           </footer>
         )}
