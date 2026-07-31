@@ -482,6 +482,7 @@ async function tryOpenStreetMapGeocode(queries: string[], body: GeocodeBody): Pr
             lng,
             query,
             displayName: row.display_name ?? '',
+            postalCode: cleanPin(row.address?.postcode),
             provider: 'openstreetmap',
             confidence: score >= 6 ? 'medium' : 'low',
             pincodeMatched: true,

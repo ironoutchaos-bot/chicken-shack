@@ -299,7 +299,7 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
       `}</style>
       <div
         ref={containerRef}
-        className="h-[56vh] min-h-[420px] w-full bg-stone-100"
+        className="h-[46vh] min-h-[350px] max-h-[520px] w-full bg-stone-100 sm:h-[50vh]"
       />
       <div className="bf-pin-target" />
       <div className="bf-pin-shadow" />
