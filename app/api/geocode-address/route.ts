@@ -201,8 +201,8 @@ async function tryGooglePlacesSearch(queries: string[], body: GeocodeBody): Prom
 
   let bestMatch: (GeocodeMatch & { score: number }) | null = null
   const searchQueries = uniq([
-    compact([body.query, body.pincode, 'Bengaluru']).join(', '),
-    compact([body.houseNumber, body.streetAddress, body.landmark, body.pincode, 'Bengaluru']).join(', '),
+    compact([body.query, 'Bengaluru']).join(', '),
+    compact([body.houseNumber, body.streetAddress, body.landmark, 'Bengaluru']).join(', '),
     ...queries,
   ]).slice(0, 3)
 
@@ -263,7 +263,7 @@ async function tryGooglePlacesSearch(queries: string[], body: GeocodeBody): Prom
             lat,
             lng,
             query,
-            displayName: place.formattedAddress ?? place.displayName?.text ?? '',
+            displayName,
             placeId: place.id ?? '',
             postalCode,
             provider: 'google',
