@@ -225,39 +225,37 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
           left: 50%;
           top: 50%;
           z-index: 600;
-          width: 46px;
-          height: 62px;
+          width: 30px;
+          height: 40px;
           transform: translate(-50%, -100%);
-          filter: drop-shadow(0 16px 18px rgba(0,0,0,.32));
+          filter: drop-shadow(0 6px 7px rgba(0,0,0,.24));
           pointer-events: none;
           transition: transform .16s ease, filter .16s ease;
         }
         .bf-map-moving .bf-center-pin {
-          transform: translate(-50%, calc(-100% - 10px));
-          filter: drop-shadow(0 22px 24px rgba(0,0,0,.26));
+          transform: translate(-50%, calc(-100% - 6px));
+          filter: drop-shadow(0 8px 9px rgba(0,0,0,.2));
         }
         .bf-center-pin::before {
           content: '';
           position: absolute;
           inset: 0;
           border-radius: 50% 50% 50% 0;
-          background: linear-gradient(135deg, #f97316 0%, #f59e0b 48%, #d97706 100%);
-          border: 5px solid #fff;
-          box-shadow:
-            inset 0 0 0 2px rgba(120,53,15,.22),
-            0 5px 12px rgba(217,119,6,.38);
+          background: #f59e0b;
+          border: 3px solid #fff;
+          box-shadow: 0 2px 5px rgba(31,17,11,.2);
           transform: rotate(-45deg);
         }
         .bf-center-pin::after {
           content: '';
           position: absolute;
           left: 50%;
-          top: 15px;
-          width: 16px;
-          height: 16px;
+          top: 10px;
+          width: 9px;
+          height: 9px;
           border-radius: 999px;
           background: #fff;
-          box-shadow: 0 0 0 5px rgba(255,255,255,.24), inset 0 0 0 2px rgba(217,119,6,.35);
+          box-shadow: inset 0 0 0 1px rgba(120,53,15,.18);
           transform: translateX(-50%);
         }
         .bf-pin-target {
@@ -265,14 +263,14 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
           left: 50%;
           top: 50%;
           z-index: 585;
-          width: 52px;
-          height: 52px;
+          width: 32px;
+          height: 32px;
           border-radius: 999px;
-          border: 2px solid rgba(245,158,11,.95);
-          background: rgba(245,158,11,.12);
+          border: 1px solid rgba(217,119,6,.72);
+          background: rgba(245,158,11,.06);
           transform: translate(-50%, -50%);
           pointer-events: none;
-          box-shadow: 0 0 0 8px rgba(245,158,11,.08);
+          box-shadow: none;
           transition: opacity .16s ease, transform .16s ease;
         }
         .bf-map-moving .bf-pin-target {
@@ -284,11 +282,11 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
           left: 50%;
           top: 50%;
           z-index: 590;
-          width: 36px;
-          height: 14px;
+          width: 20px;
+          height: 7px;
           border-radius: 999px;
-          background: rgba(0,0,0,.25);
-          transform: translate(-50%, 6px);
+          background: rgba(0,0,0,.18);
+          transform: translate(-50%, 4px);
           pointer-events: none;
           transition: opacity .16s ease, transform .16s ease;
         }

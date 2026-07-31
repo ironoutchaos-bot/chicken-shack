@@ -171,7 +171,7 @@ export default function ShopTab({
               background: 'rgba(147,24,204,.08)',
               border: '1.5px solid rgba(147,24,204,.25)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 14px rgba(147,24,204,.12)',
+              boxShadow: '0 5px 14px rgba(31,17,11,.08)',
               flexShrink: 0,
             }}>
               <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 22, color: '#9318cc', lineHeight: 1 }}>B</span>
@@ -332,7 +332,7 @@ export default function ShopTab({
 
       {/* ══ STORE CLOSED BANNER ══ */}
       {!storeOpen && (
-        <div style={{ margin: '12px 12px 0', borderRadius: 18, overflow: 'hidden', boxShadow: `0 4px 20px rgba(147,24,204,.2)` }}>
+        <div style={{ margin: '12px 12px 0', borderRadius: 18, overflow: 'hidden', boxShadow: '0 5px 18px rgba(31,17,11,.1)' }}>
           <div style={{ height: 4, background: `linear-gradient(90deg,${P},#c44ef5,${P})` }} />
           <div style={{
             padding: '14px 16px',
@@ -343,7 +343,7 @@ export default function ShopTab({
               <div style={{
                 width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 20, background: `linear-gradient(135deg,${P},#c44ef5)`,
-                boxShadow: `0 2px 8px rgba(147,24,204,.4)`,
+                boxShadow: '0 2px 7px rgba(31,17,11,.14)',
               }}>🌙</div>
               <div>
                 <p style={{ fontWeight: 900, fontSize: 14, lineHeight: 1.2, color: INK }}>We&apos;re closed right now</p>
@@ -442,7 +442,7 @@ export default function ShopTab({
                           background: 'linear-gradient(135deg,#9318cc,#c44ef5)',
                           color: '#fff', fontSize: 8, fontWeight: 700,
                           padding: '4px 10px', borderRadius: 20, letterSpacing: '0.08em',
-                          boxShadow: '0 4px 16px rgba(147,24,204,.5)',
+                          boxShadow: '0 4px 12px rgba(31,17,11,.14)',
                         }}>⭐ BEST SELLER</div>
                       )}
                     </div>

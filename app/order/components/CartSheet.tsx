@@ -657,7 +657,7 @@ export default function CartSheet({
                   onClick={() => handleCheckout('cashfree')}
                   disabled={loading || belowMin || outOfStock.length > 0}
                   className="w-full text-white rounded-2xl py-4 font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg, #9318cc 0%, #7b14ab 55%, #5b0e80 100%)', boxShadow: '0 6px 24px rgba(147,24,204,0.45)', fontFamily: "'Unbounded', sans-serif", fontSize: 12, letterSpacing: '0.04em' }}
+                  style={{ background: 'linear-gradient(135deg, #9318cc 0%, #7b14ab 55%, #5b0e80 100%)', boxShadow: '0 6px 16px rgba(31,17,11,0.16)', fontFamily: "'Unbounded', sans-serif", fontSize: 12, letterSpacing: '0.04em' }}
                 >
                   {loading && checkoutMode === 'cashfree'
                     ? <><Loader2 size={18} className="animate-spin" /> {payStep || 'Processing…'}</>

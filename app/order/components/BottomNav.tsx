@@ -53,7 +53,7 @@ export default function BottomNav({ activeTab, onTabChange, activeOrderCount, ca
               display: 'flex', alignItems: 'center', gap: 0,
               background: `linear-gradient(135deg,${P},#7b14ab)`,
               borderRadius: 16, padding: 0, overflow: 'hidden',
-              boxShadow: '0 4px 18px rgba(147,24,204,.5)',
+              boxShadow: '0 6px 16px rgba(31,17,11,.16)',
               margin: '0 4px', flexShrink: 0, cursor: 'pointer',
               border: 'none',
             }}

@@ -40,7 +40,7 @@ export default function EntryPage({ onContinue }: Props) {
           background: 'rgba(147,24,204,.12)',
           border: '1.5px solid rgba(147,24,204,.3)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 0 16px rgba(147,24,204,.2)',
+          boxShadow: '0 5px 14px rgba(31,17,11,.1)',
           flexShrink: 0,
         }}>
           <span style={{ fontFamily: "'Unbounded', sans-serif", fontWeight: 900, fontSize: 16, color: '#9318cc', lineHeight: 1 }}>B</span>
@@ -122,7 +122,7 @@ export default function EntryPage({ onContinue }: Props) {
           style={{
             background: 'linear-gradient(135deg, #9318cc 0%, #7b14ab 55%, #5b0e80 100%)',
             color: '#fff',
-            boxShadow: '0 6px 28px rgba(147,24,204,.5)',
+            boxShadow: '0 7px 18px rgba(31,17,11,.16)',
             fontFamily: "'Unbounded', sans-serif",
             fontSize: 12, letterSpacing: '0.04em',
           }}
