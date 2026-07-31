@@ -16,6 +16,20 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Google Maps ordering setup
+
+The delivery-address flow uses two restricted Google Maps Platform keys:
+
+```bash
+# Server-only key: enable and API-restrict it to Geocoding API.
+GOOGLE_GEOCODING_API_KEY=
+
+# Browser key: enable Maps JavaScript API and restrict it to blurufresh.com referrers.
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
+```
+
+Add both variables to local development and Vercel Production, Preview, and Development environments. Billing must be enabled for the Google Cloud project. The current Leaflet/OpenStreetMap view remains available only as a map-display fallback when Google Maps cannot load.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

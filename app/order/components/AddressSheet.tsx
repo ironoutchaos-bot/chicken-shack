@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { X, MapPin, Loader2, Home, Building2, CheckCircle2, AlertTriangle, XCircle, Phone, User, Crosshair, Search } from 'lucide-react'
 import { Input } from '@heroui/react'
 import AddressMapPicker from './AddressMapPicker'
@@ -18,6 +18,19 @@ export interface DeliveryAddress {
   deliveryDistanceKm?: number
   deliveryRadiusKm?:   number
   deliveryZoneCenter?: { lat: number; lng: number }
+  formattedAddress?: string
+  googlePlaceId?: string
+}
+
+type GoogleGeocodeResult = {
+  lat: number
+  lng: number
+  displayName?: string
+  streetAddress?: string
+  postalCode?: string
+  placeId?: string
+  provider?: 'google' | 'openstreetmap'
+  confidence?: 'high' | 'medium' | 'low'
 }
 
 type DeliveryZoneResult = {
@@ -93,6 +106,11 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   const [mapSearching,  setMapSearching]  = useState(false)
   const [zoneChecking,  setZoneChecking]  = useState(false)
   const [zoneResult,    setZoneResult]    = useState<DeliveryZoneResult | null>(null)
+  const [pinAddress,    setPinAddress]    = useState('')
+  const [pinPostalCode, setPinPostalCode] = useState('')
+  const [googlePlaceId, setGooglePlaceId] = useState('')
+  const [reverseChecking, setReverseChecking] = useState(false)
+  const reverseRequestRef = useRef(0)
 
   useEffect(() => {
     if (!open) return
@@ -119,6 +137,9 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         setMapOpen(typeof addr.lat === 'number' && typeof addr.lng === 'number')
         setPinTouched(typeof addr.lat === 'number' && typeof addr.lng === 'number')
         setZoneResult(null)
+        setPinAddress(addr.formattedAddress ?? '')
+        setGooglePlaceId(addr.googlePlaceId ?? '')
+        setPinPostalCode(addr.pincode ?? '')
         setMapSearch([addr.houseNumber, addr.streetAddress, addr.landmark, addr.pincode].filter(Boolean).join(', '))
       } else if (savedPincode) {
         setPincode(savedPincode)
@@ -127,12 +148,18 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         setMapOpen(false)
         setPinTouched(false)
         setZoneResult(null)
+        setPinAddress('')
+        setGooglePlaceId('')
+        setPinPostalCode('')
       } else {
         setLat(null)
         setLng(null)
         setMapOpen(false)
         setPinTouched(false)
         setZoneResult(null)
+        setPinAddress('')
+        setGooglePlaceId('')
+        setPinPostalCode('')
       }
     } catch {}
     setStep('details')
@@ -172,6 +199,36 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
     }
   }, [pincode])
 
+  async function reverseGeocodePin(nextLat: number, nextLng: number, fillBlankDetails = false) {
+    const requestId = ++reverseRequestRef.current
+    setReverseChecking(true)
+    setPinAddress('')
+    setPinPostalCode('')
+    setGooglePlaceId('')
+    try {
+      const res = await fetch('/api/geocode-address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: nextLat, lng: nextLng }),
+      })
+      const data = await res.json().catch(() => null) as GoogleGeocodeResult | null
+      if (requestId !== reverseRequestRef.current || !res.ok || data?.provider !== 'google') return null
+
+      setPinAddress(data.displayName ?? '')
+      setPinPostalCode(cleanPincode(data.postalCode ?? ''))
+      setGooglePlaceId(data.placeId ?? '')
+      if (fillBlankDetails) {
+        if (!streetAddress.trim() && data.streetAddress) setStreetAddress(data.streetAddress)
+        if (!pincode.trim() && data.postalCode) setPincode(cleanPincode(data.postalCode))
+      }
+      return data
+    } catch {
+      return null
+    } finally {
+      if (requestId === reverseRequestRef.current) setReverseChecking(false)
+    }
+  }
+
   async function openExactPinMap() {
     const cleanPin = pincode.trim()
     setPincodeError('')
@@ -206,7 +263,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           pincode: cleanPin,
         }),
       })
-      const best = await r.json().catch(() => null) as { lat?: number; lng?: number; provider?: string; confidence?: string; displayName?: string } | null
+      const best = await r.json().catch(() => null) as GoogleGeocodeResult | null
       const found = r.ok && typeof best?.lat === 'number' && typeof best?.lng === 'number'
       if (!found) {
         setLocError('Could not match this exact address in the selected pincode. Add apartment name, road, or nearby landmark, then continue again.')
@@ -225,6 +282,9 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setStep('map')
       setPinTouched(false)
       setZoneResult(null)
+      setPinAddress(best.displayName ?? '')
+      setPinPostalCode(cleanPincode(best.postalCode ?? cleanPin))
+      setGooglePlaceId(best.placeId ?? '')
       const source = best.provider === 'google' ? 'Google Maps' : 'map search'
       setMapHint(
         best.confidence === 'high'
@@ -268,7 +328,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           pincode: cleanPin,
         }),
       })
-      const best = await r.json().catch(() => null) as { lat?: number; lng?: number; provider?: string; confidence?: string } | null
+      const best = await r.json().catch(() => null) as GoogleGeocodeResult | null
       const found = r.ok && typeof best?.lat === 'number' && typeof best?.lng === 'number'
       if (!found) {
         setMapHint('Could not match that place in this pincode. Try the apartment, road, shop, or nearby landmark name.')
@@ -278,6 +338,9 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setLat(best.lat!)
       setLng(best.lng!)
       setPinTouched(true)
+      setPinAddress(best.displayName ?? '')
+      setPinPostalCode(cleanPincode(best.postalCode ?? cleanPin))
+      setGooglePlaceId(best.placeId ?? '')
       const source = best.provider === 'google' ? 'Google Maps' : 'map search'
       setMapHint(
         best.confidence === 'high'
@@ -310,22 +373,15 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       setMapOpen(true)
       setStep('map')
       setPinTouched(true)
-      await checkDeliveryZoneForPin(latitude, longitude)
-
-      try {
-        const r = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`,
-          { headers: { 'Accept-Language': 'en' }, signal: AbortSignal.timeout(8_000) }
-        )
-        const data = await r.json()
-        const addr = data.address ?? {}
-        const road   = addr.road ?? addr.pedestrian ?? addr.neighbourhood ?? addr.hamlet ?? ''
-        const area   = addr.suburb ?? addr.quarter ?? addr.city_district ?? addr.village ?? ''
-        const street = [road, area].filter(Boolean).join(', ')
-        if (!streetAddress.trim()) setStreetAddress(street)
-        if (!pincode.trim() && addr.postcode) setPincode(addr.postcode)
-      } catch {
-        // Reverse geocode is optional; the map pin is already set.
+      const [zone, googleAddress] = await Promise.all([
+        checkDeliveryZoneForPin(latitude, longitude),
+        reverseGeocodePin(latitude, longitude, true),
+      ])
+      const googlePin = cleanPincode(googleAddress?.postalCode ?? '')
+      const enteredPin = cleanPincode(pincode)
+      if (zone && googlePin && enteredPin && googlePin !== enteredPin) {
+        setZoneResult({ ...zone, deliverable: false, pincodeAllowed: false })
+        setMapHint(`Google Maps places this pin in ${googlePin}, not ${enteredPin}. Move the map to the delivery address.`)
       }
     } catch (err: unknown) {
       const geoErr = err as GeolocationPositionError
@@ -345,7 +401,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
   const nameValid   = customerName.trim().length >= 2
   const pinValid    = pincode.trim().length === 6 && isAllowedPincode(pincode)
   const detailsValid = nameValid && houseNumber.trim().length > 0 && streetAddress.trim().length > 0 && phoneValid && pinValid
-  const canProceed  = detailsValid && hasLocation && pinTouched && zoneResult?.deliverable === true && !zoneChecking
+  const googlePincodeMatches = !pinPostalCode || pinPostalCode === cleanPincode(pincode)
+  const canProceed  = detailsValid && hasLocation && pinTouched && googlePincodeMatches && zoneResult?.deliverable === true && !zoneChecking && !reverseChecking
 
   function scrollIntoView(e: React.FocusEvent<HTMLInputElement>) {
     setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350)
@@ -393,6 +450,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
       deliveryDistanceKm: zone.distanceKm,
       deliveryRadiusKm:   zone.radiusKm,
       deliveryZoneCenter: zone.center,
+      formattedAddress: pinAddress || undefined,
+      googlePlaceId: googlePlaceId || undefined,
     }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -407,6 +466,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         deliveryDistanceKm: addr.deliveryDistanceKm,
         deliveryRadiusKm:   addr.deliveryRadiusKm,
         deliveryZoneCenter: addr.deliveryZoneCenter,
+        formattedAddress: addr.formattedAddress,
+        googlePlaceId: addr.googlePlaceId,
       }))
     } catch {}
     onConfirm(addr)
@@ -596,6 +657,21 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                     <p className="text-[11px] font-black text-stone-500 uppercase tracking-[0.1em]">Exact Delivery Pin</p>
                     <span className="text-[10px] font-mono text-stone-400">{lat?.toFixed(5)}, {lng?.toFixed(5)}</span>
                   </div>
+                  {pinAddress && (
+                    <div className="flex items-start gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2.5">
+                      <MapPin size={14} className="mt-0.5 shrink-0 text-blue-600" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.08em] text-blue-700">Google Maps address</p>
+                        <p className="mt-0.5 text-[11px] font-semibold leading-relaxed text-stone-700">{pinAddress}</p>
+                      </div>
+                    </div>
+                  )}
+                  {reverseChecking && (
+                    <div className="flex items-center gap-2 rounded-2xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-[11px] font-bold text-stone-600">
+                      <Loader2 size={14} className="animate-spin text-blue-600" />
+                      Checking this pin with Google Maps...
+                    </div>
+                  )}
                   <div className="rounded-3xl border-2 border-amber-300 bg-white p-2.5 shadow-md shadow-amber-500/10">
                     <label className="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] font-black uppercase tracking-[0.1em] text-stone-700">
                       <Search size={13} className="text-amber-600" />
@@ -636,7 +712,18 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
                       setLat(nextLat)
                       setLng(nextLng)
                       setPinTouched(true)
-                      void checkDeliveryZoneForPin(nextLat, nextLng)
+                      void (async () => {
+                        const [zone, googleAddress] = await Promise.all([
+                          checkDeliveryZoneForPin(nextLat, nextLng),
+                          reverseGeocodePin(nextLat, nextLng),
+                        ])
+                        const googlePin = cleanPincode(googleAddress?.postalCode ?? '')
+                        const enteredPin = cleanPincode(pincode)
+                        if (zone && googlePin && enteredPin && googlePin !== enteredPin) {
+                          setZoneResult({ ...zone, deliverable: false, pincodeAllowed: false })
+                          setMapHint(`Google Maps places this pin in ${googlePin}, not ${enteredPin}. Move the map to the delivery address.`)
+                        }
+                      })()
                     }}
                   />
                 </div>

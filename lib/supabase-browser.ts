@@ -61,6 +61,8 @@ export type DeliveryAddress = {
   deliveryDistanceKm?: number
   deliveryRadiusKm?: number
   deliveryZoneCenter?: { lat: number; lng: number }
+  formattedAddress?: string
+  googlePlaceId?: string
   adminDeleted?: boolean
   adminDeletedAt?: string
   adminDeletedFromStatus?: string | null

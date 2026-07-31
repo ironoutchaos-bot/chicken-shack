@@ -8,6 +8,8 @@ type GeocodeBody = {
   streetAddress?: string
   landmark?: string
   pincode?: string
+  lat?: number
+  lng?: number
 }
 
 type NominatimResult = {
@@ -25,12 +27,15 @@ type GeocodeMatch = {
   lng: number
   query: string
   displayName: string
+  placeId?: string
+  postalCode?: string
   provider: 'google' | 'openstreetmap'
   confidence: 'high' | 'medium' | 'low'
   pincodeMatched?: boolean
 }
 
 const GOOGLE_GEOCODE_KEY =
+  process.env.GOOGLE_GEOCODING_API_KEY ||
   process.env.GOOGLE_MAPS_API_KEY ||
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ||
@@ -187,6 +192,7 @@ async function tryGoogleGeocode(queries: string[]): Promise<GeocodeMatch | null>
       const data = await res.json() as {
         status?: string
         results?: Array<{
+          place_id?: string
           formatted_address?: string
           address_components?: Array<{
             long_name?: string
@@ -217,6 +223,8 @@ async function tryGoogleGeocode(queries: string[]): Promise<GeocodeMatch | null>
           lng: point.lng,
           query,
           displayName: formattedAddress,
+          placeId: candidate.place_id ?? '',
+          postalCode: postalCode?.long_name ?? postalCode?.short_name ?? '',
           provider: 'google',
           confidence: locationType === 'ROOFTOP' || locationType === 'RANGE_INTERPOLATED' ? 'high' : 'medium',
           pincodeMatched,
@@ -228,6 +236,87 @@ async function tryGoogleGeocode(queries: string[]): Promise<GeocodeMatch | null>
   }
 
   return null
+}
+
+type GoogleAddressComponent = {
+  long_name?: string
+  short_name?: string
+  types?: string[]
+}
+
+function googleComponent(
+  components: GoogleAddressComponent[] | undefined,
+  ...types: string[]
+) {
+  return components?.find(component =>
+    types.some(type => component.types?.includes(type))
+  )?.long_name ?? ''
+}
+
+async function tryGoogleReverseGeocode(lat: number, lng: number) {
+  if (!GOOGLE_GEOCODE_KEY) return null
+
+  const url =
+    'https://maps.googleapis.com/maps/api/geocode/json?' +
+    new URLSearchParams({
+      latlng: `${lat},${lng}`,
+      language: 'en',
+      region: 'in',
+      key: GOOGLE_GEOCODE_KEY,
+    }).toString()
+
+  const res = await fetch(url, { signal: AbortSignal.timeout(8_000) })
+  if (!res.ok) return null
+
+  const data = await res.json() as {
+    status?: string
+    error_message?: string
+    results?: Array<{
+      place_id?: string
+      formatted_address?: string
+      types?: string[]
+      address_components?: GoogleAddressComponent[]
+      geometry?: { location_type?: string }
+    }>
+  }
+  if (data.status !== 'OK' || !data.results?.length) return null
+
+  const preferredTypes = ['street_address', 'premise', 'subpremise', 'establishment', 'point_of_interest']
+  const result = data.results.find(candidate =>
+    preferredTypes.some(type => candidate.types?.includes(type))
+  ) ?? data.results[0]
+  const components = result.address_components
+
+  const streetNumber = googleComponent(components, 'street_number')
+  const route = googleComponent(components, 'route')
+  const premise = googleComponent(components, 'premise', 'establishment', 'point_of_interest')
+  const sublocality = googleComponent(
+    components,
+    'sublocality_level_1',
+    'sublocality',
+    'neighborhood',
+  )
+  const locality = googleComponent(components, 'locality', 'administrative_area_level_2')
+  const postalCode = googleComponent(components, 'postal_code')
+  const streetAddress = uniq([
+    compact([streetNumber, route]).join(' '),
+    premise,
+    sublocality,
+    locality,
+  ]).join(', ')
+
+  return {
+    lat,
+    lng,
+    displayName: result.formatted_address ?? streetAddress,
+    streetAddress,
+    postalCode,
+    placeId: result.place_id ?? '',
+    provider: 'google' as const,
+    confidence: result.geometry?.location_type === 'ROOFTOP'
+      ? 'high' as const
+      : 'medium' as const,
+  }
 }
 
 async function tryOpenStreetMapGeocode(queries: string[], body: GeocodeBody): Promise<GeocodeMatch | null> {
@@ -295,6 +384,24 @@ export async function POST(req: NextRequest) {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const lat = Number(body.lat)
+  const lng = Number(body.lng)
+  if (Number.isFinite(lat) || Number.isFinite(lng)) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      return NextResponse.json({ error: 'Valid latitude and longitude are required' }, { status: 400 })
+    }
+    if (!GOOGLE_GEOCODE_KEY) {
+      return NextResponse.json({ error: 'Google reverse geocoding is not configured' }, { status: 503 })
+    }
+    try {
+      const match = await tryGoogleReverseGeocode(lat, lng)
+      if (match) return NextResponse.json(match)
+      return NextResponse.json({ error: 'No Google address found for this pin' }, { status: 404 })
+    } catch {
+      return NextResponse.json({ error: 'Google reverse geocoding is temporarily unavailable' }, { status: 502 })
+    }
   }
 
   const queries = buildQueries(body)
