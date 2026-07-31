@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { OrderRow, DeliveryAddress } from '@/lib/supabase-browser'
+import type { OrderRow, DeliveryAddress, OrderItem } from '@/lib/supabase-browser'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type BeforeInstallPromptEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
@@ -72,6 +72,29 @@ const STATUS_GLYPH: Record<string, string> = {
 
 function isDriverLiveOrder(order: OrderRow) {
   return order.payment_status === 'cod' || order.payment_status === 'paid'
+}
+
+function formatOrderedWeight(item: OrderItem) {
+  const quantity = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0
+  const weightPerUnit = Number(item.weightPerUnit)
+  const unit = (item.unit ?? 'g').toLowerCase()
+
+  if (!Number.isFinite(weightPerUnit) || weightPerUnit <= 0) {
+    return `${quantity} pack${quantity === 1 ? '' : 's'}`
+  }
+
+  const total = weightPerUnit * quantity
+  if (unit === 'kg') {
+    return `${Number.isInteger(total) ? total : total.toFixed(2)} kg`
+  }
+  if (unit === 'pc') {
+    return `${total} pc${total === 1 ? '' : 's'}`
+  }
+  if (total >= 1000) {
+    const kilograms = total / 1000
+    return `${Number.isInteger(kilograms) ? kilograms : kilograms.toFixed(2)} kg`
+  }
+  return `${total} g`
 }
 
 export default function DriverPage() {
@@ -838,7 +861,7 @@ function OrderCard({
       <div style={S.itemsRow}>
         {order.items.map((item, i) => (
           <span key={i} style={S.itemChip}>
-            {item.name} × {item.quantity}
+            {item.name} × {item.quantity} · {formatOrderedWeight(item)}
           </span>
         ))}
       </div>

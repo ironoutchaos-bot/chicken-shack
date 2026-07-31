@@ -16,6 +16,7 @@ import {
   ReceiptText,
   RefreshCw,
   ShieldCheck,
+  Star,
   Truck,
   XCircle,
 } from "lucide-react";
@@ -120,6 +121,21 @@ const css = `
 .oh-total-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-top:1rem;padding-top:1rem;border-top:1px dashed rgba(31,17,11,.14);}
 .oh-total-label{font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(31,17,11,.42);}
 .oh-total{font-family:'Fraunces', serif;font-weight:800;font-size:1.55rem;font-weight:900;color:var(--oh-green);text-shadow:0 0 18px rgba(206,246,33,.18);}
+.oh-review{margin-top:1rem;padding:1rem;border-radius:20px;background:#fffdf7;border:1px solid rgba(252,193,62,.34);}
+.oh-review-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:.75rem;}
+.oh-review-title{font-size:.65rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#7c4600;}
+.oh-review-state{font-size:.62rem;font-weight:800;color:#64748b;}
+.oh-stars{display:flex;align-items:center;gap:.3rem;}
+.oh-star{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(252,193,62,.34);border-radius:11px;background:#fff;color:#d1d5db;cursor:pointer;transition:transform .15s ease,color .15s ease,background .15s ease,border-color .15s ease;}
+.oh-star:hover{transform:translateY(-1px);}
+.oh-star.active{color:#f59e0b;background:#fff7db;border-color:#f6c453;}
+.oh-review-text{width:100%;min-height:88px;margin-top:.75rem;padding:.75rem .85rem;resize:vertical;border:1px solid rgba(31,17,11,.14);border-radius:14px;background:#fff;color:var(--oh-ink);font:600 .78rem/1.5 var(--font-space-grotesk),sans-serif;outline:none;}
+.oh-review-text:focus{border-color:#d78a00;box-shadow:0 0 0 3px rgba(245,158,11,.1);}
+.oh-review-footer{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:.7rem;}
+.oh-review-message{font-size:.68rem;font-weight:700;color:#047857;}
+.oh-review-message.error{color:#b91c1c;}
+.oh-review-save{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-width:112px;border:0;border-radius:12px;padding:.7rem .9rem;background:#1f110b;color:#fff;font:900 .68rem var(--font-space-grotesk),sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;}
+.oh-review-save:disabled{opacity:.48;cursor:not-allowed;}
 .oh-empty,.oh-loading{min-height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1rem;border-radius:30px;background:#fff;border:1px solid rgba(95,7,155,.1);box-shadow:0 14px 40px rgba(31,17,11,.05);}
 .oh-empty-icon,.oh-loading-icon{width:70px;height:70px;border-radius:24px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(95,7,155,.1),rgba(206,246,33,.16));color:var(--oh-purple);}
 .oh-empty h2{font-family:var(--font-space-grotesk), sans-serif;font-size:1.15rem;font-weight:900;color:var(--oh-ink);}
@@ -162,6 +178,8 @@ const css = `
   .oh-track-text{font-size:.5rem;}
   .oh-meta-grid{grid-template-columns:1fr;}
   .oh-total{font-size:1.35rem;}
+  .oh-review-head,.oh-review-footer{align-items:flex-start;flex-direction:column;}
+  .oh-review-save{width:100%;}
 }
 `;
 
@@ -283,7 +301,113 @@ function paymentIcon(status: OrderRow["payment_status"]) {
   return status === "cod" ? <Banknote size={14} /> : <CreditCard size={14} />;
 }
 
-function OrderCard({ order }: { order: OrderRow }) {
+function OrderReview({
+  order,
+  onSaved,
+}: {
+  order: OrderRow;
+  onSaved: (rating: number, comment: string) => void;
+}) {
+  const [rating, setRating] = useState(order.feedback_rating ?? 0);
+  const [hovered, setHovered] = useState(0);
+  const [comment, setComment] = useState(order.feedback_comment ?? "");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState(false);
+  const activeStars = hovered || rating;
+
+  async function saveReview() {
+    if (!rating) {
+      setError(true);
+      setMessage("Select a star rating first.");
+      return;
+    }
+
+    setSaving(true);
+    setError(false);
+    setMessage("");
+    try {
+      const response = await fetch(`/api/orders/${order.id}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, comment }),
+      });
+      if (!response.ok) throw new Error("Could not save review");
+      onSaved(rating, comment.trim());
+      setMessage(order.feedback_rating ? "Review updated." : "Thank you for your review.");
+    } catch {
+      setError(true);
+      setMessage("Could not save. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="oh-review" aria-label="Review this order">
+      <div className="oh-review-head">
+        <div>
+          <div className="oh-review-title">Rate your order</div>
+          <div className="oh-review-state">
+            {rating ? `${rating} out of 5 stars` : "Tap a star to rate"}
+          </div>
+        </div>
+        <div className="oh-stars" onMouseLeave={() => setHovered(0)}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              className={`oh-star ${star <= activeStars ? "active" : ""}`}
+              onClick={() => {
+                setRating(star);
+                setError(false);
+                setMessage("");
+              }}
+              onMouseEnter={() => setHovered(star)}
+              aria-label={`${star} star${star === 1 ? "" : "s"}`}
+            >
+              <Star size={19} fill={star <= activeStars ? "currentColor" : "none"} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <textarea
+        className="oh-review-text"
+        value={comment}
+        onChange={(event) => setComment(event.target.value)}
+        maxLength={1000}
+        placeholder="Write about freshness, packing, or delivery..."
+        aria-label="Written review"
+      />
+
+      <div className="oh-review-footer">
+        <span className={`oh-review-message ${error ? "error" : ""}`} aria-live="polite">
+          {message || `${comment.length}/1000`}
+        </span>
+        <button
+          type="button"
+          className="oh-review-save"
+          onClick={saveReview}
+          disabled={saving || rating === 0}
+        >
+          {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+          {saving ? "Saving" : order.feedback_rating ? "Update Review" : "Save Review"}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function OrderCard({
+  order,
+  showReview = false,
+  onFeedbackSaved,
+}: {
+  order: OrderRow;
+  showReview?: boolean;
+  onFeedbackSaved?: (orderId: string, rating: number, comment: string) => void;
+}) {
   const { date, time } = formatDate(order.created_at);
   const displayStatus = trackingStatus(order);
   const customer =
@@ -395,6 +519,13 @@ function OrderCard({ order }: { order: OrderRow }) {
           </div>
           <div className="oh-total">₹{order.total_amount}</div>
         </div>
+
+        {showReview && onFeedbackSaved ? (
+          <OrderReview
+            order={order}
+            onSaved={(rating, comment) => onFeedbackSaved(order.id, rating, comment)}
+          />
+        ) : null}
       </div>
     </article>
   );
@@ -642,7 +773,25 @@ export default function OrderHistoryClient({ user }: { user: AuthUser }) {
             <>
               <div className="oh-grid">
                 {currentOrders.map((order) => (
-                  <OrderCard key={order.id} order={order} />
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    showReview={activeTab === "history"}
+                    onFeedbackSaved={(orderId, rating, comment) => {
+                      setHistoryOrders((orders) =>
+                        orders.map((historyOrder) =>
+                          historyOrder.id === orderId
+                            ? {
+                                ...historyOrder,
+                                feedback_rating: rating,
+                                feedback_comment: comment,
+                                feedback_at: new Date().toISOString(),
+                              }
+                            : historyOrder,
+                        ),
+                      );
+                    }}
+                  />
                 ))}
               </div>
 

@@ -41,7 +41,9 @@ export type OrderItem = {
   pricePerKg: number
   originalPrice?: number
   discountPercentage?: number
-  quantity: number   // kg
+  quantity: number   // number of ordered packs/pieces
+  weightPerUnit?: number | null
+  unit?: 'g' | 'kg' | 'pc' | string
 }
 
 export type DeliveryAddress = {
@@ -101,6 +103,7 @@ export type CartItem = {
   quantity: number
   imageUrl: string | null
   weightPerUnit?: number | null
+  unit?: 'g' | 'kg' | 'pc' | string
 }
 
 export type DriverRow = {

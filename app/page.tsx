@@ -2497,6 +2497,8 @@ export default function Home() {
                               discountPercentage: discount,
                               quantity: 1,
                               imageUrl: p.image_url,
+                              weightPerUnit: p.weight_per_unit,
+                              unit: productUnits[p.id] ?? "g",
                             })
                           }
                         >

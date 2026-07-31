@@ -465,7 +465,7 @@ export default function ShopTab({
                         {!heroOOS && (
                           heroQty === 0 ? (
                             <button
-                              onClick={() => onAddToCart({ productId: heroProduct.id, name: heroProduct.name, pricePerKg: heroSalePrice, quantity: 1, imageUrl: heroProduct.image_url, weightPerUnit: heroProduct.weight_per_unit })}
+                              onClick={() => onAddToCart({ productId: heroProduct.id, name: heroProduct.name, pricePerKg: heroSalePrice, quantity: 1, imageUrl: heroProduct.image_url, weightPerUnit: heroProduct.weight_per_unit, unit: productUnits[heroProduct.id] ?? 'g' })}
                               style={{
                                 background: G, color: INK, border: 'none',
                                 borderRadius: 14, padding: '11px 20px',
@@ -623,7 +623,7 @@ export default function ShopTab({
                         }}>Out of Stock</button>
                       ) : qty === 0 ? (
                         <button
-                          onClick={() => onAddToCart({ productId: p.id, name: p.name, pricePerKg: salePrice, quantity: 1, imageUrl: p.image_url, weightPerUnit: p.weight_per_unit })}
+                          onClick={() => onAddToCart({ productId: p.id, name: p.name, pricePerKg: salePrice, quantity: 1, imageUrl: p.image_url, weightPerUnit: p.weight_per_unit, unit: productUnits[p.id] ?? 'g' })}
                           style={{
                             width: '100%',
                             background: 'rgba(147,24,204,.08)', color: P,
