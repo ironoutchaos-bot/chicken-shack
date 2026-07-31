@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Script from "next/script";
@@ -41,6 +41,7 @@ const css = `
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 html{scroll-behavior:smooth;}
 body{background:var(--cream);color:var(--ink);font-family:var(--font-space-grotesk), sans-serif;overflow-x:hidden;}
+html.bf-aisensy-popup-seen .df-btn-content{display:none !important;}
 
 nav{
   position: fixed;
@@ -1546,6 +1547,41 @@ export default function Home() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [productsError, setProductsError] = useState("");
   const [activeProductId, setActiveProductId] = useState<string | null>(null);
+
+  useLayoutEffect(() => {
+    const sessionKey = "bf-aisensy-popup-shown";
+    let popupAlreadyShown = false;
+
+    try {
+      popupAlreadyShown = sessionStorage.getItem(sessionKey) === "1";
+    } catch {
+      return;
+    }
+
+    if (popupAlreadyShown) {
+      document.documentElement.classList.add("bf-aisensy-popup-seen");
+      return () => {
+        document.documentElement.classList.remove("bf-aisensy-popup-seen");
+      };
+    }
+
+    const rememberPopup = () => {
+      if (!document.querySelector(".df-btn-content")) return false;
+      try {
+        sessionStorage.setItem(sessionKey, "1");
+      } catch {}
+      return true;
+    };
+
+    if (rememberPopup()) return;
+
+    const observer = new MutationObserver(() => {
+      if (rememberPopup()) observer.disconnect();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Hydrate user
   useEffect(() => {
