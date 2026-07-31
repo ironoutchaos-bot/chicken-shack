@@ -173,8 +173,122 @@ function scoreOsmResult(result: NominatimResult, body: GeocodeBody) {
   return score
 }
 
-async function tryGoogleGeocode(queries: string[]): Promise<GeocodeMatch | null> {
+function scoreGoogleLabel(label: string, body: GeocodeBody) {
+  const normalized = label.toLowerCase()
+  let score = 0
+
+  for (const token of specificWords(body.query ?? '')) {
+    if (normalized.includes(token)) score += 4
+  }
+  for (const token of specificWords(body.houseNumber ?? '')) {
+    if (normalized.includes(token)) score += 4
+  }
+  for (const token of specificWords(body.streetAddress ?? '')) {
+    if (normalized.includes(token)) score += 2.5
+  }
+  for (const token of specificWords(body.landmark ?? '')) {
+    if (normalized.includes(token)) score += 3
+  }
+  if (body.pincode && normalized.includes(cleanPin(body.pincode))) score += 3
+  if (normalized.includes('bengaluru') || normalized.includes('bangalore')) score += 1
+  if (/^[a-z0-9]{4}\+[a-z0-9]{2,}/i.test(label.trim())) score -= 5
+
+  return score
+}
+
+async function tryGooglePlacesSearch(queries: string[], body: GeocodeBody): Promise<GeocodeMatch | null> {
   if (!GOOGLE_GEOCODE_KEY) return null
+
+  let bestMatch: (GeocodeMatch & { score: number }) | null = null
+  const searchQueries = uniq([
+    compact([body.query, body.pincode, 'Bengaluru']).join(', '),
+    compact([body.houseNumber, body.streetAddress, body.landmark, body.pincode, 'Bengaluru']).join(', '),
+    ...queries,
+  ]).slice(0, 3)
+
+  for (const query of searchQueries) {
+    try {
+      const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': GOOGLE_GEOCODE_KEY,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress,places.location,places.postalAddress,places.types',
+        },
+        body: JSON.stringify({
+          textQuery: query,
+          languageCode: 'en',
+          regionCode: 'IN',
+          maxResultCount: 5,
+          locationBias: {
+            rectangle: {
+              low: { latitude: BENGALURU_BOUNDS.south, longitude: BENGALURU_BOUNDS.west },
+              high: { latitude: BENGALURU_BOUNDS.north, longitude: BENGALURU_BOUNDS.east },
+            },
+          },
+        }),
+        signal: AbortSignal.timeout(8_000),
+      })
+      if (!res.ok) continue
+
+      const data = await res.json() as {
+        places?: Array<{
+          id?: string
+          displayName?: { text?: string }
+          formattedAddress?: string
+          location?: { latitude?: number; longitude?: number }
+          postalAddress?: { postalCode?: string }
+          types?: string[]
+        }>
+      }
+      for (const place of data.places ?? []) {
+        const lat = place.location?.latitude
+        const lng = place.location?.longitude
+        if (typeof lat !== 'number' || typeof lng !== 'number') continue
+        if (
+          lat < BENGALURU_BOUNDS.south || lat > BENGALURU_BOUNDS.north ||
+          lng < BENGALURU_BOUNDS.west || lng > BENGALURU_BOUNDS.east
+        ) continue
+
+        const displayName = compact([place.displayName?.text, place.formattedAddress]).join(', ')
+        const postalCode = cleanPin(place.postalAddress?.postalCode)
+        if (!resultMatchesPincode(body.pincode, postalCode, displayName)) continue
+
+        let score = scoreGoogleLabel(displayName, body)
+        if (place.types?.some(type => ['premise', 'establishment', 'point_of_interest'].includes(type))) {
+          score += 2
+        }
+        if (!bestMatch || score > bestMatch.score) {
+          bestMatch = {
+            lat,
+            lng,
+            query,
+            displayName: place.formattedAddress ?? place.displayName?.text ?? '',
+            placeId: place.id ?? '',
+            postalCode,
+            provider: 'google',
+            confidence: score >= 8 ? 'high' : 'medium',
+            pincodeMatched: true,
+            score,
+          }
+        }
+      }
+
+      if (bestMatch && bestMatch.score >= 10) break
+    } catch {
+      // Fall back to the Geocoding API below.
+    }
+  }
+
+  if (!bestMatch) return null
+  const { score: _score, ...match } = bestMatch
+  return match
+}
+
+async function tryGoogleGeocode(queries: string[], body: GeocodeBody): Promise<GeocodeMatch | null> {
+  if (!GOOGLE_GEOCODE_KEY) return null
+
+  let bestMatch: (GeocodeMatch & { score: number }) | null = null
 
   for (const query of queries) {
     try {
@@ -218,24 +332,33 @@ async function tryGoogleGeocode(queries: string[]): Promise<GeocodeMatch | null>
         if (!pincodeMatched) continue
 
         const locationType = candidate.geometry?.location_type
-        return {
-          lat: point.lat,
-          lng: point.lng,
-          query,
-          displayName: formattedAddress,
-          placeId: candidate.place_id ?? '',
-          postalCode: postalCode?.long_name ?? postalCode?.short_name ?? '',
-          provider: 'google',
-          confidence: locationType === 'ROOFTOP' || locationType === 'RANGE_INTERPOLATED' ? 'high' : 'medium',
-          pincodeMatched,
+        let score = scoreGoogleLabel(formattedAddress, body)
+        if (locationType === 'ROOFTOP') score += 3
+        else if (locationType === 'RANGE_INTERPOLATED') score += 2
+        if (!bestMatch || score > bestMatch.score) {
+          bestMatch = {
+            lat: point.lat,
+            lng: point.lng,
+            query,
+            displayName: formattedAddress,
+            placeId: candidate.place_id ?? '',
+            postalCode: postalCode?.long_name ?? postalCode?.short_name ?? '',
+            provider: 'google',
+            confidence: score >= 8 ? 'high' : 'medium',
+            pincodeMatched,
+            score,
+          }
         }
       }
+      if (bestMatch && bestMatch.score >= 10) break
     } catch {
       // Try the next query candidate.
     }
   }
 
-  return null
+  if (!bestMatch) return null
+  const { score: _score, ...match } = bestMatch
+  return match
 }
 
 type GoogleAddressComponent = {
@@ -409,7 +532,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Address is required' }, { status: 400 })
   }
 
-  const googleMatch = await tryGoogleGeocode(queries)
+  const googlePlacesMatch = await tryGooglePlacesSearch(queries, body)
+  if (googlePlacesMatch) return NextResponse.json(googlePlacesMatch)
+
+  const googleMatch = await tryGoogleGeocode(queries, body)
   if (googleMatch) return NextResponse.json(googleMatch)
 
   const osmMatch = await tryOpenStreetMapGeocode(queries, body)

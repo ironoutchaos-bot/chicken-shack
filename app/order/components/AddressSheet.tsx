@@ -316,6 +316,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
 
     setMapSearching(true)
     setMapHint('')
+    setLocError('')
+    const searchRequestId = ++reverseRequestRef.current
     try {
       const r = await fetch('/api/geocode-address', {
         method: 'POST',
@@ -329,6 +331,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
         }),
       })
       const best = await r.json().catch(() => null) as GoogleGeocodeResult | null
+      if (searchRequestId !== reverseRequestRef.current) return
       const found = r.ok && typeof best?.lat === 'number' && typeof best?.lng === 'number'
       if (!found) {
         setMapHint('Could not match that place in this pincode. Try the apartment, road, shop, or nearby landmark name.')
@@ -337,6 +340,8 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
 
       setLat(best.lat!)
       setLng(best.lng!)
+      setMapOpen(true)
+      setStep('map')
       setPinTouched(true)
       setPinAddress(best.displayName ?? '')
       setPinPostalCode(cleanPincode(best.postalCode ?? cleanPin))

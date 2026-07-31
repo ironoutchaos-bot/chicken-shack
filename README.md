@@ -21,7 +21,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 The delivery-address flow uses two restricted Google Maps Platform keys:
 
 ```bash
-# Server-only key: enable and API-restrict it to Geocoding API.
+# Server-only key: API-restrict it to Geocoding API and Places API (New).
 GOOGLE_GEOCODING_API_KEY=
 
 # Browser key: enable Maps JavaScript API and restrict it to blurufresh.com referrers.
