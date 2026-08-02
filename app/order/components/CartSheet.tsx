@@ -24,6 +24,7 @@ interface Props {
   onDeliveryAddressSaved?: (address: DeliveryAddress) => void
   minOrderAmount?: number
   deliveryFee?: number
+  outOfStockMode?: boolean
 }
 
 // Formats a product's pack size using the admin-chosen unit (pc / g / kg).
@@ -48,7 +49,7 @@ export default function CartSheet({
   open, onClose, cart, onUpdateQty, onClear,
   user, authLoading = false, onLoginRequired, onOrderPlaced, savedPincode,
   onDeliveryAddressSaved,
-  minOrderAmount = 0, deliveryFee = 0,
+  minOrderAmount = 0, deliveryFee = 0, outOfStockMode = false,
 }: Props) {
   const [loading,        setLoading]        = useState(false)
   const [slowConn,       setSlowConn]       = useState(false)
@@ -78,9 +79,11 @@ export default function CartSheet({
   const total      = Math.max(0, subtotal + deliveryFee - discount)
   const totalPaise = Math.round(total * 100)
   const belowMin   = minOrderAmount > 0 && subtotal < minOrderAmount
-  const morningPreorderActive = !storeOpen
-  const morningPreorderNote = morningPreorderActive
+  const morningPreorderActive = !storeOpen || outOfStockMode
+  const morningPreorderNote = !storeOpen
     ? 'Store closed night preorder: deliver fresh between 7 AM - 9 AM.'
+    : outOfStockMode
+      ? 'Out-of-stock preorder: deliver fresh between 7 AM - 9 AM.'
     : null
 
   // Fetch settings + check stock freshness when cart opens
@@ -102,6 +105,9 @@ export default function CartSheet({
         setCodEnabled(d.cod_enabled !== false)
         setCfEnabled(d.cashfree_enabled !== false)
         setStoreOpen(d.store_open !== false)
+        // This is a separate operational state from the store schedule.
+        // It allows preorder messaging without showing the store-closed message.
+        // The parent supplies the current setting so the cart updates immediately.
       })
       .catch(() => {})
 
@@ -513,10 +519,12 @@ export default function CartSheet({
                       className="text-sm font-black uppercase"
                       style={{ color: '#7c2d12', letterSpacing: '0.04em', lineHeight: 1.15 }}
                     >
-                      Store is closed now
+                      {!storeOpen ? 'Store is closed now' : 'Temporarily out of stock'}
                     </p>
                     <p className="mt-1 text-[13px] font-bold leading-relaxed" style={{ color: '#1f110b' }}>
-                      Your order will be cut fresh and delivered to you in the morning between{' '}
+                      {!storeOpen
+                        ? 'Your order will be cut fresh and delivered to you in the morning between '
+                        : 'You can place your preorder now. It will be cut fresh and delivered in the morning between '}
                       <span style={{ color: '#d97706', fontWeight: 900 }}>7 AM - 9 AM</span>.
                     </p>
                   </div>

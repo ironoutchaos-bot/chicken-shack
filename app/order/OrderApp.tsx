@@ -668,6 +668,7 @@ export default function OrderApp() {
           savedPincode={pincode ?? undefined}
           minOrderAmount={minOrder}
           deliveryFee={deliveryFee}
+          outOfStockMode={outOfStock}
           onDeliveryAddressSaved={(addr) => {
             setPincode(addr.pincode)
             setAreaName(addr.streetAddress || 'Saved address')
