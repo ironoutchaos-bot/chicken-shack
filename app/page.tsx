@@ -1535,6 +1535,7 @@ export default function Home() {
 
   // Live settings
   const [storeOpen, setStoreOpen] = useState(true);
+  const [outOfStock, setOutOfStock] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [minOrder, setMinOrder] = useState(0);
   const [deliveryFee, setDeliveryFee] = useState(0);
@@ -1600,6 +1601,7 @@ export default function Home() {
       .then((r) => r.json())
       .then((d) => {
         setStoreOpen(d.store_open !== false);
+        setOutOfStock(d.out_of_stock === true);
         setAnnouncement(
           typeof d.announcement === "string" ? d.announcement : "",
         );
@@ -3132,6 +3134,7 @@ export default function Home() {
         savedPincode={pincode ?? undefined}
         minOrderAmount={minOrder}
         deliveryFee={deliveryFee}
+        outOfStockMode={outOfStock}
         onDeliveryAddressSaved={(addr) => {
           setPincode(addr.pincode);
           setAreaName(addr.streetAddress || "Saved address");
