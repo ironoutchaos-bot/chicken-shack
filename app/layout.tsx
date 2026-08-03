@@ -75,18 +75,23 @@ export const metadata: Metadata = {
   },
 
   // ── Primary SEO title — keyword-rich, under 60 chars for SERP display
-  title: "Fresh Chicken Bengaluru | B'LURU Fresh — Cut After Your Order",
+  title: "Fresh Chicken Bengaluru & Bangalore | B'LURU Fresh",
 
   // ── Meta description — under 160 chars, primary keywords in first 120
   description:
-    "Bengaluru's freshest chicken delivery. Cut fresh after every order — no stored meat, no preservatives. Delivery in 1 hour across Yelahanka, Bangalore. FSSAI 11226331000344.",
+    "B'LURU Fresh delivers fresh chicken in Bengaluru (Bangalore). Cut only after your order, never stored, FSSAI licensed, with fast delivery across Yelahanka and nearby areas.",
 
   // ── Comprehensive keyword set targeting Bengaluru + fresh chicken searches
   keywords: [
     // Primary target keywords
     "fresh chicken bengaluru",
     "bengaluru fresh chicken",
+    "bengaluru fresh chicken delivery",
+    "bengaluru fresh",
     "fresh chicken bangalore",
+    "bangalore fresh chicken",
+    "bangalore fresh chicken delivery",
+    "bangalore fresh",
     "fresh chicken delivery bangalore",
     "fresh chicken delivery bengaluru",
     // Local area keywords
@@ -131,9 +136,9 @@ export const metadata: Metadata = {
 
   // ── Open Graph — for social sharing and Google rich results
   openGraph: {
-    title: "Fresh Chicken Bengaluru | B'LURU Fresh — Delivered in 1 Hour",
+    title: "Fresh Chicken Bengaluru & Bangalore | B'LURU Fresh",
     description:
-      "Bengaluru's first ultra-fresh chicken delivery. Cut fresh after every order, zero preservatives, delivered in under 1 hour. Order now across Yelahanka & Bangalore.",
+      "Fresh chicken delivery in Bengaluru (Bangalore). Cut only after every order, zero preservatives, with fast delivery across Yelahanka and nearby areas.",
     url: "https://www.blurufresh.com",
     siteName: "B'LURU Fresh",
     type: "website",
@@ -151,9 +156,9 @@ export const metadata: Metadata = {
   // ── Twitter card
   twitter: {
     card: "summary_large_image",
-    title: "Fresh Chicken Bengaluru — B'LURU Fresh",
+    title: "Fresh Chicken Bengaluru & Bangalore — B'LURU Fresh",
     description:
-      "Cut fresh after your order. No stored meat. Delivery in 1 hour across Yelahanka, Bangalore.",
+      "Fresh chicken delivery in Bengaluru (Bangalore). Cut after your order. No stored meat. Fast delivery across Yelahanka and nearby areas.",
     images: ["https://www.blurufresh.com/assets/raw_chicken_breast.jpg"],
   },
 
@@ -278,7 +283,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   "https://www.blurufresh.com/bluru_logo.png",
                 ],
                 description:
-                  "Bengaluru's first ultra-fresh chicken delivery service. We only start cutting after your order is placed — no stored meat, no preservatives. Farm-fresh chicken delivered in under 1 hour across Yelahanka and Bangalore.",
+                  "B'LURU Fresh is an ultra-fresh chicken delivery service in Bengaluru (Bangalore). We only start cutting after your order is placed — no stored meat, no preservatives. Farm-fresh chicken delivered across Yelahanka and nearby areas.",
+                slogan:
+                  "Fresh chicken delivery in Bengaluru (Bangalore), cut only after your order.",
                 telephone: "+917012488951",
                 email: "admin@blurufresh.com",
                 foundingDate: "2024",
