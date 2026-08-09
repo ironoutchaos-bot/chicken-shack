@@ -101,8 +101,8 @@ nav{
 .nav-profile-action:hover{background:rgba(95,7,155,.07);}
 .nav-profile-action.sign-out{color:#a72b2b;}
 @media(max-width:900px){
-  .nav-orders-btn{width:34px;height:34px;border:1.5px solid rgba(123,31,208,.18);border-radius:50%;align-items:center;justify-content:center;background:rgba(123,31,208,.06);}
-  .nav-orders-label{display:none;}
+  .nav-orders-btn{width:auto;height:34px;padding:0 11px;border:1.5px solid rgba(123,31,208,.18);border-radius:999px;align-items:center;justify-content:center;background:rgba(123,31,208,.06);gap:5px;}
+  .nav-orders-label{display:inline;font-size:.68rem;font-weight:700;}
   .nav-auth-btn{width:34px;height:34px;margin-left:0;}
   .nav-profile-menu{position:fixed;right:1rem;top:78px;width:min(230px,calc(100vw - 2rem));}
 }

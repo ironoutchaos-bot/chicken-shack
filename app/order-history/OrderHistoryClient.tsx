@@ -315,7 +315,7 @@ function OrderReview({
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
   const activeStars = hovered || rating;
-  const ratingLabels = ["", "Poor", "Fair", "Clean", "Great", "Excellent"];
+  const ratingLabels = ["", "Poor", "Fair", "Good", "Great", "Excellent"];
 
   async function saveReview() {
     if (!rating) {
@@ -378,7 +378,7 @@ function OrderReview({
         value={comment}
         onChange={(event) => setComment(event.target.value)}
         maxLength={1000}
-        placeholder="Write about cleanliness, packing, or delivery..."
+        placeholder="Write about freshness, packing, or delivery..."
         aria-label="Written review"
       />
 
