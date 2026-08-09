@@ -36,7 +36,7 @@ export default function PieceSizeSheet({ open, productName, options, onClose, on
         </div>
         <button type="button" className="piece-size-confirm" onClick={() => onConfirm(selected)}>Add to Cart</button>
         <style jsx>{`
-          .piece-size-backdrop{position:fixed;inset:0;z-index:1200;background:rgba(20,10,7,.58);display:flex;align-items:flex-end;justify-content:center}
+          .piece-size-backdrop{position:fixed;inset:0;z-index:2147483646;background:rgba(20,10,7,.58);display:flex;align-items:flex-end;justify-content:center}
           .piece-size-sheet{width:100%;max-width:480px;background:#fff;border-radius:22px 22px 0 0;padding:10px 20px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -18px 60px rgba(20,10,7,.24)}
           .piece-size-handle{width:42px;height:4px;border-radius:99px;background:#d8d1ca;margin:0 auto 18px}.piece-size-heading{display:grid;grid-template-columns:44px 1fr 38px;gap:12px;align-items:center}
           .piece-size-icon{width:44px;height:44px;border-radius:12px;background:#f2ffe5;color:#4c0381;display:grid;place-items:center}.piece-size-kicker{margin:0 0 3px;color:#60079d;font-size:10px;font-weight:800;letter-spacing:.12em}
