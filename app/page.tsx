@@ -20,7 +20,6 @@ import {
   Bike,
   History,
   LogOut,
-  UserRound,
 } from "lucide-react";
 import type { CartItem, ProductRow } from "@/lib/supabase-browser";
 import type { AuthUser } from "@/lib/auth-types";
@@ -88,7 +87,7 @@ nav{
 .nav-btn:hover{background:linear-gradient(135deg,var(--pd),var(--p));color:#fff;box-shadow:0 10px 22px rgba(31,17,11,.18);}
 .nav-orders-btn{display:inline-flex;align-items:center;gap:6px;padding:0;background:transparent;border:0;font-size:.8rem;letter-spacing:.04em;color:var(--p);text-decoration:none;text-transform:uppercase;transition:color .2s;font-weight:600;font-family:var(--font-space-grotesk), sans-serif;cursor:pointer;white-space:nowrap;}
 .nav-orders-btn:hover{color:var(--pl);}
-.nav-auth-btn{position:relative;background:rgba(123,31,208,0.06);border:1.5px solid rgba(123,31,208,0.18);color:var(--p);width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;margin-left:0.5rem;}
+.nav-auth-btn{position:relative;background:rgba(123,31,208,0.06);border:1.5px solid rgba(123,31,208,0.18);color:var(--p);width:auto;height:38px;padding:0 14px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0;margin-left:0.5rem;font-size:.75rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
 .nav-auth-btn:hover{background:var(--p);color:#fff;border-color:var(--p);}
 .nav-auth-btn.signed-in::after{content:'';position:absolute;right:-1px;bottom:0;width:9px;height:9px;border-radius:50%;background:var(--g);border:2px solid var(--cream);}
 .nav-profile-wrap{position:relative;display:flex;align-items:center;}
@@ -103,7 +102,7 @@ nav{
 @media(max-width:900px){
   .nav-orders-btn{width:auto;height:34px;padding:0 11px;border:1.5px solid rgba(123,31,208,.18);border-radius:999px;align-items:center;justify-content:center;background:rgba(123,31,208,.06);gap:5px;}
   .nav-orders-label{display:inline;font-size:.68rem;font-weight:700;}
-  .nav-auth-btn{width:34px;height:34px;margin-left:0;}
+  .nav-auth-btn{width:auto;height:34px;padding:0 11px;margin-left:0;font-size:.68rem;}
   .nav-profile-menu{position:fixed;right:1rem;top:78px;width:min(230px,calc(100vw - 2rem));}
 }
 #prog{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--g),var(--p));z-index:600;transition:width .05s linear;width:0%;}
@@ -1410,8 +1409,9 @@ nav button,
   }
 
   .nav-auth-btn {
-    width: 32px;
+    width: auto;
     height: 32px;
+    padding: 0 10px;
     margin-left: 0;
   }
 
@@ -2134,7 +2134,7 @@ export default function Home() {
             aria-label="Open your orders"
             title="Your Orders"
           >
-            <span className="nav-orders-label">Orders</span>
+            <span className="nav-orders-label">My Orders</span>
           </button>
           <div className="nav-profile-wrap">
             <button
@@ -2149,7 +2149,7 @@ export default function Home() {
               aria-expanded={user ? profileMenuOpen : undefined}
               title={user ? "Customer profile" : "Customer login"}
             >
-              <UserRound size={19} strokeWidth={2.2} />
+              Profile
             </button>
             {user && profileMenuOpen && (
               <div className="nav-profile-menu">
@@ -2176,22 +2176,6 @@ export default function Home() {
               </div>
             )}
           </div>
-          <button
-            className="nav-btn"
-            onClick={goOrder}
-            style={
-              cartItemCount > 0
-                ? {
-                    background:
-                      "linear-gradient(135deg,var(--p2),var(--p),var(--pd))",
-                    color: "#fff",
-                    borderColor: "var(--p)",
-                  }
-                : undefined
-            }
-          >
-            {cartItemCount > 0 ? `Cart (${cartItemCount}) 🛒` : "Order Now"}
-          </button>
         </div>
       </nav>
 
