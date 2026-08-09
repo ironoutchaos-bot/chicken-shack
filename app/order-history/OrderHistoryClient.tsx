@@ -315,6 +315,7 @@ function OrderReview({
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
   const activeStars = hovered || rating;
+  const ratingLabels = ["", "Poor", "Fair", "Clean", "Great", "Excellent"];
 
   async function saveReview() {
     if (!rating) {
@@ -349,7 +350,7 @@ function OrderReview({
         <div>
           <div className="oh-review-title">Rate your order</div>
           <div className="oh-review-state">
-            {rating ? `${rating} out of 5 stars` : "Tap a star to rate"}
+            {rating ? `${ratingLabels[rating]} · ${rating} out of 5 stars` : "Tap a star to rate"}
           </div>
         </div>
         <div className="oh-stars" onMouseLeave={() => setHovered(0)}>
@@ -377,7 +378,7 @@ function OrderReview({
         value={comment}
         onChange={(event) => setComment(event.target.value)}
         maxLength={1000}
-        placeholder="Write about freshness, packing, or delivery..."
+        placeholder="Write about cleanliness, packing, or delivery..."
         aria-label="Written review"
       />
 
