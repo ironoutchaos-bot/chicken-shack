@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { type OrderRow } from '@/lib/supabase-browser'
 
-const LABELS = ['', 'Poor 😞', 'Fair 😐', 'Good 🙂', 'Great 😊', 'Excellent 🤩']
+const LABELS = ['', 'Poor 😞', 'Fair 😐', 'Clean 🙂', 'Great 😊', 'Excellent 🤩']
 
 function Stars({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hovered, setHovered] = useState(0)

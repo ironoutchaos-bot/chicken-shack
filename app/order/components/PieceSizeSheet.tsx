@@ -45,7 +45,6 @@ export default function PieceSizeSheet({ open, productName, options, onClose, on
           className="piece-size-note"
           value={note}
           onChange={(event) => setNote(event.target.value)}
-          placeholder="Example: slightly smaller pieces"
           maxLength={120}
           rows={2}
         />

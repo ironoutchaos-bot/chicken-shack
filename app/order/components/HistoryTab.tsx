@@ -365,7 +365,7 @@ function FeedbackSection({ order, onSaved }: { order: OrderRow; onSaved: (rating
     }
   }
 
-  const LABELS = ['', 'Poor 😞', 'Fair 😐', 'Good 🙂', 'Great 😊', 'Excellent 🤩']
+  const LABELS = ['', 'Poor 😞', 'Fair 😐', 'Clean 🙂', 'Great 😊', 'Excellent 🤩']
 
   if (saved) {
     return (
