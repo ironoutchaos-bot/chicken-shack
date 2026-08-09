@@ -44,6 +44,7 @@ export type OrderItem = {
   quantity: number   // number of ordered packs/pieces
   weightPerUnit?: number | null
   unit?: 'g' | 'kg' | 'pc' | string
+  pieceSize?: 'Small' | 'Medium' | 'Large' | string
 }
 
 export type DeliveryAddress = {
@@ -104,6 +105,7 @@ export type CartItem = {
   imageUrl: string | null
   weightPerUnit?: number | null
   unit?: 'g' | 'kg' | 'pc' | string
+  pieceSize?: 'Small' | 'Medium' | 'Large' | string
 }
 
 export type DriverRow = {

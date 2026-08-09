@@ -861,7 +861,7 @@ function OrderCard({
       <div style={S.itemsRow}>
         {order.items.map((item, i) => (
           <span key={i} style={S.itemChip}>
-            {item.name} × {item.quantity} · {formatOrderedWeight(item)}
+            {item.name} × {item.quantity} · {formatOrderedWeight(item)}{item.pieceSize ? ` · ${item.pieceSize} pieces` : ''}
           </span>
         ))}
       </div>

@@ -546,6 +546,7 @@ export default function CartSheet({
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm truncate" style={{ color: '#1C0F00' }}>{item.name}</p>
                       <p className="text-xs" style={{ color: 'rgba(22,20,15,.4)' }}>₹{item.pricePerKg}{(() => { const w = formatUnit(weightMap[item.productId] ?? item.weightPerUnit, unitMap[item.productId]); return w ? ` · ${w}` : '' })()}</p>
+                      {item.pieceSize && <p className="text-xs font-bold mt-0.5" style={{ color: '#60079d' }}>{item.pieceSize} pieces</p>}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button onClick={() => onUpdateQty(item.productId, item.quantity - 1)} className="w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-all" style={{ background: '#f2ede0', border: '1px solid rgba(22,20,15,.1)' }}>

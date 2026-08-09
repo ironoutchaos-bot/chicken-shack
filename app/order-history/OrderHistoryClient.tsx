@@ -447,7 +447,7 @@ function OrderCard({
               <div>
                 <div className="oh-item-name">{item.name}</div>
                 <div className="oh-item-meta">
-                  Qty {item.quantity} · ₹{item.pricePerKg}/pc
+                  Qty {item.quantity}{item.pieceSize ? ` · ${item.pieceSize} pieces` : ''} · ₹{item.pricePerKg}/pc
                 </div>
               </div>
               <div className="oh-item-price">

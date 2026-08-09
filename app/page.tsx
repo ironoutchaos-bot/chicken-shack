@@ -29,6 +29,8 @@ import LoginDrawer from "@/app/order/components/LoginDrawer";
 import CartSheet from "@/app/order/components/CartSheet";
 import BannerCarousel from "@/app/order/components/BannerCarousel";
 import VisitTracker from "@/app/order/components/VisitTracker";
+import PieceSizeSheet from "@/app/order/components/PieceSizeSheet";
+import { getPieceSizeOptions, type PieceSize } from "@/lib/piece-size";
 
 const css = `
 :root{
@@ -1526,6 +1528,7 @@ export default function Home() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loginOpen, setLoginOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [pendingCutItem, setPendingCutItem] = useState<CartItem | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [showFloatingOrder, setShowFloatingOrder] = useState(false);
   const ordersAfterLoginRef = useRef(false);
@@ -1733,6 +1736,14 @@ export default function Home() {
       return [...prev, item];
     });
   }, []);
+
+  const chooseCutAndAdd = useCallback((item: CartItem) => {
+    if (getPieceSizeOptions(item.name).length === 0) {
+      addToCart(item);
+      return;
+    }
+    setPendingCutItem(item);
+  }, [addToCart]);
 
   const updateCartQty = useCallback((productId: string, qty: number) => {
     if (qty <= 0) {
@@ -2491,7 +2502,7 @@ export default function Home() {
                         <button
                           className="btn-add-cart"
                           onClick={() =>
-                            addToCart({
+                            chooseCutAndAdd({
                               productId: p.id,
                               name: p.name,
                               pricePerKg: displayPrice,
@@ -3142,6 +3153,16 @@ export default function Home() {
         onOrderPlaced={() => {
           clearCart();
           setCartOpen(false);
+        }}
+      />
+      <PieceSizeSheet
+        open={Boolean(pendingCutItem)}
+        productName={pendingCutItem?.name ?? ""}
+        options={pendingCutItem ? getPieceSizeOptions(pendingCutItem.name) : []}
+        onClose={() => setPendingCutItem(null)}
+        onConfirm={(pieceSize: PieceSize) => {
+          if (pendingCutItem) addToCart({ ...pendingCutItem, pieceSize });
+          setPendingCutItem(null);
         }}
       />
     </>
