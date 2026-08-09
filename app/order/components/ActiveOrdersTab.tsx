@@ -325,6 +325,7 @@ function DeliveredCard({ order }: { order: OrderRow }) {
                 {item.name}
                 <span className="font-normal ml-1" style={{ color: '#9CA3AF' }}>× {item.quantity}</span>
                 {item.pieceSize && <span className="font-normal ml-1" style={{ color: '#60079d' }}>· {item.pieceSize} pieces</span>}
+                {item.itemNote && <span className="font-normal ml-1" style={{ color: '#6B4C2A' }}>· Note: {item.itemNote}</span>}
               </span>
             </div>
             <span className="text-sm font-black" style={{ color: '#1C0F00' }}>

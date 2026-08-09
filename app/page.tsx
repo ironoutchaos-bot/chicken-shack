@@ -3160,8 +3160,8 @@ export default function Home() {
         productName={pendingCutItem?.name ?? ""}
         options={pendingCutItem ? getPieceSizeOptions(pendingCutItem.name) : []}
         onClose={() => setPendingCutItem(null)}
-        onConfirm={(pieceSize: PieceSize) => {
-          if (pendingCutItem) addToCart({ ...pendingCutItem, pieceSize });
+        onConfirm={(pieceSize: PieceSize, itemNote: string) => {
+          if (pendingCutItem) addToCart({ ...pendingCutItem, pieceSize, itemNote: itemNote || undefined });
           setPendingCutItem(null);
         }}
       />

@@ -751,7 +751,7 @@ function OrderCard({
       <div style={S.items}>
         {order.items.map((item, i) => (
           <span key={i} style={S.item}>
-            {item.name} × {item.quantity} pc{item.quantity !== 1 ? 's' : ''}{item.pieceSize ? ` · ${item.pieceSize} pieces` : ''}
+            {item.name} × {item.quantity} pc{item.quantity !== 1 ? 's' : ''}{item.pieceSize ? ` · ${item.pieceSize} pieces` : ''}{item.itemNote ? ` · Note: ${item.itemNote}` : ''}
           </span>
         ))}
       </div>
