@@ -2134,7 +2134,6 @@ export default function Home() {
             aria-label="Open your orders"
             title="Your Orders"
           >
-            <History size={17} />
             <span className="nav-orders-label">Orders</span>
           </button>
           <div className="nav-profile-wrap">
