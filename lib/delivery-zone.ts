@@ -3,7 +3,7 @@ export const DELIVERY_ZONE_CENTER = {
   lng: 77.629187,
 } as const
 
-export const DELIVERY_ZONE_RADIUS_KM = 5.5
+export const DELIVERY_ZONE_RADIUS_KM = 6
 export const ALLOWED_DELIVERY_PINCODES = ['560064', '560077', '560092'] as const
 
 export type DeliveryZoneResult = {

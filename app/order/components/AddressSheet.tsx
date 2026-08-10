@@ -764,7 +764,7 @@ export default function AddressSheet({ open, onClose, onConfirm, savedPincode }:
           {step === 'map' && pinTouched && zoneChecking && (
             <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl px-3 py-2.5">
               <Loader2 size={13} className="text-stone-500 shrink-0 animate-spin" />
-              <p className="text-xs text-stone-600 font-medium">Checking 5.5 km delivery radius...</p>
+              <p className="text-xs text-stone-600 font-medium">Checking 6 km delivery radius...</p>
             </div>
           )}
           {step === 'map' && pinTouched && zoneResult && !zoneResult.deliverable && (
