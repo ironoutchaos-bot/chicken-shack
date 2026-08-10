@@ -16,6 +16,8 @@ export type DeliveryZoneResult = {
 }
 
 function toFiniteNumber(value: unknown) {
+  if (value === null || value === undefined || typeof value === 'boolean') return null
+  if (typeof value === 'string' && value.trim() === '') return null
   const parsed = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(parsed) ? parsed : null
 }
@@ -43,7 +45,11 @@ export function distanceBetweenKm(latA: number, lngA: number, latB: number, lngB
 export function checkDeliveryZone(lat: unknown, lng: unknown, pincode?: unknown): DeliveryZoneResult | null {
   const latitude = toFiniteNumber(lat)
   const longitude = toFiniteNumber(lng)
-  if (latitude === null || longitude === null) return null
+  if (
+    latitude === null || longitude === null ||
+    latitude < -90 || latitude > 90 ||
+    longitude < -180 || longitude > 180
+  ) return null
 
   const distanceKm = distanceBetweenKm(
     DELIVERY_ZONE_CENTER.lat,
