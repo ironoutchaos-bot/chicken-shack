@@ -19,6 +19,8 @@ export const dynamic = 'force-dynamic'
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { type Coupon } from '@/app/api/coupons/route'
+import { calculateCouponDiscount } from '@/lib/coupon-discount'
+import { validateBogoPrices } from '@/lib/coupon-catalog'
 
 const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
 const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
@@ -117,34 +119,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Calculate discount — specific coupons only discount eligible items, not the full cart
-  const cartItems   = body.cart_items ?? []
-  const deliveryFee = Number(body.delivery_fee ?? 0)
-
-  let discountBase: number
-  if (coupon.applies_to === 'specific' && coupon.product_ids.length > 0) {
-    // Only sum up eligible items — delivery fee and other items are excluded
-    discountBase = cartItems
-      .filter(i => coupon.product_ids.includes(i.productId))
-      .reduce((s, i) => s + Number(i.pricePerKg) * Number(i.quantity), 0)
-  } else {
-    const subtotal = body.subtotal ?? cartItems.reduce((s, i) => s + Number(i.pricePerKg) * Number(i.quantity), 0)
-    discountBase = subtotal + deliveryFee
+  try {
+    const items = body.cart_items ?? []
+    if (coupon.discount_type === 'bogo') await validateBogoPrices(items)
+    const result = calculateCouponDiscount(coupon, items, Number(body.delivery_fee ?? 0))
+    return NextResponse.json({ valid: true, ...result, coupon_id: coupon.id })
+  } catch (error) {
+    return NextResponse.json({ valid: false, error: error instanceof Error ? error.message : 'Could not validate coupon. Please try again.' })
   }
-
-  let discount = coupon.discount_type === 'percent'
-    ? Math.round((discountBase * coupon.discount_value) / 100)
-    : coupon.discount_value
-  discount = Math.min(discount, discountBase)
-
-  const label = coupon.discount_type === 'percent'
-    ? `${coupon.discount_value}% off`
-    : `₹${coupon.discount_value} off`
-
-  return NextResponse.json({
-    valid:      true,
-    discount,
-    label,
-    coupon_id:  coupon.id,
-  })
 }

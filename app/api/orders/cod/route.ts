@@ -22,6 +22,8 @@ import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import { sessionOptions, type SessionData } from '@/lib/session'
 import { type Coupon } from '@/app/api/coupons/route'
+import { calculateCouponDiscount, type CouponCartItem } from '@/lib/coupon-discount'
+import { validateBogoPrices } from '@/lib/coupon-catalog'
 import { notifyDriverAssignment, notifyAllDrivers } from '@/lib/push-notify'
 import { sendOrderConfirmationOnce, summarizeItems } from '@/lib/aisensy'
 import { ALLOWED_DELIVERY_PINCODES, checkDeliveryZone, isAllowedDeliveryPincode, normalizePincode } from '@/lib/delivery-zone'
@@ -167,6 +169,7 @@ export async function POST(req: NextRequest) {
   const subtotal   = cartItems.reduce((s, i) => s + (Number(i.pricePerKg) * Number(i.quantity)), 0)
   const deliveryFee = Number(settings.delivery_fee ?? 0)
   let   serverDiscount = 0
+  let freeItems: { productId: string; quantity: number }[] = []
 
   // ── Coupon validation (multi-coupon system) ───────────────────────────────
   const requestedCode = body.coupon_code ? String(body.coupon_code).trim().toUpperCase() : null
@@ -178,6 +181,16 @@ export async function POST(req: NextRequest) {
 
     if (!coupon || !coupon.enabled) {
       return NextResponse.json({ error: 'Invalid or inactive coupon code' }, { status: 400 })
+    }
+
+    try {
+      const couponItems = items as CouponCartItem[]
+      if (coupon.discount_type === 'bogo') await validateBogoPrices(couponItems)
+      const calculated = calculateCouponDiscount(coupon, couponItems, deliveryFee)
+      serverDiscount = calculated.discount
+      freeItems = calculated.freeItems
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not validate coupon' }, { status: 400 })
     }
 
     // Product-specific check
@@ -210,21 +223,6 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Compute actual discount server-side
-    // Specific coupons only apply to eligible items — not the full cart + delivery
-    let discountBase: number
-    if (coupon.applies_to === 'specific' && coupon.product_ids.length > 0) {
-      const allItems = items as { productId: string; pricePerKg: number; quantity: number }[]
-      discountBase = allItems
-        .filter((i: { productId: string }) => coupon.product_ids.includes(i.productId))
-        .reduce((s: number, i: { pricePerKg: number; quantity: number }) => s + Number(i.pricePerKg) * Number(i.quantity), 0)
-    } else {
-      discountBase = subtotal + deliveryFee
-    }
-    serverDiscount = coupon.discount_type === 'percent'
-      ? Math.round((discountBase * coupon.discount_value) / 100)
-      : coupon.discount_value
-    serverDiscount = Math.min(serverDiscount, discountBase)
   }
 
   const verifiedTotal = Math.max(0, subtotal + deliveryFee - serverDiscount)
@@ -271,9 +269,16 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Build insert payload ───────────────────────────────────────────────────
+  const freeRemaining = new Map(freeItems.map(item => [item.productId, item.quantity]))
+  const orderItems = (items as (CouponCartItem & Record<string, unknown>)[]).map(item => {
+    const { freeQuantity: _clientFreeQuantity, ...saved } = item
+    const freeQuantity = Math.min(item.quantity, freeRemaining.get(item.productId) ?? 0)
+    freeRemaining.set(item.productId, (freeRemaining.get(item.productId) ?? 0) - freeQuantity)
+    return freeQuantity > 0 ? { ...saved, freeQuantity } : saved
+  })
   const insert: Record<string, unknown> = {
     user_id,
-    items,
+    items: orderItems,
     total_amount:     verifiedTotal,
     payment_status:   payment_status ?? 'cod',
     order_status:     'placed',

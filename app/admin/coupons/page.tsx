@@ -10,7 +10,7 @@ type Product = { id: string; name: string; price_per_kg: number }
 type FormState = {
   code:               string
   enabled:            boolean
-  discount_type:      'percent' | 'fixed'
+  discount_type:      'percent' | 'fixed' | 'bogo'
   discount_value:     number
   max_uses_per_phone: number
   applies_to:         'all' | 'specific'
@@ -36,6 +36,7 @@ function genCode(): string {
 }
 
 function discountLabel(c: Coupon): string {
+  if (c.discount_type === 'bogo') return 'Buy 1 Get 1 Free'
   return c.discount_type === 'percent' ? `${c.discount_value}% off` : `₹${c.discount_value} off`
 }
 
@@ -121,7 +122,7 @@ export default function CouponsPage() {
     setFormError('')
     const code = form.code.trim().toUpperCase()
     if (!code) { setFormError('Coupon code is required'); return }
-    if (form.discount_value <= 0) { setFormError('Discount value must be greater than 0'); return }
+    if (form.discount_type !== 'bogo' && form.discount_value <= 0) { setFormError('Discount value must be greater than 0'); return }
     if (form.discount_type === 'percent' && form.discount_value > 100) {
       setFormError('Percentage discount cannot exceed 100%')
       return
@@ -382,29 +383,21 @@ export default function CouponsPage() {
             </div>
 
             {/* Discount type + value */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: form.discount_type === 'bogo' ? '1fr' : '1fr 1fr', gap: 12, marginBottom: '1rem' }}>
               <div>
                 <label style={S.label}>Discount Type</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {(['percent', 'fixed'] as const).map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, discount_type: t }))}
-                      style={{
-                        flex: 1, padding: '0.45rem', borderRadius: 8, border: '2px solid',
-                        borderColor: form.discount_type === t ? '#d97706' : '#e5e7eb',
-                        background:  form.discount_type === t ? '#fef3c7' : '#fff',
-                        fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer',
-                        color: form.discount_type === t ? '#92400e' : '#6b7280',
-                      }}
-                    >
-                      {t === 'percent' ? '% Off' : '₹ Off'}
-                    </button>
-                  ))}
-                </div>
+                <select
+                  aria-label="Discount Type"
+                  style={S.input}
+                  value={form.discount_type}
+                  onChange={event => setForm(f => ({ ...f, discount_type: event.target.value as FormState['discount_type'], discount_value: event.target.value === 'bogo' ? 0 : f.discount_value || 10 }))}
+                >
+                  <option value="percent">Percentage off</option>
+                  <option value="fixed">Fixed amount off</option>
+                  <option value="bogo">Buy 1 Get 1 Free</option>
+                </select>
               </div>
-              <div>
+              {form.discount_type !== 'bogo' && <div>
                 <label style={S.label}>Discount Value</label>
                 <input
                   type="number"
@@ -414,8 +407,13 @@ export default function CouponsPage() {
                   value={form.discount_value}
                   onChange={e => setForm(f => ({ ...f, discount_value: Number(e.target.value) }))}
                 />
-              </div>
+              </div>}
             </div>
+            {form.discount_type === 'bogo' && (
+              <p style={{ margin: '0 0 16px', fontSize: '0.85rem', lineHeight: 1.5, color: '#92400e', background: '#fffbeb', padding: 12, borderRadius: 8 }}>
+                Add 2 packs of the same eligible product and pay for 1. Every pair includes 1 free pack; pack sizes must match. Delivery charges still apply.
+              </p>
+            )}
 
             {/* Total usage limit */}
             <div style={{ marginBottom: '1rem' }}>
@@ -492,13 +490,13 @@ export default function CouponsPage() {
             )}
 
             {/* Preview */}
-            {form.code && form.discount_value > 0 && (
+            {form.code && (form.discount_type === 'bogo' || form.discount_value > 0) && (
               <div style={{ background: '#fffbeb', border: '1.5px dashed #fbbf24', borderRadius: 10, padding: '0.65rem 1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: '1.2rem' }}>🎟️</span>
                 <div>
                   <p style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', fontFamily: 'monospace', letterSpacing: '0.06em' }}>{form.code || '—'}</p>
                   <p style={{ margin: 0, fontSize: '0.78rem', color: '#92400e' }}>
-                    {form.discount_type === 'percent' ? `${form.discount_value}% off` : `₹${form.discount_value} off`}
+                    {form.discount_type === 'bogo' ? 'Buy 1 Get 1 Free' : form.discount_type === 'percent' ? `${form.discount_value}% off` : `₹${form.discount_value} off`}
                     {form.applies_to === 'specific' && form.product_ids.length > 0
                       ? ` · ${form.product_ids.length} product${form.product_ids.length !== 1 ? 's' : ''} only`
                       : ' · All products'}

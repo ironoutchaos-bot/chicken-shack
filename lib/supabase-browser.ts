@@ -36,6 +36,7 @@ export type ProductRow = {
 }
 
 export type OrderItem = {
+  freeQuantity?: number
   productId: string
   name: string
   pricePerKg: number

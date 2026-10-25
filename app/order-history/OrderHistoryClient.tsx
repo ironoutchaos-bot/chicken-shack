@@ -447,6 +447,7 @@ function OrderCard({
             >
               <div>
                 <div className="oh-item-name">{item.name}</div>
+                {item.freeQuantity ? <div className="oh-item-meta">Includes {item.freeQuantity} FREE pack{item.freeQuantity === 1 ? '' : 's'}</div> : null}
                 <div className="oh-item-meta">
                   Qty {item.quantity}{item.pieceSize ? ` · ${item.pieceSize} pieces` : ''}{item.itemNote ? ` · Note: ${item.itemNote}` : ''} · ₹{item.pricePerKg}/pc
                 </div>

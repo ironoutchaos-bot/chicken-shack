@@ -67,12 +67,19 @@ export default function CartSheet({
 
   // Coupon state
   const [couponInput,    setCouponInput]    = useState('')
-  const [couponApplied,  setCouponApplied]  = useState(false)
+  const [hasAppliedCoupon, setCouponApplied] = useState(false)
+  const [couponCartKey, setCouponCartKey] = useState('')
+  const [freeItems, setFreeItems] = useState<{ productId: string; quantity: number }[]>([])
   const [couponError,    setCouponError]    = useState('')
   const [couponDiscount, setCouponDiscount] = useState(0)
   const [couponLabel,    setCouponLabel]    = useState('')
   const couponInputRef    = useRef<HTMLInputElement>(null)
   const checkoutOpenedRef = useRef(false)
+
+  const cartKey = JSON.stringify([cart, deliveryFee])
+  const currentCartKey = useRef(cartKey)
+  currentCartKey.current = cartKey
+  const couponApplied = hasAppliedCoupon && couponCartKey === cartKey
 
   const subtotal   = cart.reduce((s, c) => s + c.pricePerKg * c.quantity, 0)
   const discount   = couponApplied ? couponDiscount : 0
@@ -170,6 +177,7 @@ export default function CartSheet({
   const showCF  = cfEnabled
 
   function handleCheckout(mode: CheckoutMode) {
+    if (couponChecking) return
     if (cart.length > 0) trackFunnelEvent('checkout_started')
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ ecommerce: null });
@@ -205,6 +213,7 @@ export default function CartSheet({
     const entered = couponInput.trim().toUpperCase()
     if (!entered) { setCouponError('Please enter a coupon code'); return }
     setCouponChecking(true)
+    const requestedCartKey = cartKey
     try {
       const res = await fetch('/api/coupon/validate', {
         method:  'POST',
@@ -218,6 +227,10 @@ export default function CartSheet({
         }),
       })
       const data = await res.json()
+      if (currentCartKey.current !== requestedCartKey) {
+        setCouponError('Your cart changed. Please apply the coupon again.')
+        return
+      }
       if (!data.valid) {
         setCouponError(data.error ?? 'Invalid coupon code')
         setCouponChecking(false)
@@ -225,11 +238,14 @@ export default function CartSheet({
       }
       setCouponDiscount(data.discount)
       setCouponLabel(data.label)
+      setCouponCartKey(requestedCartKey)
+      setFreeItems(Array.isArray(data.freeItems) ? data.freeItems : [])
       setCouponApplied(true)
     } catch {
       setCouponError('Could not verify coupon. Please try again.')
+    } finally {
+      setCouponChecking(false)
     }
-    setCouponChecking(false)
   }
 
   function removeCoupon() {
@@ -548,6 +564,7 @@ export default function CartSheet({
                       <p className="text-xs" style={{ color: 'rgba(22,20,15,.4)' }}>₹{item.pricePerKg}{(() => { const w = formatUnit(weightMap[item.productId] ?? item.weightPerUnit, unitMap[item.productId]); return w ? ` · ${w}` : '' })()}</p>
                       {item.pieceSize && <p className="text-xs font-bold mt-0.5" style={{ color: '#60079d' }}>{item.pieceSize} pieces</p>}
                       {item.itemNote && <p className="text-xs mt-0.5 line-clamp-2" style={{ color: '#6B4C2A' }}>Note: {item.itemNote}</p>}
+                      {couponApplied && freeItems.find(free => free.productId === item.productId) && <p className="text-xs font-bold mt-1" style={{ color: '#166534' }}>{freeItems.find(free => free.productId === item.productId)!.quantity} of {item.quantity} packs FREE</p>}
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button onClick={() => onUpdateQty(item.productId, item.quantity - 1)} className="w-7 h-7 rounded-lg flex items-center justify-center active:scale-90 transition-all" style={{ background: '#f2ede0', border: '1px solid rgba(22,20,15,.1)' }}>

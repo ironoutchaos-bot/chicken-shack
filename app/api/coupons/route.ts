@@ -7,7 +7,7 @@ export type Coupon = {
   id:                 string   // uuid generated client-side
   code:               string
   enabled:            boolean
-  discount_type:      'percent' | 'fixed'
+  discount_type:      'percent' | 'fixed' | 'bogo'
   discount_value:     number
   max_uses_per_phone: number   // total usage limit; 0 = unlimited
   applies_to:         'all' | 'specific'
@@ -52,14 +52,16 @@ async function saveCoupons(coupons: Coupon[]) {
       body:    JSON.stringify({ value: coupons }),
     }
   )
+  if (!patch.ok) throw new Error('Could not save coupon settings')
   const rows = await patch.json().catch(() => [])
   const updated = Array.isArray(rows) ? rows.length : (patch.ok ? 1 : 0)
   if (updated === 0) {
-    await fetch(`${SUPA_URL()}/rest/v1/settings`, {
+    const insert = await fetch(`${SUPA_URL()}/rest/v1/settings`, {
       method:  'POST',
       headers: { ...h, 'Prefer': 'return=minimal' },
       body:    JSON.stringify({ key: 'coupons', value: coupons }),
     })
+    if (!insert.ok) throw new Error('Could not save coupon settings')
   }
 }
 
@@ -78,6 +80,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
   if (!body.code?.trim()) return NextResponse.json({ error: 'Code is required' }, { status: 400 })
+  if (body.discount_type && !['percent', 'fixed', 'bogo'].includes(body.discount_type)) return NextResponse.json({ error: 'Invalid discount type' }, { status: 400 })
+  if (body.applies_to === 'specific' && !body.product_ids?.length) return NextResponse.json({ error: 'Select at least one product' }, { status: 400 })
 
   const coupons = await loadCoupons()
   const code = body.code.trim().toUpperCase()
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
     code,
     enabled:            body.enabled            ?? true,
     discount_type:      body.discount_type      ?? 'percent',
-    discount_value:     body.discount_value     ?? 10,
+    discount_value:     body.discount_type === 'bogo' ? 0 : body.discount_value ?? 10,
     max_uses_per_phone: body.max_uses_per_phone ?? 0,
     applies_to:         body.applies_to         ?? 'all',
     product_ids:        body.product_ids        ?? [],
@@ -124,7 +128,11 @@ export async function PATCH(req: NextRequest) {
     body.code = newCode
   }
 
-  coupons[idx] = { ...coupons[idx], ...body }
+  const updated = { ...coupons[idx], ...body }
+  if (!['percent', 'fixed', 'bogo'].includes(updated.discount_type)) return NextResponse.json({ error: 'Invalid discount type' }, { status: 400 })
+  if (updated.applies_to === 'specific' && !updated.product_ids?.length) return NextResponse.json({ error: 'Select at least one product' }, { status: 400 })
+  if (updated.discount_type === 'bogo') updated.discount_value = 0
+  coupons[idx] = updated
   await saveCoupons(coupons)
   return NextResponse.json(coupons[idx])
 }

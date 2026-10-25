@@ -862,6 +862,7 @@ function OrderCard({
         {order.items.map((item, i) => (
           <span key={i} style={S.itemChip}>
             {item.name} × {item.quantity} · {formatOrderedWeight(item)}{item.pieceSize ? ` · ${item.pieceSize} pieces` : ''}{item.itemNote ? ` · Note: ${item.itemNote}` : ''}
+            {item.freeQuantity ? ` · Includes ${item.freeQuantity} FREE pack${item.freeQuantity === 1 ? '' : 's'}` : ''}
           </span>
         ))}
       </div>
