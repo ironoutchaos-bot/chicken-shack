@@ -383,19 +383,28 @@ export default function CouponsPage() {
             </div>
 
             {/* Discount type + value */}
-            <div style={{ display: 'grid', gridTemplateColumns: form.discount_type === 'bogo' ? '1fr' : '1fr 1fr', gap: 12, marginBottom: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: '1rem' }}>
               <div>
                 <label style={S.label}>Discount Type</label>
-                <select
-                  aria-label="Discount Type"
-                  style={S.input}
-                  value={form.discount_type}
-                  onChange={event => setForm(f => ({ ...f, discount_type: event.target.value as FormState['discount_type'], discount_value: event.target.value === 'bogo' ? 0 : f.discount_value || 10 }))}
-                >
-                  <option value="percent">Percentage off</option>
-                  <option value="fixed">Fixed amount off</option>
-                  <option value="bogo">Buy 1 Get 1 Free</option>
-                </select>
+                <div role="radiogroup" aria-label="Discount Type" style={{ display: 'grid', gap: 8 }}>
+                  {([
+                    { value: 'percent', label: 'Percentage off' },
+                    { value: 'fixed', label: 'Fixed amount off' },
+                    { value: 'bogo', label: 'Buy 1 Get 1 Free' },
+                  ] as const).map(option => (
+                    <label key={option.value} style={{ display: 'flex', alignItems: 'center', gap: 10, minHeight: 44, padding: '10px 12px', borderRadius: 8, border: `1.5px solid ${form.discount_type === option.value ? '#d97706' : '#e5e7eb'}`, background: form.discount_type === option.value ? '#fffbeb' : '#fff', color: '#1a1109', fontSize: '0.9rem', fontWeight: 650, cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="coupon-discount-type"
+                        value={option.value}
+                        checked={form.discount_type === option.value}
+                        onChange={() => setForm(f => ({ ...f, discount_type: option.value, discount_value: option.value === 'bogo' ? 0 : f.discount_value || 10 }))}
+                        style={{ width: 18, height: 18, accentColor: '#d97706', flexShrink: 0 }}
+                      />
+                      {option.label}
+                    </label>
+                  ))}
+                </div>
               </div>
               {form.discount_type !== 'bogo' && <div>
                 <label style={S.label}>Discount Value</label>
