@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { isAdminRequest } from '@/app/api/admin/login/route'
 import { notifyUserOrderStatus, notifyDriverAssignment } from '@/lib/push-notify'
 
@@ -99,7 +99,7 @@ export async function PATCH(
 
     // Notify driver if they were just assigned
     if (body.driver_id) {
-      notifyDriverAssignment(body.driver_id, id).catch(() => {})
+      after(async () => { await notifyDriverAssignment(body.driver_id!, id).catch(error => console.error('[driver alert]', error)) })
     }
 
     return NextResponse.json({ ok: true })

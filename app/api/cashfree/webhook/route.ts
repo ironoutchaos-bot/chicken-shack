@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
  * Signature verification:
  *   HMAC-SHA256(x-webhook-timestamp + rawBody, CASHFREE_SECRET_KEY) → base64
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { createHmac } from 'crypto'
 import { notifyAllDrivers } from '@/lib/push-notify'
 import { sendOrderConfirmationOnce, summarizeItems } from '@/lib/aisensy'
@@ -168,7 +168,7 @@ export async function POST(req: NextRequest) {
     // Online payment confirmed → the order is now live. Alert all drivers so a
     // loud notification pops for every order, assigned or not.
     if (dbOrder.order_status !== 'delivered' && dbOrder.order_status !== 'cancelled') {
-      notifyAllDrivers(dbOrder.id).catch(() => {})
+      after(async () => { await notifyAllDrivers(dbOrder.id).catch(error => console.error('[driver alert]', error)) })
     }
 
     await sendConfirmation(dbOrder)

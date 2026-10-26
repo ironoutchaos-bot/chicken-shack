@@ -1,6 +1,6 @@
-// B'LURU FRESH Service Worker — v12
+// B'LURU FRESH Service Worker — v13
 // Bump the version any time sw.js changes so the browser installs the update.
-const CACHE = 'blurufresh-v12'
+const CACHE = 'blurufresh-v13'
 
 // ── NO pre-caching on install ─────────────────────────────────────────────────
 // Previously we pre-cached HTML pages in the install event using cache.addAll().
@@ -120,7 +120,7 @@ self.addEventListener('push', (event) => {
       }),
       // Tell any open pages to refresh + (for drivers) sound the alarm.
       clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-        list.forEach(c => c.postMessage({ type: 'ORDER_UPDATE', kind: data.kind }))
+        list.forEach(c => c.postMessage({ type: 'ORDER_UPDATE', kind: data.kind, test: data.test === true }))
       }),
     ])
   )

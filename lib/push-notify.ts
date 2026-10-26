@@ -72,12 +72,12 @@ export async function notifyDriverAssignment(driverId: string, orderId: string) 
  */
 export type DriverNotifyResult = { total: number; sent: number; failed: number; removed: number }
 
-export async function notifyAllDrivers(orderId: string, test = false): Promise<DriverNotifyResult> {
+export async function notifyAllDrivers(orderId: string, test = false, device?: { driverId: string; endpoint: string }): Promise<DriverNotifyResult> {
   const short = orderId.slice(0, 8).toUpperCase()
   const result: DriverNotifyResult = { total: 0, sent: 0, failed: 0, removed: 0 }
 
   const res = await fetch(
-    `${SUPA_URL()}/rest/v1/driver_push_subscriptions?select=endpoint,p256dh,auth`,
+    `${SUPA_URL()}/rest/v1/driver_push_subscriptions?select=endpoint,p256dh,auth${device ? `&driver_id=eq.${encodeURIComponent(device.driverId)}&endpoint=eq.${encodeURIComponent(device.endpoint)}` : ''}`,
     {
       headers: {
         'apikey':        SUPA_SRV(),
@@ -94,7 +94,7 @@ export async function notifyAllDrivers(orderId: string, test = false): Promise<D
   const payload = JSON.stringify({
     title: test ? '🔔 Test Alarm' : '🛵 New Order Received!',
     body:  test
-      ? 'This is a test — your new-order alarm is working! 🎉'
+      ? 'Test notification. Check whether this phone sounds or vibrates.'
       : `Order #${short} just came in. Tap to view & deliver.`,
     icon:  '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
@@ -104,6 +104,7 @@ export async function notifyAllDrivers(orderId: string, test = false): Promise<D
     requireInteraction: true,
     vibrate:            [500, 200, 500, 200, 500, 200, 700],
     kind:               'driver_new_order',
+    test,
   })
 
   await Promise.allSettled(

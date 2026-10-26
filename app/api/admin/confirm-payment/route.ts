@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
  * Manually marks a pending online payment as paid and triggers driver auto-assignment.
  * Used when webhook/client-side verify fails and admin needs to confirm manually.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { notifyDriverAssignment } from '@/lib/push-notify'
 import { sendOrderConfirmationOnce, summarizeItems } from '@/lib/aisensy'
 import { isAdminRequest } from '@/app/api/admin/login/route'
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   // Notify driver if auto-assigned by trigger
   if (updated?.driver_id && updated?.id) {
-    notifyDriverAssignment(updated.driver_id, updated.id).catch(() => {})
+    after(async () => { await notifyDriverAssignment(updated.driver_id, updated.id).catch(error => console.error('[driver alert]', error)) })
   }
 
   // Same WhatsApp confirmation the customer would have received automatically.

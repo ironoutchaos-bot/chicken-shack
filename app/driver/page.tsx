@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { Bell, Volume2 } from 'lucide-react'
 import type { OrderRow, DeliveryAddress, OrderItem } from '@/lib/supabase-browser'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -109,6 +110,11 @@ export default function DriverPage() {
   const [pushStatus,    setPushStatus]    = useState<'idle' | 'subscribed' | 'denied'>('idle')
   const [pushAsking,    setPushAsking]    = useState(false)
   const [pushDismissed, setPushDismissed] = useState(false)
+  const [pushError, setPushError] = useState('')
+  const [soundStatus, setSoundStatus] = useState<'off' | 'ready' | 'blocked'>('off')
+  const [testMessage, setTestMessage] = useState('')
+  const [testSending, setTestSending] = useState(false)
+  const pushEndpointRef = useRef<string | null>(null)
 
   // PWA install
   const [isStandalone,   setIsStandalone]   = useState(true)   // assume installed until checked
@@ -127,6 +133,8 @@ export default function DriverPage() {
 
   // New-order alarm (loud looping ring while the app is open)
   const [alarmOn,      setAlarmOn]      = useState(false)
+  const [alarmIsTest, setAlarmIsTest] = useState(false)
+  const alarmTestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const audioCtxRef      = useRef<AudioContext | null>(null)
   const alarmTimerRef    = useRef<ReturnType<typeof setInterval> | null>(null)
   const alarmPlayingRef  = useRef(false)
@@ -192,19 +200,37 @@ export default function DriverPage() {
 
   // ── Push notifications ───────────────────────────────────────
   async function subscribePush() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || typeof Notification === 'undefined') {
+      setPushError('This browser cannot enable push alerts. Open the installed driver app or a supported browser.')
+      return
+    }
     setPushAsking(true)
+    setPushError('')
+    setPushStatus('idle')
+    pushEndpointRef.current = null
     try {
       const permission = await Notification.requestPermission()
       if (permission !== 'granted') { setPushStatus('denied'); setPushAsking(false); return }
 
-      const reg = await navigator.serviceWorker.ready
-      const existing = await reg.pushManager.getSubscription()
+      await navigator.serviceWorker.register('/sw.js')
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Alert setup timed out. Please try again.')), 15000)),
+      ])
+      await reg.update().catch(() => {})
+      let existing = await reg.pushManager.getSubscription()
+      const publicKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '')
+      if (!publicKey.length) throw new Error('Alert configuration is missing. Contact Admin.')
+      if (existing?.options.applicationServerKey) {
+        const savedKey = new Uint8Array(existing.options.applicationServerKey)
+        if (savedKey.length !== publicKey.length || savedKey.some((value, index) => value !== publicKey[index])) {
+          await existing.unsubscribe()
+          existing = null
+        }
+      }
       const sub = existing ?? await reg.pushManager.subscribe({
         userVisibleOnly:      true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
-        ).buffer as ArrayBuffer,
+        applicationServerKey: publicKey.buffer as ArrayBuffer,
       })
 
       const saveRes = await fetch('/api/push/driver-subscribe', {
@@ -213,11 +239,15 @@ export default function DriverPage() {
         body:    JSON.stringify({ subscription: sub.toJSON() }),
       })
       if (saveRes.ok) {
+        pushEndpointRef.current = sub.endpoint
         setPushStatus('subscribed')
+      } else {
+        throw new Error('Could not register this phone for alerts. Please sign in again and retry.')
       }
       // If save failed, leave status as 'idle' so the banner stays and driver can retry
-    } catch {
-      // leave as idle
+    } catch (error) {
+      setPushStatus('idle')
+      setPushError(error instanceof Error ? error.message : 'Could not enable alerts. Please try again.')
     } finally {
       setPushAsking(false)
     }
@@ -241,14 +271,22 @@ export default function DriverPage() {
   const stopAlarm = useCallback(() => {
     alarmPlayingRef.current = false
     if (alarmTimerRef.current) { clearInterval(alarmTimerRef.current); alarmTimerRef.current = null }
+    if (alarmTestTimeoutRef.current) { clearTimeout(alarmTestTimeoutRef.current); alarmTestTimeoutRef.current = null }
     try { navigator.vibrate?.(0) } catch {}
     setAlarmOn(false)
   }, [])
 
-  const startAlarm = useCallback(() => {
-    if (alarmPlayingRef.current) return
+  const startAlarm = useCallback((isTest = false) => {
+    if (alarmPlayingRef.current) {
+      if (!isTest) {
+        setAlarmIsTest(false)
+        if (alarmTestTimeoutRef.current) { clearTimeout(alarmTestTimeoutRef.current); alarmTestTimeoutRef.current = null }
+      }
+      return
+    }
     alarmPlayingRef.current = true
     setAlarmOn(true)
+    setAlarmIsTest(isTest)
     const ctx = ensureAudio()
     const ring = () => {
       try { navigator.vibrate?.([300, 120, 300, 120, 450]) } catch {}
@@ -271,7 +309,40 @@ export default function DriverPage() {
     }
     ring()
     alarmTimerRef.current = setInterval(ring, 1500)
-  }, [ensureAudio])
+    if (isTest) alarmTestTimeoutRef.current = setTimeout(stopAlarm, 4000)
+  }, [ensureAudio, stopAlarm])
+
+  async function testSound() {
+    try {
+      const context = ensureAudio()
+      if (!context) throw new Error('Sound is unavailable in this browser.')
+      await context.resume()
+      if (context.state !== 'running') throw new Error('Sound is blocked. Check this browser or app sound permissions.')
+      setSoundStatus('ready')
+      setTestMessage('Playing a 4-second sound test. Check your phone volume if it is silent.')
+      startAlarm(true)
+    } catch (error) {
+      setSoundStatus('blocked')
+      setTestMessage(error instanceof Error ? error.message : 'Could not play the sound test.')
+    }
+  }
+
+  async function testNotification() {
+    const endpoint = pushEndpointRef.current
+    if (!endpoint) { setPushError('Tap Enable Alerts on this phone first.'); return }
+    setTestSending(true)
+    setTestMessage('')
+    try {
+      const response = await fetch('/api/driver/test-notification', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Could not send the test notification.')
+      setTestMessage('Test sent to this phone. Check for a notification and sound; acceptance does not confirm that it played.')
+    } catch (error) {
+      setTestMessage(error instanceof Error ? error.message : 'Could not send the test notification.')
+    } finally { setTestSending(false) }
+  }
 
   // Unlock the AudioContext on the first user interaction on the dashboard,
   // so the alarm can play later when an order arrives (autoplay policy).
@@ -317,7 +388,6 @@ export default function DriverPage() {
     if (view !== 'dashboard') return
     if (typeof Notification !== 'undefined') {
       if (Notification.permission === 'granted') {
-        setPushStatus('subscribed')
         subscribePush() // re-register silently; upserts on endpoint so safe to call every open
       }
       if (Notification.permission === 'denied') setPushStatus('denied')
@@ -339,7 +409,7 @@ export default function DriverPage() {
     if (!('serviceWorker' in navigator)) return
     const handler = (event: MessageEvent) => {
       if (event.data?.type === 'ORDER_UPDATE') {
-        if (event.data?.kind === 'driver_new_order') startAlarm()
+        if (event.data?.kind === 'driver_new_order') startAlarm(event.data?.test === true)
         loadOrders()
       }
     }
@@ -460,8 +530,8 @@ export default function DriverPage() {
         <div style={S.alarmOverlay} onClick={stopAlarm}>
           <div style={S.alarmCard} onClick={e => e.stopPropagation()}>
             <div style={S.alarmBell}>🔔</div>
-            <p style={S.alarmTitle}>New Order!</p>
-            <p style={S.alarmSub}>A new order just came in. Tap below to view it.</p>
+            <p style={S.alarmTitle}>{alarmIsTest ? 'Sound Test' : 'New Order!'}</p>
+            <p style={S.alarmSub}>{alarmIsTest ? 'This is a test alert. No new order was created.' : 'A new order just came in. Tap below to view it.'}</p>
             <button onClick={stopAlarm} style={S.alarmStopBtn}>Stop &amp; View Orders</button>
           </div>
           <style>{`@keyframes bfPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}`}</style>
@@ -586,9 +656,31 @@ export default function DriverPage() {
       {pushStatus === 'subscribed' && (
         <div style={S.pushActive}>
           <span>🔔</span>
-          <span>Notifications on — you&apos;ll be alerted for new orders</span>
+          <span>This phone is registered for order notifications</span>
         </div>
       )}
+
+      <section aria-label="Order alerts" style={{ margin: '0 20px 20px', padding: 16, border: '1px solid #3a3a3c', borderRadius: 8, background: '#1c1c1e' }}>
+        <h2 style={{ margin: '0 0 8px', fontSize: 16, color: '#fff', fontWeight: 700 }}>Order alerts</h2>
+        <p style={{ margin: '0 0 12px', fontSize: 13, lineHeight: 1.5, color: '#b8b8be' }}>
+          Sound: {soundStatus === 'ready' ? 'enabled for this open session' : soundStatus === 'blocked' ? 'blocked on this device' : 'tap Test Sound to enable'}.
+          {' '}For alerts with the app closed, allow notifications and turn on notification sound in your phone settings.
+        </p>
+        {pushStatus === 'denied' && <p role="alert" style={{ color: '#ffd083', fontSize: 13 }}>Notifications are blocked. Allow them in this app or browser&apos;s phone settings, then tap Enable Alerts.</p>}
+        {pushError && <p role="alert" style={{ color: '#ffb4a9', fontSize: 13, overflowWrap: 'anywhere' }}>{pushError}</p>}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <button type="button" onClick={subscribePush} disabled={pushAsking} style={{ ...S.pushAllow, display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 42, borderRadius: 8 }}>
+            <Bell size={16} /> {pushAsking ? 'Connecting...' : 'Enable Alerts'}
+          </button>
+          <button type="button" onClick={testSound} style={{ ...S.pushAllow, display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 42, borderRadius: 8 }}>
+            <Volume2 size={16} /> Test Sound
+          </button>
+          <button type="button" onClick={testNotification} disabled={testSending || pushAsking || pushStatus !== 'subscribed'} style={{ ...S.pushAllow, minHeight: 42, borderRadius: 8, opacity: pushStatus === 'subscribed' ? 1 : 0.5 }}>
+            {testSending ? 'Sending...' : 'Test Notification'}
+          </button>
+        </div>
+        {testMessage && <p role="status" style={{ margin: '12px 0 0', fontSize: 13, lineHeight: 1.5, color: '#d8e7bb', overflowWrap: 'anywhere' }}>{testMessage}</p>}
+      </section>
 
       {/* Orders */}
       <div style={S.feed}>

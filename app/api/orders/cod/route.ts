@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
  * No admin auth required — we validate the user_id exists in profiles
  * to prevent anonymous abuse.
  */
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 import { getIronSession } from 'iron-session'
 import { cookies } from 'next/headers'
 import { sessionOptions, type SessionData } from '@/lib/session'
@@ -335,9 +335,9 @@ export async function POST(req: NextRequest) {
     // actionable immediately; online orders only become live once paid (handled
     // in the PATCH / webhook below), so don't double-alert for them here.
     if (order?.id && (order.payment_status === 'cod' || order.payment_status === 'paid')) {
-      notifyAllDrivers(order.id).catch(() => {})
+      after(async () => { await notifyAllDrivers(order.id).catch(error => console.error('[driver alert]', error)) })
     } else if (order?.driver_id && order?.id) {
-      notifyDriverAssignment(order.driver_id, order.id).catch(() => {})
+      after(async () => { await notifyDriverAssignment(order.driver_id, order.id).catch(error => console.error('[driver alert]', error)) })
     }
 
     if (order?.id && order.customer_phone && (order.payment_status === 'cod' || order.payment_status === 'paid')) {
@@ -482,7 +482,7 @@ export async function PATCH(req: NextRequest) {
         confirmedOrder = order ?? null
         // Online payment just confirmed → the order is now live. Alert all drivers.
         if (order?.id && order.order_status !== 'delivered' && order.order_status !== 'cancelled') {
-          notifyAllDrivers(order.id).catch(() => {})
+          after(async () => { await notifyAllDrivers(order.id).catch(error => console.error('[driver alert]', error)) })
         }
       }
     } catch { /* notification is best-effort */ }
