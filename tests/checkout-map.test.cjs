@@ -6,7 +6,7 @@ const vm = require('node:vm')
 const ts = require('typescript')
 
 // Exercise the component's async selection handlers with controlled lookup responses.
-function harness(fetch) {
+function harness(fetch, geolocation) {
   let cursor = 0
   const slots = []
   const jsx = (type, props) => ({ type, props: props || {} })
@@ -20,7 +20,7 @@ function harness(fetch) {
   const source = fs.readFileSync(path.join(__dirname, '../app/order/components/AddressSheetV2.tsx'), 'utf8')
   const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   vm.runInNewContext(compiled, {
-    exports: module.exports, module, fetch, AbortSignal, setTimeout, console,
+    exports: module.exports, module, fetch, AbortSignal, setTimeout, console, navigator: { geolocation },
     require(name) {
       if (name === 'react') return hooks
       if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx }
@@ -145,5 +145,15 @@ test('search interrupting reverse lookup does not leave confirmation loading', a
   releaseOld(response({}, false))
   await tick()
   assert.equal(app.map().props.lat, 13.1)
+  assert.equal(app.button('Confirm this location').props.disabled, false)
+})
+
+test('current location can proceed when automatic address lookup is unavailable', async () => {
+  const app = harness(async url => url.includes('geocode') ? response({}, false) : response(zone()), {
+    getCurrentPosition(resolve) { resolve({ coords: { latitude: 13.091234, longitude: 77.631234 } }) },
+  })
+  await app.button('Use current location').props.onClick()
+  assert.equal(app.map().props.lat, 13.091234)
+  assert.equal(app.map().props.lng, 77.631234)
   assert.equal(app.button('Confirm this location').props.disabled, false)
 })
