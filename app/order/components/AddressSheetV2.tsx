@@ -249,6 +249,11 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
     }
     setLocating(true)
     const requestId = ++selectionRequestRef.current
+    setReverseChecking(false)
+    setZoneChecking(false)
+    setMapSearching(false)
+    setZoneResult(null)
+    setPinTouched(false)
     setLocError('')
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -283,7 +288,7 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
     setZoneChecking(false)
     setMapSearching(true)
     setLocError('')
-    setMapHint('Searching Google Maps...')
+    setMapHint('Searching for the delivery location...')
     try {
       const response = await fetch('/api/geocode-address', {
         method: 'POST',
