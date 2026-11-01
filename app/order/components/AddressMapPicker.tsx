@@ -67,7 +67,7 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
   const googleMapRef = useRef<LooseGoogleMap | null>(null)
   const providerRef = useRef<'google' | 'leaflet' | null>(null)
   const onChangeRef = useRef(onChange)
-  const ignoreNextMoveRef = useRef(false)
+  const lastPointRef = useRef({ lat, lng })
 
   useEffect(() => {
     onChangeRef.current = onChange
@@ -83,7 +83,6 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
       if (cancelled || !containerRef.current) return
 
       if (googleMaps) {
-        ignoreNextMoveRef.current = true
         const map = new googleMaps.Map(containerRef.current, {
           center: { lat, lng },
           zoom: 18,
@@ -102,17 +101,19 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
         })
         map.addListener('idle', () => {
           containerRef.current?.closest('.bf-map-shell')?.classList.remove('bf-map-moving')
-          if (ignoreNextMoveRef.current) {
-            ignoreNextMoveRef.current = false
-            return
-          }
           const center = map.getCenter()
-          if (center) onChangeRef.current(center.lat(), center.lng())
+          if (!center) return
+          const point = { lat: center.lat(), lng: center.lng() }
+          if (Math.abs(point.lat - lastPointRef.current.lat) < 0.0000001 && Math.abs(point.lng - lastPointRef.current.lng) < 0.0000001) return
+          lastPointRef.current = point
+          onChangeRef.current(point.lat, point.lng)
         })
         map.addListener('click', (event) => {
           if (!event?.latLng) return
-          ignoreNextMoveRef.current = false
-          map.panTo({ lat: event.latLng.lat(), lng: event.latLng.lng() })
+          const point = { lat: event.latLng.lat(), lng: event.latLng.lng() }
+          lastPointRef.current = point
+          onChangeRef.current(point.lat, point.lng)
+          map.panTo(point)
           if ((map.getZoom() ?? 0) < 18) map.setZoom(18)
         })
 
@@ -145,10 +146,14 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
       map.on('moveend', () => {
         containerRef.current?.closest('.bf-map-shell')?.classList.remove('bf-map-moving')
         const point = map.getCenter()
+        if (Math.abs(point.lat - lastPointRef.current.lat) < 0.0000001 && Math.abs(point.lng - lastPointRef.current.lng) < 0.0000001) return
+        lastPointRef.current = { lat: point.lat, lng: point.lng }
         onChangeRef.current(point.lat, point.lng)
       })
 
       map.on('click', (event) => {
+        lastPointRef.current = { lat: event.latlng.lat, lng: event.latlng.lng }
+        onChangeRef.current(event.latlng.lat, event.latlng.lng)
         map.setView(event.latlng, Math.max(map.getZoom(), 18), { animate: true })
       })
 
@@ -175,6 +180,7 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
     const point: [number, number] = [lat, lng]
     const leafletCenter = leafletRef.current?.getCenter()
     if (leafletRef.current && (!leafletCenter || leafletCenter.distanceTo(point) > 1)) {
+      lastPointRef.current = { lat, lng }
       leafletRef.current.panTo(point)
     }
 
@@ -183,7 +189,7 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
       const currentLat = googleCenter.lat()
       const currentLng = googleCenter.lng()
       if (Math.abs(currentLat - lat) > 0.00001 || Math.abs(currentLng - lng) > 0.00001) {
-        ignoreNextMoveRef.current = true
+        lastPointRef.current = { lat, lng }
         googleMapRef.current.setCenter({ lat, lng })
       }
     }

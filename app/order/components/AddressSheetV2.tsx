@@ -101,10 +101,14 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
   const [validating, setValidating] = useState(false)
   const [locError, setLocError] = useState('')
   const [pincodeError, setPincodeError] = useState('')
-  const reverseRequestRef = useRef(0)
+  const selectionRequestRef = useRef(0)
 
   useEffect(() => {
     if (!open) return
+    selectionRequestRef.current++
+    setReverseChecking(false)
+    setZoneChecking(false)
+    setMapSearching(false)
     document.body.classList.add('bf-address-sheet-open')
     return () => document.body.classList.remove('bf-address-sheet-open')
   }, [open])
@@ -144,7 +148,7 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
     setPincodeError('')
   }, [open, savedPincode])
 
-  const checkDeliveryZone = useCallback(async (nextLat: number, nextLng: number, pinOverride?: string) => {
+  const checkDeliveryZone = useCallback(async (nextLat: number, nextLng: number, pinOverride?: string, requestId = selectionRequestRef.current) => {
     setZoneChecking(true)
     try {
       const pin = cleanPincode(pinOverride ?? pincode)
@@ -152,34 +156,37 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lat: nextLat, lng: nextLng, ...(pin ? { pincode: pin } : {}) }),
+        signal: AbortSignal.timeout(10000),
       })
       const result = await response.json().catch(() => null) as DeliveryZoneResult | null
       if (!response.ok || !result) throw new Error('zone check failed')
+      if (requestId !== selectionRequestRef.current) return null
       setZoneResult(result)
       if (result.pincodeAllowed === false) setMapHint(`Delivery is available only for ${ALLOWED_PINCODES.join(', ')}.`)
       else if (result.deliverable) setMapHint('Delivery is available at this location.')
       else setMapHint('Delivery is not available at this location.')
       return result
     } catch {
+      if (requestId !== selectionRequestRef.current) return null
       setZoneResult(null)
       setMapHint('Could not check the delivery area. Move the map slightly and try again.')
       return null
     } finally {
-      setZoneChecking(false)
+      if (requestId === selectionRequestRef.current) setZoneChecking(false)
     }
   }, [pincode])
 
-  const reverseGeocodePin = useCallback(async (nextLat: number, nextLng: number) => {
-    const requestId = ++reverseRequestRef.current
+  const reverseGeocodePin = useCallback(async (nextLat: number, nextLng: number, requestId: number) => {
     setReverseChecking(true)
     try {
       const response = await fetch('/api/geocode-address', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lat: nextLat, lng: nextLng }),
+        signal: AbortSignal.timeout(10000),
       })
       const result = await response.json().catch(() => null) as GeocodeResult | null
-      if (requestId !== reverseRequestRef.current || !response.ok || result?.provider !== 'google') return null
+      if (requestId !== selectionRequestRef.current || !response.ok || !result) return null
       const resolvedPin = cleanPincode(result.postalCode)
       setPinAddress(result.displayName ?? '')
       setPinPostalCode(resolvedPin)
@@ -190,19 +197,35 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
     } catch {
       return null
     } finally {
-      if (requestId === reverseRequestRef.current) setReverseChecking(false)
+      if (requestId === selectionRequestRef.current) setReverseChecking(false)
     }
   }, [streetAddress])
 
   async function resolveMovedPin(nextLat: number, nextLng: number) {
+    const requestId = ++selectionRequestRef.current
     setLat(nextLat)
     setLng(nextLng)
     setPinTouched(true)
-    const address = await reverseGeocodePin(nextLat, nextLng)
-    await checkDeliveryZone(nextLat, nextLng, cleanPincode(address?.postalCode))
+    setPinAddress('')
+    setPinPostalCode('')
+    setGooglePlaceId('')
+    setZoneResult(null)
+    setMapSearching(false)
+    setReverseChecking(true)
+    const [address] = await Promise.all([
+      reverseGeocodePin(nextLat, nextLng, requestId),
+      checkDeliveryZone(nextLat, nextLng, '', requestId),
+    ])
+    if (requestId !== selectionRequestRef.current) return
+    const resolvedPin = cleanPincode(address?.postalCode)
+    if (resolvedPin) await checkDeliveryZone(nextLat, nextLng, resolvedPin, requestId)
   }
 
   function openAwayFromLocation() {
+    selectionRequestRef.current++
+    setReverseChecking(false)
+    setZoneChecking(false)
+    setMapSearching(false)
     setLocationMode('away')
     setStep('map')
     setMapOpen(true)
@@ -225,22 +248,20 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
       return
     }
     setLocating(true)
+    const requestId = ++selectionRequestRef.current
     setLocError('')
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 12_000, enableHighAccuracy: true, maximumAge: 0 })
       })
+      if (requestId !== selectionRequestRef.current) return
       const nextLat = position.coords.latitude
       const nextLng = position.coords.longitude
       setLocationMode('current')
       setStep('map')
       setMapOpen(true)
-      setLat(nextLat)
-      setLng(nextLng)
-      setPinTouched(true)
       setMapHint('Your current location is pinned. Adjust the map only if the pin is not on the delivery entrance.')
-      const address = await reverseGeocodePin(nextLat, nextLng)
-      await checkDeliveryZone(nextLat, nextLng, cleanPincode(address?.postalCode))
+      await resolveMovedPin(nextLat, nextLng)
     } catch (error) {
       const geoError = error as GeolocationPositionError
       setLocError(geoError?.code === 1 ? 'Location access was denied. Choose "Away from my location" and search for the address.' : 'We could not detect your current location. Search for the address instead.')
@@ -255,7 +276,11 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
       setMapHint('Type an area, apartment, street, shop, or landmark to search.')
       return
     }
-    const requestId = ++reverseRequestRef.current
+    const requestId = ++selectionRequestRef.current
+    setPinTouched(false)
+    setZoneResult(null)
+    setReverseChecking(false)
+    setZoneChecking(false)
     setMapSearching(true)
     setLocError('')
     setMapHint('Searching Google Maps...')
@@ -264,9 +289,10 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query }),
+        signal: AbortSignal.timeout(15000),
       })
       const result = await response.json().catch(() => null) as GeocodeResult | null
-      if (requestId !== reverseRequestRef.current) return
+      if (requestId !== selectionRequestRef.current) return
       if (!response.ok || typeof result?.lat !== 'number' || typeof result?.lng !== 'number') {
         setMapHint('We could not find that place. Try the building, road, shop, or nearby landmark name.')
         return
@@ -280,11 +306,11 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
       setGooglePlaceId(result.placeId ?? '')
       if (resultPin) setPincode(resultPin)
       setMapHint('Location found. Adjust the map if the fixed pin is not on the exact entrance.')
-      await checkDeliveryZone(result.lat, result.lng, resultPin)
+      await checkDeliveryZone(result.lat, result.lng, resultPin, requestId)
     } catch {
-      setMapHint('Google Maps search is temporarily unavailable. Please try again.')
+      if (requestId === selectionRequestRef.current) setMapHint('Address search is temporarily unavailable. Tap or move the map to select the delivery entrance, or use your current location.')
     } finally {
-      setMapSearching(false)
+      if (requestId === selectionRequestRef.current) setMapSearching(false)
     }
   }
 
@@ -292,8 +318,8 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
   const phoneValid = customerPhone.replace(/\D/g, '').length >= 10
   const detailsValid = customerName.trim().length >= 2 && houseNumber.trim().length > 0 && streetAddress.trim().length > 0 && phoneValid && isAllowedPincode(pincode)
   const googlePincodeMatches = !pinPostalCode || pinPostalCode === cleanPincode(pincode)
-  const canConfirmPin = hasLocation && pinTouched && isAllowedPincode(pinPostalCode) && zoneResult?.deliverable === true && !zoneChecking && !reverseChecking
-  const canProceed = detailsValid && hasLocation && pinTouched && googlePincodeMatches && zoneResult?.deliverable === true && !zoneChecking
+  const canConfirmPin = hasLocation && pinTouched && (!pinPostalCode || isAllowedPincode(pinPostalCode)) && zoneResult?.deliverable === true && !zoneChecking && !reverseChecking && !mapSearching && !locating
+  const canProceed = detailsValid && hasLocation && pinTouched && googlePincodeMatches && zoneResult?.deliverable === true && !zoneChecking && !reverseChecking && !mapSearching && !locating
 
   function scrollInput(event: React.FocusEvent<HTMLInputElement>) {
     setTimeout(() => event.target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350)
@@ -378,7 +404,7 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
               {mapOpen && hasLocation && (
                 <>
                   <AddressMapPicker lat={lat} lng={lng} onChange={(nextLat, nextLng) => { void resolveMovedPin(nextLat, nextLng) }} />
-                  <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3.5 shadow-sm"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[#6510a8]">{reverseChecking ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}</span><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.1em] text-stone-400">Deliver to</p><p className="mt-1 text-[12px] font-bold leading-relaxed text-stone-800">{pinAddress || (reverseChecking ? 'Finding this address...' : 'Search or move the map to choose a location')}</p>{pinPostalCode && <p className="mt-1 text-[11px] font-semibold text-stone-500">Pincode {pinPostalCode}</p>}</div></div></div>
+                  <div className="rounded-2xl border border-stone-200 bg-white px-4 py-3.5 shadow-sm"><div className="flex gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-purple-100 text-[#6510a8]">{reverseChecking ? <Loader2 size={18} className="animate-spin" /> : <MapPin size={18} />}</span><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.1em] text-stone-400">Deliver to</p><p className="mt-1 text-[12px] font-bold leading-relaxed text-stone-800">{pinAddress || (reverseChecking ? 'Finding this address...' : pinTouched ? 'Exact map pin selected. Add your address details next.' : 'Search or move the map to choose a location')}</p>{pinPostalCode && <p className="mt-1 text-[11px] font-semibold text-stone-500">Pincode {pinPostalCode}</p>}</div></div></div>
                 </>
               )}
             </section>
@@ -386,7 +412,7 @@ export default function AddressSheetV2({ open, onClose, onConfirm, savedPincode 
 
           {step === 'details' && (
             <section className="space-y-4">
-              <div className="rounded-2xl border border-purple-200 bg-purple-50 px-4 py-3.5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#6510a8]">Selected delivery location</p><p className="mt-1 text-[12px] font-bold leading-relaxed text-stone-800">{pinAddress}</p></div><button type="button" onClick={() => setStep('map')} className="shrink-0 rounded-xl border border-[#6510a8] bg-white px-3 py-2 text-[11px] font-black text-[#6510a8]">Change</button></div></div>
+              <div className="rounded-2xl border border-purple-200 bg-purple-50 px-4 py-3.5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-black uppercase tracking-[0.1em] text-[#6510a8]">Selected delivery location</p><p className="mt-1 text-[12px] font-bold leading-relaxed text-stone-800">{pinAddress || 'Your exact map pin is saved. Enter the delivery address below.'}</p></div><button type="button" onClick={() => setStep('map')} className="shrink-0 rounded-xl border border-[#6510a8] bg-white px-3 py-2 text-[11px] font-black text-[#6510a8]">Change</button></div></div>
               <Field icon={<User size={16} />} label="Your Name" required hint="So we know who to deliver to"><input className={fieldClass} value={customerName} onChange={event => setCustomerName(event.target.value)} onFocus={scrollInput} placeholder="e.g. Priya Sharma" /></Field>
               <Field icon={<Home size={16} />} label="House No / Flat / Floor" required hint="Entered by you so the driver reaches the right door"><input className={fieldClass} value={houseNumber} onChange={event => setHouseNumber(event.target.value)} onFocus={scrollInput} placeholder="#42, 3rd Floor, Sunrise Apts" /></Field>
               <Field icon={<Phone size={16} />} label="Mobile Number" required hint="Our delivery team will call you on this number" error={customerPhone.length > 0 && !phoneValid ? 'Enter a valid 10-digit number' : undefined}><input type="tel" inputMode="numeric" maxLength={12} className={fieldClass} value={customerPhone} onChange={event => setCustomerPhone(event.target.value.replace(/[^\d+\-\s]/g, ''))} onFocus={scrollInput} placeholder="9876543210" /></Field>
