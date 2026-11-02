@@ -10,7 +10,8 @@ function harness() {
   const slots = [], pending = [], changes = [], scripts = [], timers = new Map(), listeners = new Map()
   const container = { replaceChildren() {}, closest: () => ({ classList: { add() {}, remove() {} } }) }
   const leaflet = { events: {}, center: { lat: 13.09, lng: 77.63, distanceTo: () => 0 }, setView(point) { if (Array.isArray(point)) this.center = { ...this.center, lat: point[0], lng: point[1] }; return this }, on(name, fn) { this.events[name] = fn }, getCenter() { return this.center }, getZoom: () => 17, panTo() {}, remove() {}, invalidateSize() {} }
-  const maps = { Map: class { constructor() { googleCount++ } addListener() {} getCenter() { return { lat: () => 13.09, lng: () => 77.63 } } }, event: { clearInstanceListeners() {} } }
+  const googleEvents = {}
+  const maps = { Map: class { constructor() { googleCount++ } addListener(name, fn) { googleEvents[name] = fn } panTo() {} setZoom() {} getZoom() { return 18 } getCenter() { return { lat: () => 13.09, lng: () => 77.63 } } }, event: { clearInstanceListeners() {} } }
   const page = {
     addEventListener(name, fn) { listeners.set(name, fn) }, removeEventListener(name) { listeners.delete(name) }, dispatchEvent(event) { listeners.get(event.type)?.() },
     setTimeout(fn) { const id = timers.size + 1; timers.set(id, fn); return id }, clearTimeout(id) { timers.delete(id) },
@@ -35,28 +36,31 @@ function harness() {
     },
   })
   function render() { cursor = 0; const tree = module.exports.default({ lat: 13.09, lng: 77.63, onChange: (lat, lng) => changes.push({ lat, lng }) }); while (pending.length) pending.shift()(); return tree }
-  return { render, scripts, timers, page, maps, leaflet, changes, counts: () => ({ googleCount, leafletCount }) }
+  return { render, scripts, timers, page, maps, leaflet, googleEvents, changes, counts: () => ({ googleCount, leafletCount }) }
 }
 const tick = () => new Promise(resolve => setTimeout(resolve, 10))
 
-test('Google script network failure loads alternate map', async () => {
+test('Google script network failure shows error without alternate map', async () => {
   const app = harness(); app.render(); app.scripts[0].onerror(); await tick(); app.render(); await tick()
   assert.equal(app.counts().googleCount, 0)
-  assert.equal(app.counts().leafletCount, 1)
+  assert.equal(app.counts().leafletCount, 0)
+  assert.match(JSON.stringify(app.render()), /Google Maps could not load/)
 })
-test('Google key rejection after script load switches an existing map', async () => {
+test('Google key rejection never switches to another provider', async () => {
   const app = harness(); app.render(); app.page.google = { maps: app.maps }; app.scripts[0].onload(); await tick()
   assert.equal(app.counts().googleCount, 1)
   app.page.gm_authFailure(); app.render(); await tick()
-  assert.equal(app.counts().leafletCount, 1)
+  assert.equal(app.counts().leafletCount, 0)
+  assert.match(JSON.stringify(app.render()), /Google Maps could not load/)
 })
-test('Google script timeout loads alternate map', async () => {
+test('Google script timeout shows error without alternate map', async () => {
   const app = harness(); app.render(); [...app.timers.values()][0](); await tick(); app.render(); await tick()
-  assert.equal(app.counts().leafletCount, 1)
+  assert.equal(app.counts().leafletCount, 0)
+  assert.match(JSON.stringify(app.render()), /Google Maps could not load/)
 })
-test('alternate map click preserves exact coordinates', async () => {
-  const app = harness(); app.render(); app.scripts[0].onerror(); await tick(); app.render(); await tick()
-  app.leaflet.events.click({ latlng: { lat: 13.091234, lng: 77.631234 } })
+test('Google map click preserves exact coordinates', async () => {
+  const app = harness(); app.render(); app.page.google = { maps: app.maps }; app.scripts[0].onload(); await tick()
+  app.googleEvents.click({ latLng: { lat: () => 13.091234, lng: () => 77.631234 } })
   assert.equal(app.changes.length, 1)
   assert.equal(app.changes[0].lat, 13.091234)
   assert.equal(app.changes[0].lng, 77.631234)

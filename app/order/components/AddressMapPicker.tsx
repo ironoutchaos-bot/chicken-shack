@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { Map as LeafletMap } from 'leaflet'
 
 type LatLng = { lat: number; lng: number }
 type LooseGoogleMap = {
@@ -78,18 +77,15 @@ function loadGoogleMaps() {
 
 export default function AddressMapPicker({ lat, lng, onChange }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const leafletRef = useRef<LeafletMap | null>(null)
   const googleMapRef = useRef<LooseGoogleMap | null>(null)
-  const providerRef = useRef<'google' | 'leaflet' | null>(null)
   const onChangeRef = useRef(onChange)
   const lastPointRef = useRef({ lat, lng })
   const latestLocationRef = useRef({ lat, lng })
   latestLocationRef.current = { lat, lng }
-  const [useFallback, setUseFallback] = useState(false)
   const [mapError, setMapError] = useState('')
 
   useEffect(() => {
-    const fallback = () => setUseFallback(true)
+    const fallback = () => setMapError('Google Maps could not load. Please check your connection and reload the page.')
     window.addEventListener('bf-google-maps-failed', fallback)
     return () => window.removeEventListener('bf-google-maps-failed', fallback)
   }, [])
@@ -102,12 +98,12 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
     let cancelled = false
 
     async function initMap() {
-      if (!containerRef.current || leafletRef.current || googleMapRef.current) return
+      if (!containerRef.current || googleMapRef.current) return
 
-      const googleMaps = useFallback ? null : await loadGoogleMaps()?.catch(() => null)
+      const googleMaps = await loadGoogleMaps()?.catch(() => null)
       if (cancelled || !containerRef.current) return
-      if (!googleMaps && !useFallback) {
-        setUseFallback(true)
+      if (!googleMaps) {
+        setMapError('Google Maps could not load. Please check your connection and reload the page.')
         return
       }
 
@@ -149,56 +145,14 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
         })
 
         googleMapRef.current = map
-        providerRef.current = 'google'
         return
       }
 
-      const L = await import('leaflet')
-      if (cancelled || !containerRef.current) return
-      const initialPoint = latestLocationRef.current
-      lastPointRef.current = initialPoint
-
-      const map = L.map(containerRef.current, {
-        zoomControl: false,
-        attributionControl: true,
-        dragging: true,
-        scrollWheelZoom: true,
-      }).setView([initialPoint.lat, initialPoint.lng], 17)
-
-      L.control.zoom({ position: 'bottomright' }).addTo(map)
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxNativeZoom: 19,
-        maxZoom: 20,
-        attribution: '&copy; OpenStreetMap contributors',
-      }).addTo(map)
-
-      map.on('movestart', () => {
-        containerRef.current?.closest('.bf-map-shell')?.classList.add('bf-map-moving')
-      })
-
-      map.on('moveend', () => {
-        containerRef.current?.closest('.bf-map-shell')?.classList.remove('bf-map-moving')
-        const point = map.getCenter()
-        if (Math.abs(point.lat - lastPointRef.current.lat) < 0.0000001 && Math.abs(point.lng - lastPointRef.current.lng) < 0.0000001) return
-        lastPointRef.current = { lat: point.lat, lng: point.lng }
-        onChangeRef.current(point.lat, point.lng)
-      })
-
-      map.on('click', (event) => {
-        lastPointRef.current = { lat: event.latlng.lat, lng: event.latlng.lng }
-        onChangeRef.current(event.latlng.lat, event.latlng.lng)
-        map.setView(event.latlng, Math.max(map.getZoom(), 18), { animate: true })
-      })
-
-      leafletRef.current = map
-      providerRef.current = 'leaflet'
-      setTimeout(() => map.invalidateSize(), 150)
     }
 
     initMap().catch(() => {
       if (cancelled) return
-      if (!useFallback) setUseFallback(true)
-      else setMapError('The map could not load. Check your internet connection and reopen the map.')
+      setMapError('Google Maps could not load. Please check your connection and reload the page.')
     })
 
     return () => {
@@ -207,21 +161,11 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
         window.google.maps.event.clearInstanceListeners(googleMapRef.current)
       }
       googleMapRef.current = null
-      leafletRef.current?.remove()
-      leafletRef.current = null
       containerRef.current?.replaceChildren()
-      providerRef.current = null
     }
-  }, [useFallback])
+  }, [])
 
   useEffect(() => {
-    const point: [number, number] = [lat, lng]
-    const leafletCenter = leafletRef.current?.getCenter()
-    if (leafletRef.current && (!leafletCenter || leafletCenter.distanceTo(point) > 1)) {
-      lastPointRef.current = { lat, lng }
-      leafletRef.current.panTo(point)
-    }
-
     const googleCenter = googleMapRef.current?.getCenter()
     if (googleMapRef.current && googleCenter) {
       const currentLat = googleCenter.lat()
@@ -235,7 +179,6 @@ export default function AddressMapPicker({ lat, lng, onChange }: Props) {
 
   return (
     <div className="bf-map-shell relative overflow-hidden rounded-2xl border border-stone-200 bg-stone-100 shadow-sm">
-      {!useFallback && <button type="button" onClick={() => { setMapError(''); setUseFallback(true) }} className="absolute right-3 top-14 z-[700] rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-bold text-stone-900 shadow-sm">Use alternate map</button>}
       {mapError && <div role="alert" className="absolute inset-x-3 top-14 z-[700] rounded-lg border border-red-200 bg-white p-3 text-sm font-semibold text-red-700">{mapError}</div>}
       <style>{`
         .leaflet-control-zoom {
