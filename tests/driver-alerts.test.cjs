@@ -8,32 +8,37 @@ const ts = require('typescript')
 // Supply fetch in each sandbox without making any network requests.
 function fixture(sendNotification) {
   const requests = []
+  const mobileOrders = []
   const source = fs.readFileSync(path.join(__dirname, '../lib/push-notify.ts'), 'utf8')
   const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, esModuleInterop: true } }).outputText
   const module = { exports: {} }
   vm.runInNewContext(code, {
     module, exports: module.exports, console, process: { env: { NEXT_PUBLIC_SUPABASE_URL: 'https://test.invalid' } },
-    require: () => ({ setVapidDetails() {}, sendNotification }),
+    require: name => name === './mobile-push'
+      ? { scheduleMobilePush() {}, scheduleNewOrderPush: id => mobileOrders.push(id) }
+      : { setVapidDetails() {}, sendNotification },
     fetch: async (url, options) => { requests.push({ url, options }); return { ok: true, json: async () => [{ endpoint: 'https://push.invalid/device', p256dh: 'test', auth: 'test' }] } },
   })
-  return { run: module.exports.notifyAllDrivers, requests }
+  return { run: module.exports.notifyAllDrivers, requests, mobileOrders }
 }
 
 test('phone test only queries authenticated driver and selected device', async () => {
   let payload
-  const { run, requests } = fixture(async (_, body) => { payload = JSON.parse(body) })
+  const { run, requests, mobileOrders } = fixture(async (_, body) => { payload = JSON.parse(body) })
   const result = await run('test-order', true, { driverId: 'driver-a', endpoint: 'https://push.invalid/device' })
   assert.match(requests[0].url, /driver_id=eq.driver-a&endpoint=eq.https%3A%2F%2Fpush.invalid%2Fdevice/)
   assert.equal(result.sent, 1)
   assert.equal(payload.test, true)
   assert.match(payload.title, /Test Alarm/)
+  assert.equal(mobileOrders.length, 0)
 })
 test('real order notification is not marked as a sound test', async () => {
   let payload
-  const { run } = fixture(async (_, body) => { payload = JSON.parse(body) })
+  const { run, mobileOrders } = fixture(async (_, body) => { payload = JSON.parse(body) })
   await run('new-order')
   assert.equal(payload.test, false)
   assert.equal(payload.kind, 'driver_new_order')
+  assert.deepEqual(mobileOrders, ['new-order'])
 })
 test('send is awaited before reporting success', async () => {
   let completed = false

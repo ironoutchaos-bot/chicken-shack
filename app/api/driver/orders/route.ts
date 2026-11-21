@@ -23,7 +23,7 @@ async function getDriverId(req: NextRequest): Promise<string | null> {
   // Confirm driver still exists and is active
   const res = await fetch(
     `${SUPA_URL()}/rest/v1/drivers?id=eq.${encodeURIComponent(driverId)}&select=id,is_active`,
-    { headers: srvHeaders() }
+    { headers: srvHeaders(), cache: 'no-store' }
   )
   const drivers = await res.json()
   const driver  = Array.isArray(drivers) ? drivers[0] : null
@@ -42,11 +42,11 @@ export async function GET(req: NextRequest) {
   const [assignedRes, unassignedRes, productsRes, unitsRes] = await Promise.all([
     fetch(
       `${SUPA_URL()}/rest/v1/orders?driver_id=eq.${encodeURIComponent(driverId)}&${CONFIRMED_PAYMENT_FILTER}&order=created_at.desc&select=*`,
-      { headers: srvHeaders() }
+      { headers: srvHeaders(), cache: 'no-store' }
     ),
     fetch(
       `${SUPA_URL()}/rest/v1/orders?driver_id=is.null&order_status=not.in.(delivered,cancelled)&${CONFIRMED_PAYMENT_FILTER}&order=created_at.desc&select=*`,
-      { headers: srvHeaders() }
+      { headers: srvHeaders(), cache: 'no-store' }
     ),
     fetch(
       `${SUPA_URL()}/rest/v1/products?select=id,weight_per_unit`,
@@ -131,5 +131,7 @@ export async function GET(req: NextRequest) {
     }
   })
 
-  return NextResponse.json(enriched)
+  return NextResponse.json(enriched, {
+    headers: { 'Cache-Control': 'private, no-store, max-age=0' },
+  })
 }

@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Bell, Volume2 } from 'lucide-react'
 import type { OrderRow, DeliveryAddress, OrderItem } from '@/lib/supabase-browser'
+import { DriverSessionExpired, fetchDriverOrders, hasUnseenDriverOrders } from '@/lib/driver-order-feed'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type BeforeInstallPromptEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
@@ -103,6 +104,8 @@ export default function DriverPage() {
   const [driver,      setDriver]      = useState<DriverInfo | null>(null)
   const [orders,      setOrders]      = useState<OrderRow[]>([])
   const [ordersLoad,  setOrdersLoad]  = useState(false)
+  const [ordersError, setOrdersError] = useState('')
+  const ordersInFlightRef = useRef(false)
   const [updatingId,  setUpdatingId]  = useState<string | null>(null)
   const [expandedId,  setExpandedId]  = useState<string | null>(null)
 
@@ -358,27 +361,38 @@ export default function DriverPage() {
 
   // ── Load orders ─────────────────────────────────────────────
   const loadOrders = useCallback(async () => {
+    if (ordersInFlightRef.current) return
+    ordersInFlightRef.current = true
     setOrdersLoad(true)
     try {
-      const res = await fetch('/api/driver/orders')
-      if (res.ok) {
-        const data: OrderRow[] = await res.json()
-        setOrders(data)
-
-        // Detect newly-arrived orders that still need action → ring the alarm.
-        const actionable = data.filter(o => isDriverLiveOrder(o) && (o.order_status === 'placed' || o.order_status === 'packed'))
-        if (seenOrderIdsRef.current === null) {
-          // First load — establish the baseline without ringing.
-          seenOrderIdsRef.current = new Set(data.map(o => o.id))
-        } else {
-          const hasNew = actionable.some(o => !seenOrderIdsRef.current!.has(o.id))
-          data.forEach(o => seenOrderIdsRef.current!.add(o.id))
-          if (hasNew) startAlarm()
-        }
+      const data = await fetchDriverOrders()
+      setOrders(data)
+      setOrdersError('')
+      // Include waiting orders on the first load after opening or signing in.
+      const hasNew = hasUnseenDriverOrders(data, seenOrderIdsRef.current)
+      seenOrderIdsRef.current = new Set([
+        ...(seenOrderIdsRef.current ?? []),
+        ...data.filter(isDriverLiveOrder).map(order => order.id),
+      ])
+      if (hasNew) startAlarm()
+    } catch (error) {
+      if (error instanceof DriverSessionExpired) {
+        stopAlarm()
+        seenOrderIdsRef.current = null
+        setDriver(null)
+        setOrders([])
+        setLoginErr(error.message)
+        setView('login')
+      } else {
+        setOrdersError(error instanceof Error && error.name !== 'TimeoutError' && error.name !== 'TypeError'
+          ? error.message
+          : 'Connection lost. Orders may be out of date. Reconnect or tap Refresh; we will keep retrying.')
       }
-    } catch {}
-    finally { setOrdersLoad(false) }
-  }, [startAlarm])
+    } finally {
+      ordersInFlightRef.current = false
+      setOrdersLoad(false)
+    }
+  }, [startAlarm, stopAlarm])
 
   // Check push permission state when dashboard opens.
   // If permission is already granted, silently re-register so every phone
@@ -395,12 +409,23 @@ export default function DriverPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view])
 
-  // Poll every 20s when dashboard is visible
+  // Refresh on return/reconnection as mobile browsers suspend background timers.
   useEffect(() => {
     if (view !== 'dashboard') return
     loadOrders()
-    pollRef.current = setInterval(loadOrders, 20_000)
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+    const refreshVisible = () => {
+      if (document.visibilityState === 'visible') loadOrders()
+    }
+    pollRef.current = setInterval(refreshVisible, 10_000)
+    document.addEventListener('visibilitychange', refreshVisible)
+    window.addEventListener('focus', refreshVisible)
+    window.addEventListener('online', refreshVisible)
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current)
+      document.removeEventListener('visibilitychange', refreshVisible)
+      window.removeEventListener('focus', refreshVisible)
+      window.removeEventListener('online', refreshVisible)
+    }
   }, [view, loadOrders])
 
   // Instant refresh when SW delivers a push notification to this page
@@ -437,6 +462,9 @@ export default function DriverPage() {
 
   // ── Logout ───────────────────────────────────────────────────
   async function handleLogout() {
+    stopAlarm()
+    seenOrderIdsRef.current = null
+    setOrdersError('')
     await fetch('/api/driver/login', { method: 'DELETE' }).catch(() => {})
     setDriver(null)
     setOrders([])
@@ -612,6 +640,13 @@ export default function DriverPage() {
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {ordersError && (
+        <div role="alert" style={{ ...S.pushBanner, color: '#ffb4ab' }}>
+          <p style={{ margin: 0, flex: 1 }}>{ordersError}</p>
+          <button onClick={loadOrders} disabled={ordersLoad} style={S.pushAllow}>Refresh</button>
         </div>
       )}
 
