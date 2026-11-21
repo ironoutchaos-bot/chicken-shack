@@ -1,4 +1,5 @@
 import webpush from 'web-push'
+import { scheduleMobilePush, scheduleNewOrderPush } from './mobile-push'
 
 webpush.setVapidDetails(
   process.env.VAPID_EMAIL    ?? 'mailto:thechickenshack00@gmail.com',
@@ -17,6 +18,7 @@ const STATUS_MESSAGES: Record<string, { title: string; body: string }> = {
 }
 
 export async function notifyDriverAssignment(driverId: string, orderId: string) {
+  scheduleMobilePush({event_key:`order:${orderId}:assigned:${driverId}`,role:'driver',recipient_id:driverId,order_id:orderId,kind:'driver_dispatch',title:'New delivery assigned',body:'Open your delivery desk to review your assigned order.'})
   const short = orderId.slice(0, 8).toUpperCase()
 
   const res = await fetch(
@@ -73,6 +75,7 @@ export async function notifyDriverAssignment(driverId: string, orderId: string) 
 export type DriverNotifyResult = { total: number; sent: number; failed: number; removed: number }
 
 export async function notifyAllDrivers(orderId: string, test = false, device?: { driverId: string; endpoint: string }): Promise<DriverNotifyResult> {
+  if (!test && !device) scheduleNewOrderPush(orderId)
   const short = orderId.slice(0, 8).toUpperCase()
   const result: DriverNotifyResult = { total: 0, sent: 0, failed: 0, removed: 0 }
 
@@ -173,9 +176,10 @@ export async function notifyUserFeedbackRequest(userId: string, orderId: string)
   )
 }
 
-export async function notifyUserOrderStatus(userId: string, status: string) {
+export async function notifyUserOrderStatus(userId: string, status: string, orderId?: string) {
   const msg = STATUS_MESSAGES[status]
   if (!msg) return
+  if (orderId) scheduleMobilePush({event_key:`order:${orderId}:${status}:${userId}`,role:'customer',recipient_id:userId,order_id:orderId,kind:'order_status',title:msg.title,body:msg.body})
 
   // Fetch all push subscriptions for this user
   const res = await fetch(

@@ -18,47 +18,9 @@ export const dynamic = 'force-dynamic'
  * Failure: { valid: false, error: string }
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { type Coupon } from '@/app/api/coupons/route'
+import { couponUnavailableMessage, loadCoupon, loadCouponUsage } from '@/lib/coupon-settings'
 import { calculateCouponDiscount } from '@/lib/coupon-discount'
 import { validateBogoPrices } from '@/lib/coupon-catalog'
-
-const SUPA_URL = () => process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') ?? ''
-const SUPA_SRV = () => process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-
-function srvHeaders() {
-  return {
-    'apikey':        SUPA_SRV(),
-    'Authorization': `Bearer ${SUPA_SRV()}`,
-    'Content-Type':  'application/json',
-  }
-}
-
-async function loadCoupons(): Promise<Coupon[]> {
-  try {
-    const res = await fetch(
-      `${SUPA_URL()}/rest/v1/settings?key=eq.coupons&select=value`,
-      { headers: srvHeaders() }
-    )
-    if (!res.ok) return []
-    const rows: { value: unknown }[] = await res.json()
-    if (!rows.length) return []
-    const v = rows[0].value
-    return Array.isArray(v) ? v as Coupon[] : []
-  } catch { return [] }
-}
-
-async function loadUsageTracker(): Promise<Record<string, number>> {
-  try {
-    const res = await fetch(
-      `${SUPA_URL()}/rest/v1/settings?key=eq.coupon_usage_tracker&select=value`,
-      { headers: srvHeaders() }
-    )
-    if (!res.ok) return {}
-    const rows: { value: unknown }[] = await res.json()
-    if (!rows.length) return {}
-    return (rows[0].value ?? {}) as Record<string, number>
-  } catch { return {} }
-}
 
 function couponUsageCount(tracker: Record<string, number>, code: string): number {
   return Object.entries(tracker)
@@ -79,14 +41,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ valid: false, error: 'Invalid request' }, { status: 400 })
   }
 
-  const entered = (body.code ?? '').trim().toUpperCase()
+  const entered = typeof body?.code === 'string' ? body.code.trim().toUpperCase() : ''
   if (!entered) {
     return NextResponse.json({ valid: false, error: 'Please enter a coupon code' })
   }
 
-  // Load all coupons
-  const coupons = await loadCoupons()
-  const coupon  = coupons.find(c => c.code === entered)
+  let coupon
+  let tracker: Record<string, number> = {}
+  try {
+    coupon = await loadCoupon(entered)
+    if (coupon?.enabled && coupon.max_uses_per_phone > 0) tracker = await loadCouponUsage()
+  } catch (error) {
+    console.error('[coupon/validate] Could not read coupon settings:', error)
+    return NextResponse.json({ valid: false, error: couponUnavailableMessage }, { status: 503 })
+  }
 
   if (!coupon) {
     return NextResponse.json({ valid: false, error: 'Invalid coupon code' })
@@ -109,7 +77,6 @@ export async function POST(req: NextRequest) {
 
   // Total usage limit
   if (coupon.max_uses_per_phone > 0) {
-    const tracker = await loadUsageTracker()
     const used    = couponUsageCount(tracker, coupon.code)
     if (used >= coupon.max_uses_per_phone) {
       return NextResponse.json({

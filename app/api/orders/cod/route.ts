@@ -23,6 +23,7 @@ import { cookies } from 'next/headers'
 import { sessionOptions, type SessionData } from '@/lib/session'
 import { type Coupon } from '@/app/api/coupons/route'
 import { calculateCouponDiscount, type CouponCartItem } from '@/lib/coupon-discount'
+import { couponUnavailableMessage, loadCoupon, loadCouponDeliveryFee, loadCouponUsage } from '@/lib/coupon-settings'
 import { validateBogoPrices } from '@/lib/coupon-catalog'
 import { notifyDriverAssignment, notifyAllDrivers } from '@/lib/push-notify'
 import { sendOrderConfirmationOnce, summarizeItems } from '@/lib/aisensy'
@@ -151,33 +152,38 @@ export async function POST(req: NextRequest) {
     ? { ...deliveryAddressCheck.address, analyticsDeviceId }
     : deliveryAddressCheck.address
 
-  // ── Fetch live settings for coupon validation + delivery fee ──────────────
-  let settings: Record<string, unknown> = {}
-  try {
-    const sRes = await fetch(
-      `${SUPA_URL()}/rest/v1/settings?select=key,value`,
-      { headers: srvHeaders() }
-    )
-    if (sRes.ok) {
-      const rows: { key: string; value: unknown }[] = await sRes.json()
-      if (Array.isArray(rows)) settings = Object.fromEntries(rows.map(r => [r.key, r.value]))
-    }
-  } catch { /* proceed without settings — coupon won't be validated */ }
+  const requestedCode = body.coupon_code ? String(body.coupon_code).trim().toUpperCase() : null
+  let deliveryFee = 0
 
-  // ── Recalculate total server-side so client can't send fake amounts ────────
+  // Keep the existing settings read for orders without a coupon.
+  if (!requestedCode) {
+    try {
+      const response = await fetch(`${SUPA_URL()}/rest/v1/settings?select=key,value`, { headers: srvHeaders() })
+      if (response.ok) {
+        const rows: { key: string; value: unknown }[] = await response.json()
+        if (Array.isArray(rows)) deliveryFee = Number(rows.find(row => row.key === 'delivery_fee')?.value ?? 0)
+      }
+    } catch { /* preserve the existing fallback for orders without coupons */ }
+  }
+
   const cartItems = items as { pricePerKg: number; quantity: number }[]
-  const subtotal   = cartItems.reduce((s, i) => s + (Number(i.pricePerKg) * Number(i.quantity)), 0)
-  const deliveryFee = Number(settings.delivery_fee ?? 0)
-  let   serverDiscount = 0
+  const subtotal = cartItems.reduce((sum, item) => sum + Number(item.pricePerKg) * Number(item.quantity), 0)
+  let serverDiscount = 0
   let freeItems: { productId: string; quantity: number }[] = []
 
-  // ── Coupon validation (multi-coupon system) ───────────────────────────────
-  const requestedCode = body.coupon_code ? String(body.coupon_code).trim().toUpperCase() : null
   if (requestedCode) {
-    // Load coupons array from settings
-    const couponsRaw = settings.coupons
-    const coupons: Coupon[] = Array.isArray(couponsRaw) ? couponsRaw as Coupon[] : []
-    const coupon = coupons.find((c: Coupon) => c.code === requestedCode)
+    let coupon
+    let tracker: Record<string, number> = {}
+    try {
+      coupon = await loadCoupon(requestedCode)
+      if (coupon?.enabled) {
+        deliveryFee = await loadCouponDeliveryFee()
+        if (coupon.max_uses_per_phone > 0) tracker = await loadCouponUsage()
+      }
+    } catch (error) {
+      console.error('[orders/cod POST] Could not read coupon settings:', error)
+      return NextResponse.json({ error: couponUnavailableMessage }, { status: 503 })
+    }
 
     if (!coupon || !coupon.enabled) {
       return NextResponse.json({ error: 'Invalid or inactive coupon code' }, { status: 400 })
@@ -206,7 +212,6 @@ export async function POST(req: NextRequest) {
 
     // Check total usage limit
     if (coupon.max_uses_per_phone > 0) {
-      const tracker = (settings.coupon_usage_tracker ?? {}) as Record<string, number>
       const tKey    = `${coupon.code}:__total`
       const used    = couponUsageCount(tracker, coupon.code)
 
@@ -226,6 +231,10 @@ export async function POST(req: NextRequest) {
   }
 
   const verifiedTotal = Math.max(0, subtotal + deliveryFee - serverDiscount)
+  if (requestedCode && payment_status === 'pending' && typeof body.total_amount === 'number' &&
+      Math.round(body.total_amount * 100) !== Math.round(verifiedTotal * 100)) {
+    return NextResponse.json({ error: 'Your order total changed. Review your cart before paying.' }, { status: 409 })
+  }
 
   // ── Ensure profile exists (guards against FK violation after DB reset) ──────
   try {

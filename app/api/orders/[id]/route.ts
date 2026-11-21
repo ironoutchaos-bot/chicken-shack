@@ -94,7 +94,7 @@ export async function PATCH(
 
     // Notify customer if status changed
     if (body.order_status && userId) {
-      notifyUserOrderStatus(userId, body.order_status).catch(() => {})
+      notifyUserOrderStatus(userId, body.order_status, id).catch(() => {})
     }
 
     // Notify driver if they were just assigned

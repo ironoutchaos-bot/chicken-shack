@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 type GeocodeBody = {
+  includeSuggestions?: boolean
   query?: string
   houseNumber?: string
   streetAddress?: string
@@ -196,15 +197,16 @@ function scoreGoogleLabel(label: string, body: GeocodeBody) {
   return score
 }
 
-async function tryGooglePlacesSearch(queries: string[], body: GeocodeBody): Promise<GeocodeMatch | null> {
+async function tryGooglePlacesSearch(queries: string[], body: GeocodeBody): Promise<(GeocodeMatch & { suggestions?: GeocodeMatch[] }) | null> {
   if (!GOOGLE_GEOCODE_KEY) return null
 
   let bestMatch: (GeocodeMatch & { score: number }) | null = null
+  const candidates: (GeocodeMatch & { score: number })[] = []
   const searchQueries = uniq([
     compact([body.query, 'Bengaluru']).join(', '),
     compact([body.houseNumber, body.streetAddress, body.landmark, 'Bengaluru']).join(', '),
     ...queries,
-  ]).slice(0, 3)
+  ]).slice(0, body.includeSuggestions === true ? 1 : 3)
 
   for (const query of searchQueries) {
     try {
@@ -258,8 +260,7 @@ async function tryGooglePlacesSearch(queries: string[], body: GeocodeBody): Prom
         if (place.types?.some(type => ['premise', 'establishment', 'point_of_interest'].includes(type))) {
           score += 2
         }
-        if (!bestMatch || score > bestMatch.score) {
-          bestMatch = {
+        const candidate: GeocodeMatch & { score: number } = {
             lat,
             lng,
             query,
@@ -271,7 +272,8 @@ async function tryGooglePlacesSearch(queries: string[], body: GeocodeBody): Prom
             pincodeMatched: true,
             score,
           }
-        }
+        candidates.push(candidate)
+        if (!bestMatch || score > bestMatch.score) bestMatch = candidate
       }
 
       if (bestMatch && bestMatch.score >= 10) break
@@ -282,6 +284,16 @@ async function tryGooglePlacesSearch(queries: string[], body: GeocodeBody): Prom
 
   if (!bestMatch) return null
   const { score: _score, ...match } = bestMatch
+  if (body.includeSuggestions === true) {
+    const seen = new Set<string>()
+    const suggestions = candidates.sort((a, b) => b.score - a.score).filter(candidate => {
+      const key = candidate.placeId || `${candidate.lat},${candidate.lng}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    }).slice(0, 5).map(({ score: _rank, ...candidate }) => candidate)
+    return { ...match, suggestions }
+  }
   return match
 }
 
@@ -527,6 +539,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Google reverse geocoding is temporarily unavailable' }, { status: 502 })
     }
   }
+
+  if (body.includeSuggestions === true && (typeof body.query !== 'string' || body.query.trim().length < 4 || body.query.length > 200)) return NextResponse.json({ error: 'Enter 4 to 200 characters to search an address' }, { status: 400 })
 
   const queries = buildQueries(body)
   if (queries.length === 0) {

@@ -208,25 +208,33 @@ export default function CartSheet({
 
   const [couponChecking, setCouponChecking] = useState(false)
 
+  async function validateCoupon(code: string) {
+    const res = await fetch('/api/coupon/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(15_000),
+      body: JSON.stringify({
+        code,
+        cart_items: cart,
+        customer_phone: user?.phone ?? '',
+        subtotal,
+        delivery_fee: deliveryFee,
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error ?? 'Could not verify coupon. Please try again.')
+    return data
+  }
+
   async function applyCoupon() {
+    if (couponChecking || loading) return
     setCouponError('')
     const entered = couponInput.trim().toUpperCase()
     if (!entered) { setCouponError('Please enter a coupon code'); return }
     setCouponChecking(true)
     const requestedCartKey = cartKey
     try {
-      const res = await fetch('/api/coupon/validate', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code:            entered,
-          cart_items:      cart,
-          customer_phone:  user?.phone ?? '',
-          subtotal,
-          delivery_fee:    deliveryFee,
-        }),
-      })
-      const data = await res.json()
+      const data = await validateCoupon(entered)
       if (currentCartKey.current !== requestedCartKey) {
         setCouponError('Your cart changed. Please apply the coupon again.')
         return
@@ -241,8 +249,8 @@ export default function CartSheet({
       setCouponCartKey(requestedCartKey)
       setFreeItems(Array.isArray(data.freeItems) ? data.freeItems : [])
       setCouponApplied(true)
-    } catch {
-      setCouponError('Could not verify coupon. Please try again.')
+    } catch (error) {
+      setCouponError(error instanceof Error && error.name === 'Error' ? error.message : 'Could not verify coupon. Please try again.')
     } finally {
       setCouponChecking(false)
     }
@@ -283,6 +291,27 @@ export default function CartSheet({
     setPayStep('Creating order…')
 
     try {
+      if (couponApplied) {
+        setPayStep('Checking coupon…')
+        const data = await validateCoupon(couponInput.trim().toUpperCase())
+        if (currentCartKey.current !== cartKey) {
+          setLastAddr(null)
+          throw new Error('Your cart changed. Review it before paying.')
+        }
+        if (!data.valid) {
+          setCouponApplied(false)
+          setLastAddr(null)
+          throw new Error(`${data.error ?? 'This coupon is no longer available.'} Review your cart before paying.`)
+        }
+        if (Math.round(data.discount * 100) !== Math.round(couponDiscount * 100)) {
+          setCouponDiscount(data.discount)
+          setCouponLabel(data.label)
+          setFreeItems(Array.isArray(data.freeItems) ? data.freeItems : [])
+          setLastAddr(null)
+          throw new Error('Your coupon discount changed. Review the updated total before paying.')
+        }
+        setPayStep('Creating order…')
+      }
       // Use user prop directly — no Supabase network calls at all
       // Derive base URL from the current window so staging/dev redirects work too
       const baseUrl   = typeof window !== 'undefined' ? window.location.origin : 'https://blurufresh.com'
@@ -339,6 +368,7 @@ export default function CartSheet({
       )
       const dbData = await dbRes.json().catch(() => ({}))
       if (!dbRes.ok) {
+        if (dbRes.status === 409) setLastAddr(null)
         throw new Error(dbData.error ?? `Failed to save order (${dbRes.status})`)
       }
       const realOrderId = dbData.id
@@ -604,7 +634,7 @@ export default function CartSheet({
                         <p className="text-sm font-bold" style={{ color: '#91d852' }}>{couponInput.toUpperCase()}</p>
                         <p className="text-xs" style={{ color: 'rgba(145,216,82,.7)' }}>{couponLabel} applied — saving ₹{couponDiscount}</p>
                       </div>
-                      <button onClick={removeCoupon} className="text-xs font-bold shrink-0" style={{ color: '#f87171' }}>Remove</button>
+                      <button disabled={loading} onClick={removeCoupon} className="text-xs font-bold shrink-0" style={{ color: '#f87171' }}>Remove</button>
                     </div>
                   ) : (
                     <div className="flex gap-2">
@@ -612,13 +642,14 @@ export default function CartSheet({
                         ref={couponInputRef}
                         type="text" placeholder="Enter coupon code"
                         value={couponInput}
+                        disabled={couponChecking || loading}
                         onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError('') }}
                         onKeyDown={e => e.key === 'Enter' && applyCoupon()}
                         maxLength={20}
                         className="flex-1 rounded-2xl px-4 py-3 text-sm font-mono font-bold uppercase tracking-widest outline-none transition-colors placeholder:font-normal placeholder:tracking-normal placeholder:normal-case"
                         style={{ background: '#fff', border: '1.5px solid rgba(22,20,15,.12)', color: '#1C0F00' }}
                       />
-                      <button onClick={applyCoupon} disabled={couponChecking} className="px-4 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60" style={{ background: '#91d852', color: '#16140f', whiteSpace: 'nowrap' }}>
+                      <button onClick={applyCoupon} disabled={couponChecking || loading} className="px-4 py-3 rounded-2xl text-sm font-bold transition-all active:scale-95 disabled:opacity-60" style={{ background: '#91d852', color: '#16140f', whiteSpace: 'nowrap' }}>
                         {couponChecking ? <Loader2 size={15} className="animate-spin" /> : 'Apply'}
                       </button>
                     </div>

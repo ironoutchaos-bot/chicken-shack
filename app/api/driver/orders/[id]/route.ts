@@ -108,7 +108,7 @@ export async function PATCH(
 
   // ── Notify the customer (fire-and-forget, don't block the response) ───────
   if (order.user_id) {
-    notifyUserOrderStatus(order.user_id, body.order_status).catch(() => {})
+    notifyUserOrderStatus(order.user_id, body.order_status, orderId).catch(() => {})
   }
 
   return NextResponse.json({ ok: true })

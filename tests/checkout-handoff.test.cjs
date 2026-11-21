@@ -5,10 +5,10 @@ const path = require('node:path')
 const vm = require('node:vm')
 const ts = require('typescript')
 
-function checkoutHarness({ mode = 'cod', failSave = false, user = { id: 'test-user', name: 'Test Customer', phone: '9000000000' } } = {}) {
+function checkoutHarness({ mode = 'cod', failSave = false, packPrice = 188, quantity = 2, deliveryFee = 30, couponResponses = [], user = { id: 'test-user', name: 'Test Customer', phone: '9000000000' } } = {}) {
   let cursor = 0, clears = 0, confirmations = 0, logins = 0, gatewayCalls = 0
   const slots = [], requests = [], storage = new Map()
-  const cart = [{ productId: 'curry-500', name: 'Curry Cut', pricePerKg: 188, quantity: 2, imageUrl: null, weightPerUnit: 500, unit: 'g', pieceSize: 'Small', itemNote: 'Cut preference test' }]
+  const cart = [{ productId: 'curry-500', name: 'Curry Cut', pricePerKg: packPrice, quantity, imageUrl: null, weightPerUnit: 500, unit: 'g', pieceSize: 'Small', itemNote: 'Cut preference test' }]
   const jsx = (type, props) => ({ type, props: props || {} })
   const hooks = {
     useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = initial; return [slots[index], value => { slots[index] = typeof value === 'function' ? value(slots[index]) : value }] },
@@ -20,12 +20,13 @@ function checkoutHarness({ mode = 'cod', failSave = false, user = { id: 'test-us
   const module = { exports: {} }
   const compiled = ts.transpileModule(fs.readFileSync(path.join(__dirname, '../app/order/components/CartSheet.tsx'), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText
   vm.runInNewContext(compiled, {
-    exports: module.exports, module, window: pageWindow, console, process: { env: {} },
+    exports: module.exports, module, window: pageWindow, console, AbortSignal, process: { env: {} },
     localStorage: { setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
     setTimeout: (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref(); return timer }, clearTimeout,
     fetch: async (url, options = {}) => {
       const body = options.body ? JSON.parse(options.body) : null
       requests.push({ url, body })
+      if (url === '/api/coupon/validate' && couponResponses.length) return couponResponses.shift()
       if (url === '/api/coupon/validate') return response({ valid: true, discount: 188, label: 'Buy 1 Get 1 Free', freeItems: [{ productId: 'curry-500', quantity: 1 }] })
       if (url === '/api/cashfree/create-order') return response({ order_id: 'cf-test', payment_session_id: 'session-test' })
       if (url === '/api/orders/cod') return response(failSave ? { error: 'Test order save failure' } : { id: 'order-test' }, !failSave)
@@ -41,7 +42,7 @@ function checkoutHarness({ mode = 'cod', failSave = false, user = { id: 'test-us
       throw new Error(`Unexpected dependency: ${name}`)
     },
   })
-  let props = { open: true, onClose() {}, cart, onUpdateQty() {}, onClear() { clears++ }, user, onLoginRequired() { logins++ }, onOrderPlaced() { confirmations++ }, deliveryFee: 30 }
+  let props = { open: true, onClose() {}, cart, onUpdateQty() {}, onClear() { clears++ }, user, onLoginRequired() { logins++ }, onOrderPlaced() { confirmations++ }, deliveryFee }
   function render() { cursor = 0; return module.exports.default(props) }
   function all(tree, predicate) { const found = []; function visit(node) { if (!node || typeof node !== 'object') return; if (Array.isArray(node)) return node.forEach(visit); if (predicate(node)) found.push(node); visit(node.props?.children) } visit(tree); return found }
   function text(node) { if (typeof node === 'string' || typeof node === 'number') return String(node); if (Array.isArray(node)) return node.map(text).join(''); return node?.props ? text(node.props.children) : '' }
@@ -123,3 +124,37 @@ test('changing quantity removes old coupon discount before checkout', async () =
   assert.equal(order.coupon_discount, 0)
   assert.equal(order.total_amount, 218)
 })
+
+
+test('99% coupon on ₹209 revalidates before opening the ₹2 online payment', async () => {
+  const quote = () => ({ ok: true, json: async () => ({ valid: true, discount: 207, label: '99% off' }) })
+  const app = checkoutHarness({ mode: 'cashfree', packPrice: 209, quantity: 1, deliveryFee: 0, couponResponses: [quote(), quote()] })
+  await app.coupon()
+  app.choosePayment()
+  await app.confirmAddress()
+  assert.deepEqual(app.requests.map(request => request.url), [
+    '/api/coupon/validate', '/api/coupon/validate', '/api/cashfree/create-order', '/api/orders/cod',
+  ])
+  assert.equal(app.requests[2].body.amount_inr, 2)
+  assert.equal(app.requests[3].body.total_amount, 2)
+  assert.equal(app.counters().gatewayCalls, 1)
+})
+
+for (const [name, checkoutResponse, message, displayedTotal] of [
+  ['coupon settings outage', { ok: false, json: async () => ({ valid: false, error: 'Coupon verification is temporarily unavailable.' }) }, 'temporarily unavailable', '₹2'],
+  ['disabled coupon', { ok: true, json: async () => ({ valid: false, error: 'This coupon is not active' }) }, 'not active', '₹209'],
+  ['changed discount', { ok: true, json: async () => ({ valid: true, discount: 100, label: 'Updated coupon' }) }, 'discount changed', '₹109'],
+]) {
+  test(`${name} stops checkout before creating a payment and preserves the cart`, async () => {
+    const applied = { ok: true, json: async () => ({ valid: true, discount: 207, label: '99% off' }) }
+    const app = checkoutHarness({ mode: 'cashfree', packPrice: 209, quantity: 1, deliveryFee: 0, couponResponses: [applied, checkoutResponse] })
+    await app.coupon()
+    app.choosePayment()
+    await app.confirmAddress()
+    assert.equal(app.requests.length, 2)
+    assert.equal(app.counters().gatewayCalls, 0)
+    assert.equal(app.counters().clears, 0)
+    assert.ok(app.text(app.render()).includes(message))
+    assert.ok(app.text(app.button('Online')).includes(displayedTotal))
+  })
+}
